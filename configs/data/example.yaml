@@ -1,0 +1,8 @@
+# Ultralytics-compatible YOLO dataset. Replace this path with a real dataset.
+path: ../../datasets/stage0
+train: images/train
+val: images/val
+test: images/test
+names:
+  0: object
+

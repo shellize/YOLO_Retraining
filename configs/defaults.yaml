@@ -1,0 +1,32 @@
+task:
+  name: null
+  label: experiment
+  seed: 42
+  output_root: ../runs/tasks
+  parent_result: null
+
+select_policy:
+  name: full
+  params: {}
+
+epoch_policy:
+  name: static
+  params: {}
+
+budget:
+  type: epochs
+  value: 100
+
+backend:
+  params:
+    batch: 32
+    imgsz: 640
+    device: [0, 1]
+    workers: 8
+    amp: true
+
+evaluation:
+  primary_metric: map50_95
+  test_scope: seen
+  evaluate_checkpoints: [last, best]
+

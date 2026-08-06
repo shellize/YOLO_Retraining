@@ -1,0 +1,15 @@
+include: [../defaults.yaml, ../model/yolo11n.yaml]
+task:
+  label: random-replay
+  parent_result: null
+data:
+  catalog: {stage0: ../data/example.yaml}
+  current: [stage0]
+  candidate: [stage0]
+  validation: [stage0]
+  test: [stage0]
+initialization: {source: parent, checkpoint: last}
+select_policy:
+  name: random_replay
+  params: {replay_size: 500}
+
