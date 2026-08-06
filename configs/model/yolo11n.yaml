@@ -1,0 +1,4 @@
+model:
+  backend: ultralytics
+  definition: yolo11n.yaml
+

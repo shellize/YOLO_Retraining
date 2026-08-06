@@ -1,0 +1,12 @@
+include: [../defaults.yaml, ../model/yolo11n.yaml]
+task:
+  label: full-cold
+data:
+  catalog: {stage0: ../data/example.yaml}
+  current: [stage0]
+  candidate: [stage0]
+  validation: [stage0]
+  test: [stage0]
+initialization: {source: pretrained, checkpoint: yolo11n.pt}
+select_policy: {name: full, params: {}}
+

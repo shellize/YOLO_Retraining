@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=70", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "yolo-retraining"
+version = "0.1.0"
+description = "Research-oriented baseline retraining experiments for Ultralytics YOLO."
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+license = {text = "MIT"}
+dependencies = [
+  "numpy>=1.26,<3",
+  "Pillow>=10,<13",
+  "PyYAML>=6,<7",
+  "ultralytics==8.4.102",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8,<9",
+  "pytest-cov>=5,<8",
+]
+
+[project.scripts]
+yolo-retraining = "yolo_retraining.run:main"
+yolo-retraining-doctor = "yolo_retraining.doctor:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+  "smoke: downloads weights and runs a tiny real Ultralytics cycle",
+  "ddp: requires at least two CUDA devices",
+]
+

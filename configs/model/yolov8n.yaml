@@ -1,0 +1,4 @@
+model:
+  backend: ultralytics
+  definition: yolov8n.yaml
+
