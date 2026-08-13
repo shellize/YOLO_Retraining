@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import csv
 import math
+import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -95,12 +97,58 @@ def build_train_command(
     return command
 
 
-def run_command(command: Sequence[str], *, cwd: Path, log_path: Path) -> None:
+ANSI_ESCAPE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+
+
+def run_command(command: Sequence[str], *, cwd: Path, log_path: Path, progress_epochs: int | None = None) -> None:
     log_path.parent.mkdir(parents=True, exist_ok=True)
+    environment = os.environ.copy()
+    environment.setdefault("PYTHONUNBUFFERED", "1")
     with log_path.open("w", encoding="utf-8") as log:
-        result = subprocess.run(list(command), cwd=cwd, stdout=log, stderr=subprocess.STDOUT, text=True, check=False)
-    if result.returncode != 0:
-        raise RuntimeError(f"YOLOv5 subprocess failed with exit code {result.returncode}; see {log_path}")
+        process = subprocess.Popen(
+            list(command),
+            cwd=cwd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            bufsize=1,
+            env=environment,
+        )
+        if process.stdout is None:  # pragma: no cover - guaranteed by stdout=PIPE
+            raise RuntimeError("failed to capture YOLOv5 subprocess output")
+        record = ""
+        shown_epochs: set[int] = set()
+        for character in iter(lambda: process.stdout.read(1), ""):
+            log.write(character)
+            if character in {"\r", "\n"}:
+                _print_coarse_progress(record, progress_epochs, shown_epochs)
+                record = ""
+            else:
+                record += character
+        if record:
+            _print_coarse_progress(record, progress_epochs, shown_epochs)
+        returncode = process.wait()
+    if returncode != 0:
+        raise RuntimeError(f"YOLOv5 subprocess failed with exit code {returncode}; see {log_path}")
+
+
+def _print_coarse_progress(raw_line: str, epochs: int | None, shown_epochs: set[int]) -> None:
+    line = ANSI_ESCAPE.sub("", raw_line).strip()
+    if not line:
+        return
+    if epochs is not None:
+        match = re.search(rf"(?<!\d)(\d+)/{epochs - 1}(?!\d)", line)
+        if match:
+            epoch = int(match.group(1))
+            if epoch not in shown_epochs:
+                shown_epochs.add(epoch)
+                print(f"[YOLOv5] epoch {epoch + 1}/{epochs} running", flush=True)
+    if re.match(r"^all\s+\d+\s+\d+\s+", line):
+        print(f"[YOLOv5] validation: {line}", flush=True)
+    elif "epochs completed in" in line:
+        print(f"[YOLOv5] {line}", flush=True)
 
 
 def read_training_history(path: Path) -> list[dict[str, Any]]:

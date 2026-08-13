@@ -20,18 +20,26 @@ VPS, AFSS, resume, COCO input, and dynamic epoch sampling are deliberately out o
 Create the isolated Python 3.10 environment, install PyTorch 2.2.2/CUDA 12.1 dependencies, clone the fixed YOLOv5 source revision, and download `yolov5s.pt`:
 
 ```powershell
-.\scripts\bootstrap.ps1
+.\requirements\bootstrap.ps1
 ```
 
 ```bash
-./scripts/bootstrap.sh
+./requirements/bootstrap.sh
 ```
 
 The default environment is `yolo-retraining-v5`. YOLOv5 is stored in the ignored `.third_party/yolov5` directory. Set `YOLOV5_ROOT` before running a script to use an existing server checkout. The checkout must be clean and exactly match the fixed commit; scripts never reset or overwrite a mismatched source tree.
 
 The large CUDA wheels are downloaded into ignored `.third_party/wheels` files with retry and resume support. A server mirror can be selected with `YOLO_RETRAINING_TORCH_WHEEL_URL` and `YOLO_RETRAINING_TORCHVISION_WHEEL_URL`; the default URLs remain the official PyTorch CUDA 12.1 index.
 
-If the environment and source already exist, use `use_existing_env.ps1` or `use_existing_env.sh`. Bootstrap refuses to mutate an existing environment unless explicitly allowed with `-AllowExistingEnvironmentUpdate` on Windows or `YOLO_RETRAINING_ALLOW_ENV_UPDATE=1` on Linux.
+If the environment and source already exist, use `requirements/use_existing_env.ps1` or `requirements/use_existing_env.sh`. Bootstrap refuses to mutate an existing environment unless explicitly allowed with `-AllowExistingEnvironmentUpdate` on Windows or `YOLO_RETRAINING_ALLOW_ENV_UPDATE=1` on Linux.
+
+Environment setup scripts live under `requirements/`; experiment launchers live under `scripts/`. To run the formal Full Cold base task with pretrained YOLOv5s weights and all of `stage0` on the second physical GPU:
+
+```bash
+CUDA_VISIBLE_DEVICES=1 bash scripts/run_full_cold_stage0.sh
+```
+
+The selected physical GPU is exposed as logical `device=0` inside the training process. Optional overrides include `TASK_NAME`, `SEED`, `EPOCHS`, `BATCH`, `WORKERS`, and `OUTPUT_ROOT`.
 
 The optional modern Ultralytics backend can be installed separately:
 

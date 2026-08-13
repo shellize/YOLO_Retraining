@@ -95,6 +95,29 @@ def test_subprocess_failure_reports_log(tmp_path: Path) -> None:
     assert log_path.is_file()
 
 
+def test_training_subprocess_keeps_detailed_log_and_prints_coarse_progress(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    log_path = tmp_path / "training.log"
+    program = (
+        "import sys; "
+        "sys.stdout.write('0/2 detailed batch progress\\r'); sys.stdout.flush(); "
+        "sys.stdout.write('all 16 20 0.8 0.7 0.6 0.4\\n'); sys.stdout.flush(); "
+        "sys.stdout.write('1/2 another detailed batch progress\\r'); sys.stdout.flush(); "
+        "sys.stdout.write('3 epochs completed in 0.100 hours.\\n'); sys.stdout.flush()"
+    )
+
+    run_command([sys.executable, "-u", "-c", program], cwd=tmp_path, log_path=log_path, progress_epochs=3)
+
+    terminal = capsys.readouterr().out
+    detailed = log_path.read_text(encoding="utf-8")
+    assert "[YOLOv5] epoch 1/3 running" in terminal
+    assert "[YOLOv5] epoch 2/3 running" in terminal
+    assert "[YOLOv5] validation: all 16 20 0.8 0.7 0.6 0.4" in terminal
+    assert "epochs completed" in terminal
+    assert "detailed batch progress" not in terminal
+    assert "detailed batch progress" in detailed
+    assert "another detailed batch progress" in detailed
+
+
 def test_read_only_verifier_suppresses_yolov5_image_write(tmp_path: Path) -> None:
     image_path = tmp_path / "image.jpg"
     image_path.write_bytes(b"original")

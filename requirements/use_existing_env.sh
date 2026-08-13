@@ -6,7 +6,7 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 YOLO_ROOT="${YOLOV5_ROOT:-$PROJECT_ROOT/.third_party/yolov5}"
 
 if ! conda env list | awk '{print $1}' | grep -Fxq "$ENV_NAME"; then
-  echo "Conda environment '$ENV_NAME' does not exist. Use scripts/bootstrap.sh explicitly." >&2
+  echo "Conda environment '$ENV_NAME' does not exist. Use requirements/bootstrap.sh explicitly." >&2
   exit 1
 fi
 

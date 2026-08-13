@@ -23,6 +23,7 @@ class TaskRunner:
 
     def run(self) -> Path:
         create_output(self.output_dir)
+        print(f"[Task] output: {self.output_dir.resolve()}", flush=True)
         dump_yaml(self.config, self.output_dir / "task.yaml")
         status_path = self.output_dir / "task_status.json"
         write_json(status_path, status_payload("created"))
@@ -30,6 +31,12 @@ class TaskRunner:
             registry = build_registry(catalog_from_data_config(self.config["data"]))
             scope = resolve_scope(registry, self.config["data"])
             self._write_scope(scope)
+            test_count = sum(len(ids) for ids in scope["test_by_group"].values())
+            print(
+                f"[Task] data: current={len(scope['current_ids'])}, candidate={len(scope['candidate_ids'])}, "
+                f"validation={len(scope['validation_ids'])}, test={test_count}",
+                flush=True,
+            )
             write_json(status_path, status_payload("selecting"))
             selection_started = time.perf_counter()
             selection_policy = create_selection_policy(self.config["select_policy"])
@@ -40,10 +47,21 @@ class TaskRunner:
                 raise ValueError("selection policy returned no training samples")
             selection_seconds = time.perf_counter() - selection_started
             self._write_selection(selection, selected_ids)
+            group_counts = {key: len(value) for key, value in selection.get("groups", {}).items()}
+            print(
+                f"[Task] selection: policy={self.config['select_policy']['name']}, selected={len(selected_ids)}, "
+                f"groups={group_counts}, time={selection_seconds:.3f}s",
+                flush=True,
+            )
             initial_checkpoint = self._resolve_initialization(registry["names"])
             self.backend.validate_config(self.config)
             backend_dir = self.output_dir / "backend" / self.backend.output_namespace
             write_json(status_path, status_payload("training", selected_count=len(selected_ids)))
+            print(
+                f"[Task] training: backend={self.config['model']['backend']}, epochs={self.config['budget']['value']}, "
+                f"batch={self.config['backend']['params']['batch']}, device={self.config['backend']['params']['device']}",
+                flush=True,
+            )
             training = self.backend.train(
                 {
                     "config": self.config,
@@ -55,6 +73,7 @@ class TaskRunner:
                     "raw_dir": backend_dir,
                 }
             )
+            print(f"[Task] training completed: {float(training.get('training_seconds', 0.0)):.1f}s", flush=True)
             write_csv(self.output_dir / "metrics" / "train_history.csv", training.get("history", []))
             write_json(status_path, status_payload("evaluating"))
             metrics, evaluation_seconds = self._evaluate(registry, scope, training)
@@ -66,11 +85,16 @@ class TaskRunner:
             result = self._result(registry, selection, training, metrics, cost)
             write_json(self.output_dir / "task_result.json", result)
             write_json(status_path, status_payload("completed"))
+            print(
+                f"[Task] completed: evaluation={evaluation_seconds:.1f}s, output={self.output_dir.resolve()}",
+                flush=True,
+            )
             return self.output_dir
         except Exception as error:
             (self.output_dir / "logs").mkdir(parents=True, exist_ok=True)
             (self.output_dir / "logs" / "error.txt").write_text(traceback.format_exc(), encoding="utf-8")
             write_json(status_path, status_payload("failed", error_type=type(error).__name__, error=str(error)))
+            print(f"[Task] failed: {error}; details={self.output_dir / 'logs' / 'error.txt'}", flush=True)
             raise
 
     def _write_scope(self, scope: Mapping[str, Any]) -> None:
@@ -128,6 +152,7 @@ class TaskRunner:
         for checkpoint_name in self.config["evaluation"].get("evaluate_checkpoints", ["last", "best"]):
             checkpoint_metrics: dict[str, Any] = {}
             for group, sample_ids in scope["test_by_group"].items():
+                print(f"[Task] evaluating: checkpoint={checkpoint_name}, group={group}, samples={len(sample_ids)}", flush=True)
                 result = self.backend.evaluate(
                     {
                         "config": self.config,
@@ -139,6 +164,12 @@ class TaskRunner:
                 )
                 elapsed += float(result.get("evaluation_seconds", 0.0))
                 checkpoint_metrics[group] = result
+                print(
+                    f"[Task] evaluation: checkpoint={checkpoint_name}, group={group}, "
+                    f"mAP50-95={float(result.get('map50_95', 0.0)):.4f}, "
+                    f"mAP50={float(result.get('map50', 0.0)):.4f}, time={float(result.get('evaluation_seconds', 0.0)):.1f}s",
+                    flush=True,
+                )
             all_metrics[checkpoint_name] = checkpoint_metrics
         return all_metrics, elapsed
 

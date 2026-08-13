@@ -21,7 +21,7 @@ backend:
   params:
     batch: 32
     imgsz: 640
-    device: [0, 1]
+    device: 0
     workers: 8
     amp: true
 
@@ -29,4 +29,3 @@ evaluation:
   primary_metric: map50_95
   test_scope: seen
   evaluate_checkpoints: [last, best]
-

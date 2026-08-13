@@ -55,7 +55,7 @@ class Yolov5Backend(DetectionBackend):
         checkpoint = resolve_checkpoint(str(request["initial_checkpoint"]), source_root)
         command = build_train_command(config, source_root=source_root, checkpoint=checkpoint, data_yaml=data_yaml, output_dir=raw_dir)
         started = time.perf_counter()
-        run_command(command, cwd=source_root, log_path=standard_dir / "logs" / "yolov5_train.log")
+        run_command(command, cwd=source_root, log_path=standard_dir / "logs" / "yolov5_train.log", progress_epochs=int(config["budget"]["value"]))
         elapsed = time.perf_counter() - started
         training_dir = raw_dir / "train"
         source_last = require_artifact(training_dir / "weights" / "last.pt", "YOLOv5 last checkpoint")

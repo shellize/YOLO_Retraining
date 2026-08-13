@@ -34,7 +34,7 @@ def validate_yolov5_source(root: Path | None = None) -> dict[str, Any]:
     root = (root or resolve_yolov5_root()).resolve()
     required = (root / "train.py", root / "val.py", root / "models" / "yolov5s.yaml")
     if not all(path.is_file() for path in required):
-        raise FileNotFoundError(f"YOLOv5 v7.0 source is missing at {root}; run scripts/bootstrap first or set YOLOV5_ROOT")
+        raise FileNotFoundError(f"YOLOv5 v7.0 source is missing at {root}; run requirements/bootstrap first or set YOLOV5_ROOT")
     try:
         commit = _git(root, "rev-parse", "HEAD")
         tracked_changes = _git(root, "status", "--porcelain", "--untracked-files=no")
@@ -56,5 +56,5 @@ def resolve_checkpoint(value: str | Path, root: Path) -> Path:
     else:
         resolved = (root / checkpoint).resolve()
     if not resolved.is_file():
-        raise FileNotFoundError(f"YOLOv5 checkpoint does not exist: {resolved}; run scripts/bootstrap to download yolov5s.pt")
+        raise FileNotFoundError(f"YOLOv5 checkpoint does not exist: {resolved}; run requirements/bootstrap to download yolov5s.pt")
     return resolved
