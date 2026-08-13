@@ -41,13 +41,34 @@ conda run -n yolo-retraining-v5 python -m pip install -r requirements/ultralytic
 
 ## Data
 
-Each arrival points to a YOLO data YAML containing `path`, `train`, `val`, `test`, and `names`. Images must use the native `images/...` and `labels/...` layout. Split entries may be directories, individual images, or text manifests containing image paths. Algorithms operate stable IDs of the form:
+The preferred data protocol separates logical experiment groups from physical batch folders. [`configs/data/self_improving.yaml`](configs/data/self_improving.yaml) maps the fixed `test` and `val` groups and the arriving `stage0`, `stage1`, ... groups onto `images/0720_*` directories. A group accepts a list, so one stage may contain any number of batch directories:
+
+```yaml
+groups:
+  test:
+    split: test
+    images: [images/0720_1, images/0720_2]
+  val:
+    split: val
+    images: [images/0720_3, images/0720_4]
+  stage0:
+    split: train
+    images: [images/0720_5, images/0720_6]
+```
+
+Regrouping batches only changes this YAML; it does not move images or labels. The older catalog protocol, where each stage points to a complete YOLO YAML containing `train`, `val`, and `test`, remains supported for compatibility. Images must use the native `images/...` and `labels/...` layout. Algorithms operate stable IDs of the form:
 
 ```text
 group_id::relative/path/to/image.jpg
 ```
 
 Selected images are passed to the detector through a small text manifest. Images and labels are never copied, moved, hard-linked, or soft-linked.
+
+Existing datasets named `0720_01` through `0720_09` can be normalized once on each machine. The command renames both image and label directories and rewrites the dataset-local `data.yaml` with `path: .` and the fixed train/val/test split:
+
+```bash
+conda run -n yolo-retraining-v5 python scripts/normalize_batch_names.py /data/yolo/self_improving
+```
 
 ## Run
 
@@ -67,7 +88,7 @@ Sequence:
 yolo-retraining sequence --config configs/sequence/random_replay.yaml
 ```
 
-Real paths and arrivals should be provided by copying the example configs. The checked-in examples intentionally point at `datasets/stage0`, which is ignored by Git.
+The checked-in Task and Sequence configs use the logical layout. Sequence arrivals list only stage IDs; the common layout supplies their physical folders and the fixed validation/test groups.
 
 ## Results
 

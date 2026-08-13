@@ -33,6 +33,29 @@ def load_dataset_yaml(path: Path | str) -> dict[str, Any]:
     return {"yaml_path": str(yaml_path), "root": str(root), "names": _normalize_names(payload["names"]), "splits": {key: payload[key] for key in ("train", "val", "test")}}
 
 
+def _load_layout_group(group_id: str, yaml_path: Path, payload: Mapping[str, Any]) -> dict[str, Any]:
+    groups = payload.get("groups")
+    if not isinstance(groups, Mapping) or not groups:
+        raise ValueError(f"dataset layout requires a non-empty groups mapping: {yaml_path}")
+    group_spec = groups.get(group_id)
+    if not isinstance(group_spec, Mapping):
+        raise ValueError(f"dataset layout has no logical group {group_id!r}: {yaml_path}")
+    split = group_spec.get("split")
+    if split not in {"train", "val", "test"}:
+        raise ValueError(f"layout group {group_id!r} split must be train, val, or test")
+    images = group_spec.get("images")
+    if not isinstance(images, (str, list)) or not images:
+        raise ValueError(f"layout group {group_id!r} requires a non-empty images entry")
+    declared_root = Path(payload.get("path", yaml_path.parent)).expanduser()
+    root = (yaml_path.parent / declared_root).resolve() if not declared_root.is_absolute() else declared_root.resolve()
+    return {
+        "yaml_path": str(yaml_path),
+        "root": str(root),
+        "names": _normalize_names(payload.get("names")),
+        "splits": {name: images if name == split else None for name in ("train", "val", "test")},
+    }
+
+
 def _images_from_entry(root: Path, entry: str | list[str]) -> list[Path]:
     entries = entry if isinstance(entry, list) else [entry]
     files: list[Path] = []
@@ -70,12 +93,17 @@ def yolo_label_path(image_path: Path) -> Path:
 
 
 def load_group(group_id: str, yaml_path: Path | str) -> dict[str, Any]:
-    spec = load_dataset_yaml(yaml_path)
+    yaml_path = Path(yaml_path).expanduser().resolve()
+    payload = yaml.safe_load(yaml_path.read_text(encoding="utf-8")) or {}
+    if not isinstance(payload, Mapping):
+        raise ValueError(f"dataset YAML root must be a mapping: {yaml_path}")
+    spec = _load_layout_group(group_id, yaml_path, payload) if "groups" in payload else load_dataset_yaml(yaml_path)
     root = Path(spec["root"])
     split_records: dict[str, list[dict[str, Any]]] = {}
     for split, entry in spec["splits"].items():
         records: list[dict[str, Any]] = []
-        for image_path in _images_from_entry(root, entry):
+        image_paths = [] if entry is None else _images_from_entry(root, entry)
+        for image_path in image_paths:
             try:
                 relative = image_path.relative_to(root).as_posix()
             except ValueError as error:
@@ -92,4 +120,3 @@ def load_group(group_id: str, yaml_path: Path | str) -> dict[str, Any]:
             )
         split_records[split] = records
     return {"group_id": group_id, "yaml_path": spec["yaml_path"], "root": spec["root"], "names": spec["names"], "splits": split_records}
-

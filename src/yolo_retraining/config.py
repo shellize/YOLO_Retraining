@@ -17,7 +17,7 @@ BUILTIN_DEFAULTS: dict[str, Any] = {
 }
 
 TASK_KEYS = {"task", "data", "model", "initialization", "select_policy", "epoch_policy", "budget", "backend", "evaluation"}
-SEQUENCE_KEYS = {"sequence", "arrivals", "scope_rule", "initialization", "task_template", "task_overrides"}
+SEQUENCE_KEYS = {"sequence", "data", "arrivals", "scope_rule", "initialization", "task_template", "task_overrides"}
 
 
 def deep_merge(base: Mapping[str, Any], override: Mapping[str, Any]) -> dict[str, Any]:
@@ -56,8 +56,11 @@ def _resolve_paths(payload: dict[str, Any], base: Path) -> dict[str, Any]:
     if isinstance(sequence, dict) and sequence.get("output_root") is not None:
         sequence["output_root"] = _absolute(base, sequence["output_root"])
     data = resolved.get("data", {})
-    if isinstance(data, dict) and isinstance(data.get("catalog"), dict):
-        data["catalog"] = {str(key): _absolute(base, value) for key, value in data["catalog"].items()}
+    if isinstance(data, dict):
+        if isinstance(data.get("catalog"), dict):
+            data["catalog"] = {str(key): _absolute(base, value) for key, value in data["catalog"].items()}
+        if data.get("layout") is not None:
+            data["layout"] = _absolute(base, data["layout"])
     arrivals = resolved.get("arrivals")
     if isinstance(arrivals, list):
         for arrival in arrivals:
@@ -136,13 +139,17 @@ def validate_task_config(config: Mapping[str, Any]) -> None:
         raise ValueError("task.output_root is required")
     data = config["data"]
     catalog = data.get("catalog")
-    if not isinstance(catalog, Mapping) or not catalog:
-        raise ValueError("data.catalog must be a non-empty mapping")
+    layout = data.get("layout")
+    has_catalog = isinstance(catalog, Mapping) and bool(catalog)
+    has_layout = isinstance(layout, str) and bool(layout)
+    if has_catalog == has_layout:
+        raise ValueError("data requires exactly one of a non-empty catalog or layout")
+    available_groups = set(catalog) if has_catalog else _layout_groups(Path(layout))
     for scope in ("current", "candidate", "validation", "test"):
         groups = data.get(scope)
         if not isinstance(groups, list) or not groups:
             raise ValueError(f"data.{scope} must be a non-empty list")
-        missing = set(groups) - set(catalog)
+        missing = set(groups) - available_groups
         if missing:
             raise ValueError(f"data.{scope} references unknown groups: {sorted(missing)}")
     if not set(data["current"]).issubset(data["candidate"]):
@@ -175,8 +182,22 @@ def validate_sequence_config(config: Mapping[str, Any]) -> None:
     ids = [item.get("id") for item in arrivals if isinstance(item, Mapping)]
     if len(ids) != len(arrivals) or any(not item for item in ids) or len(set(ids)) != len(ids):
         raise ValueError("each arrival requires a unique non-empty id")
-    if any(not isinstance(item.get("data"), str) for item in arrivals):
-        raise ValueError("each arrival requires a data YAML path")
+    layout_data = config.get("data")
+    uses_layout = isinstance(layout_data, Mapping) and isinstance(layout_data.get("layout"), str)
+    if uses_layout:
+        available_groups = _layout_groups(Path(layout_data["layout"]))
+        missing_arrivals = set(ids) - available_groups
+        if missing_arrivals:
+            raise ValueError(f"arrivals reference groups missing from data.layout: {sorted(missing_arrivals)}")
+        for scope in ("validation", "test"):
+            groups = layout_data.get(scope)
+            if not isinstance(groups, list) or not groups:
+                raise ValueError(f"sequence data.{scope} must be a non-empty list")
+            missing = set(groups) - available_groups
+            if missing:
+                raise ValueError(f"sequence data.{scope} references groups missing from layout: {sorted(missing)}")
+    elif any(not isinstance(item.get("data"), str) for item in arrivals):
+        raise ValueError("each arrival requires a data YAML path when sequence data.layout is absent")
     sequence = config["sequence"]
     if not sequence.get("output_root"):
         raise ValueError("sequence.output_root is required")
@@ -186,6 +207,16 @@ def validate_sequence_config(config: Mapping[str, Any]) -> None:
     for key in ("first", "subsequent"):
         if not isinstance(initialization.get(key), Mapping):
             raise ValueError(f"initialization.{key} must be a mapping")
+
+
+def _layout_groups(path: Path) -> set[str]:
+    if not path.is_file():
+        raise FileNotFoundError(f"data layout does not exist: {path}")
+    payload = _load_yaml(path)
+    groups = payload.get("groups")
+    if not isinstance(groups, Mapping) or not groups:
+        raise ValueError(f"data layout requires a non-empty groups mapping: {path}")
+    return {str(group_id) for group_id in groups}
 
 
 def dump_yaml(payload: Mapping[str, Any], path: Path) -> None:

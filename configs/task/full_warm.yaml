@@ -3,10 +3,10 @@ task:
   label: full-warm
   parent_result: null
 data:
-  catalog: {stage0: ../data/example.yaml}
+  layout: ../data/self_improving.yaml
   current: [stage0]
   candidate: [stage0]
-  validation: [stage0]
-  test: [stage0]
+  validation: [val]
+  test: [test]
 initialization: {source: parent, checkpoint: last}
 select_policy: {name: full, params: {}}

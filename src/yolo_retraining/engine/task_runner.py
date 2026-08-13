@@ -7,7 +7,7 @@ from typing import Any, Mapping
 
 from yolo_retraining.backends import DetectionBackend, create_backend
 from yolo_retraining.config import dump_yaml, validate_task_config
-from yolo_retraining.data import build_registry, resolve_scope
+from yolo_retraining.data import build_registry, catalog_from_data_config, resolve_scope
 from yolo_retraining.evaluation import build_cost
 from yolo_retraining.policies import create_epoch_policy, create_selection_policy
 
@@ -27,7 +27,7 @@ class TaskRunner:
         status_path = self.output_dir / "task_status.json"
         write_json(status_path, status_payload("created"))
         try:
-            registry = build_registry(self.config["data"]["catalog"])
+            registry = build_registry(catalog_from_data_config(self.config["data"]))
             scope = resolve_scope(registry, self.config["data"])
             self._write_scope(scope)
             write_json(status_path, status_payload("selecting"))

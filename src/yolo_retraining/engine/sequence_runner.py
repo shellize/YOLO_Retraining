@@ -26,12 +26,15 @@ class SequenceRunner:
         tasks_dir.mkdir()
         results: list[dict[str, Any]] = []
         catalog: dict[str, str] = {}
+        seen_groups: list[str] = []
         previous_result: Path | None = None
         try:
             for index, arrival in enumerate(self.config["arrivals"]):
                 group_id = str(arrival["id"])
-                catalog[group_id] = str(arrival["data"])
-                task_config = self._task_config(index, group_id, catalog, previous_result)
+                seen_groups.append(group_id)
+                if "data" in arrival:
+                    catalog[group_id] = str(arrival["data"])
+                task_config = self._task_config(index, group_id, seen_groups, catalog, previous_result)
                 task_dir = tasks_dir / f"{index:03d}__{sanitize(group_id)}__{sanitize(task_config['task']['label'])}"
                 result_dir = TaskRunner(task_config, output_dir=task_dir).run()
                 result = read_json(result_dir / "task_result.json")
@@ -49,7 +52,7 @@ class SequenceRunner:
             write_json(status_path, status_payload("failed", completed_tasks=len(results), error_type=type(error).__name__, error=str(error)))
             raise
 
-    def _task_config(self, index: int, group_id: str, catalog: Mapping[str, str], previous_result: Path | None) -> dict[str, Any]:
+    def _task_config(self, index: int, group_id: str, seen_groups: list[str], catalog: Mapping[str, str], previous_result: Path | None) -> dict[str, Any]:
         task_config = deep_merge(BUILTIN_DEFAULTS, self.config["task_template"])
         override = self.config.get("task_overrides", {}).get(group_id, {})
         task_config = deep_merge(task_config, override)
@@ -64,9 +67,19 @@ class SequenceRunner:
                 "parent_result": str(previous_result.resolve()) if previous_result else None,
             },
         )
-        candidate_groups = list(catalog) if self.config["scope_rule"]["candidate"] == "all_seen" else [group_id]
-        evaluation_groups = list(catalog) if self.config["scope_rule"].get("evaluation", "seen") == "seen" else [group_id]
-        task_config["data"] = {"catalog": dict(catalog), "current": [group_id], "candidate": candidate_groups, "validation": evaluation_groups, "test": evaluation_groups}
+        candidate_groups = list(seen_groups) if self.config["scope_rule"]["candidate"] == "all_seen" else [group_id]
+        layout_data = self.config.get("data")
+        if isinstance(layout_data, Mapping) and layout_data.get("layout"):
+            task_config["data"] = {
+                "layout": str(layout_data["layout"]),
+                "current": [group_id],
+                "candidate": candidate_groups,
+                "validation": list(layout_data["validation"]),
+                "test": list(layout_data["test"]),
+            }
+        else:
+            evaluation_groups = list(seen_groups) if self.config["scope_rule"].get("evaluation", "seen") == "seen" else [group_id]
+            task_config["data"] = {"catalog": dict(catalog), "current": [group_id], "candidate": candidate_groups, "validation": evaluation_groups, "test": evaluation_groups}
         task_config["initialization"] = dict(self.config["initialization"]["first" if index == 0 else "subsequent"])
         validate_task_config(task_config)
         return task_config
@@ -86,4 +99,3 @@ class SequenceRunner:
         write_csv(self.output_dir / "summary" / "metrics_by_task.csv", metric_rows)
         write_csv(self.output_dir / "summary" / "cost_by_task.csv", cost_rows)
         write_csv(self.output_dir / "summary" / "selection_by_task.csv", selection_rows)
-

@@ -84,5 +84,5 @@ class FakeBackend(DetectionBackend):
     def evaluate(self, request: Mapping[str, Any]) -> dict[str, Any]:
         first = request["sample_ids"][0]
         group = first.split("::", 1)[0]
-        score = 0.5 + int(group.replace("stage", "")) * 0.01
+        score = 0.5 + (int(group.removeprefix("stage")) * 0.01 if group.startswith("stage") else 0.0)
         return {"map50_95": score, "map50": score + 0.1, "precision": 0.7, "recall": 0.6, "per_class_ap": {"object": score}, "sample_count": len(request["sample_ids"]), "evaluation_seconds": 0.1}

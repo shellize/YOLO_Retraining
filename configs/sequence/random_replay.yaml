@@ -4,8 +4,27 @@ sequence:
   seed: 42
   output_root: ../../runs/sequences
 arrivals:
-  - {id: stage0, data: ../data/example.yaml}
-scope_rule: {candidate: all_seen, evaluation: seen}
+  - {id: stage0}
+  - {id: stage1}
+  - {id: stage2}
+  - {id: stage3}
+  - {id: stage4}
+  - {id: stage5}
+  - {id: stage6}
+  - {id: stage7}
+  - {id: stage8}
+  - {id: stage9}
+  - {id: stage10}
+  - {id: stage11}
+  - {id: stage12}
+  - {id: stage13}
+  - {id: stage14}
+  - {id: stage15}
+data:
+  layout: ../data/self_improving.yaml
+  validation: [val]
+  test: [test]
+scope_rule: {candidate: all_seen}
 initialization:
   first: {source: pretrained, checkpoint: yolov5s.pt}
   subsequent: {source: parent, checkpoint: last}

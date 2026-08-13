@@ -11,7 +11,7 @@ htmlcov/
 
 # Experiment data and artifacts
 datasets/
-data/
+/data/
 runs/
 weights/
 *.pt

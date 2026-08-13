@@ -6,6 +6,19 @@ from typing import Any, Mapping
 from .loaders import load_group
 
 
+def catalog_from_data_config(data_config: Mapping[str, Any]) -> dict[str, str]:
+    catalog = data_config.get("catalog")
+    if isinstance(catalog, Mapping):
+        return {str(key): str(value) for key, value in catalog.items()}
+    layout = data_config.get("layout")
+    if not isinstance(layout, str) or not layout:
+        raise ValueError("data requires either catalog or layout")
+    group_ids: set[str] = set()
+    for scope in ("current", "candidate", "validation", "test"):
+        group_ids.update(str(value) for value in data_config.get(scope, []))
+    return {group_id: layout for group_id in sorted(group_ids)}
+
+
 def build_registry(catalog: Mapping[str, str]) -> dict[str, Any]:
     records: dict[str, dict[str, Any]] = {}
     groups: dict[str, dict[str, list[str]]] = {}
@@ -45,4 +58,3 @@ def records_for(registry: Mapping[str, Any], sample_ids: list[str] | set[str]) -
     if missing:
         raise KeyError(f"unknown sample ids: {sorted(missing)[:5]}")
     return [records[sample_id] for sample_id in sample_ids]
-

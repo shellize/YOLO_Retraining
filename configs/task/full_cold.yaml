@@ -2,10 +2,10 @@ include: [../defaults.yaml, ../model/yolov5s.yaml]
 task:
   label: full-cold
 data:
-  catalog: {stage0: ../data/example.yaml}
+  layout: ../data/self_improving.yaml
   current: [stage0]
   candidate: [stage0]
-  validation: [stage0]
-  test: [stage0]
+  validation: [val]
+  test: [test]
 initialization: {source: pretrained, checkpoint: yolov5s.pt}
 select_policy: {name: full, params: {}}

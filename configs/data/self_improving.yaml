@@ -1,0 +1,63 @@
+# Logical experiment groups mapped onto the physical 0720 batch folders.
+# Change only this file when regrouping batches; no image movement is required.
+path: ../../data/self_improving
+names:
+  0: large luggage
+  1: stroller
+  2: wheelchair
+  3: flatbed truck
+groups:
+  test:
+    split: test
+    images: [images/0720_1, images/0720_2]
+  val:
+    split: val
+    images: [images/0720_3, images/0720_4]
+  stage0:
+    split: train
+    images: [images/0720_5]
+  stage1:
+    split: train
+    images: [images/0720_6]
+  stage2:
+    split: train
+    images: [images/0720_7]
+  stage3:
+    split: train
+    images: [images/0720_8]
+  stage4:
+    split: train
+    images: [images/0720_9]
+  stage5:
+    split: train
+    images: [images/0720_10]
+  stage6:
+    split: train
+    images: [images/0720_11]
+  stage7:
+    split: train
+    images: [images/0720_12]
+  stage8:
+    split: train
+    images: [images/0720_13]
+  stage9:
+    split: train
+    images: [images/0720_14]
+  stage10:
+    split: train
+    images: [images/0720_15]
+  stage11:
+    split: train
+    images: [images/0720_16]
+  stage12:
+    split: train
+    images: [images/0720_17]
+  stage13:
+    split: train
+    images: [images/0720_18]
+  stage14:
+    split: train
+    images: [images/0720_19]
+  stage15:
+    split: train
+    images: [images/0720_20]
