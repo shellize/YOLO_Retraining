@@ -39,7 +39,7 @@ Environment setup scripts live under `requirements/`; experiment launchers live 
 CUDA_VISIBLE_DEVICES=1 bash scripts/run_full_cold_stage0.sh
 ```
 
-The selected physical GPU is exposed as logical `device=0` inside the training process. Optional overrides include `TASK_NAME`, `SEED`, `EPOCHS`, `BATCH`, `WORKERS`, and `OUTPUT_ROOT`.
+The selected physical GPU is exposed as logical `device=0` inside the training process. Experiment parameters such as seed, epochs, batch size, and output location are defined by the YAML configuration.
 
 The optional modern Ultralytics backend can be installed separately:
 
