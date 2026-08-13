@@ -9,9 +9,11 @@ htmlcov/
 .vscode/
 .third_party/
 
-# Experiment data and artifacts
-datasets/
+# Only the repository-root dataset is excluded. Files such as configs/data/
+# and data_analyse/ remain version controlled.
 /data/
+
+# Reproducible/generated experiment artifacts
 runs/
 weights/
 *.pt
