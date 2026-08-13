@@ -41,6 +41,18 @@ CUDA_VISIBLE_DEVICES=1 bash scripts/run_full_cold_stage0.sh
 
 The selected physical GPU is exposed as logical `device=0` inside the training process. Experiment parameters such as seed, epochs, batch size, and output location are defined by the YAML configuration.
 
+Run the two baseline lanes in separate terminals. Each GPU runs one heavy and one light Sequence serially; the two terminals run in parallel:
+
+```bash
+# Terminal 1, physical GPU 0
+bash scripts/run_full_cold_current_only.sh
+
+# Terminal 2, physical GPU 1
+bash scripts/run_full_warm_random_replay.sh
+```
+
+The allocation is GPU 0: Full Cold then Current-only; GPU 1: Full Warm then Random Replay. Set `CUDA_VISIBLE_DEVICES` explicitly before either command to override its default GPU.
+
 The optional modern Ultralytics backend can be installed separately:
 
 ```powershell
@@ -101,6 +113,8 @@ The checked-in Task and Sequence configs use the logical layout. Sequence arriva
 ## Results
 
 Every completed Task contains resolved `task.yaml`, selected ID files, `last.pt`, `best.pt`, train/evaluation metrics, cost accounting, and `task_result.json`. A failed Task writes `task_status.json` and `logs/error.txt`, does not write `task_result.json`, and stops its Sequence. Resume and overwrite are not supported.
+
+YOLOv5 subprocess logs are compact by default: progress bars keep their final state per scan/epoch/evaluation, and repeated read-only incomplete-JPEG warnings are written as a count with a few examples. The terminal keeps coarse epoch and validation progress. Set `YOLO_RETRAINING_LOG_MODE=full` when the complete subprocess stream is needed for debugging.
 
 ## Tests
 

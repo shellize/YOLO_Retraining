@@ -12,7 +12,7 @@ BUILTIN_DEFAULTS: dict[str, Any] = {
     "select_policy": {"name": "full", "params": {}},
     "epoch_policy": {"name": "static", "params": {}},
     "budget": {"type": "epochs", "value": 100},
-    "backend": {"params": {"batch": 16, "imgsz": 640, "device": 0, "workers": 4, "amp": True}},
+    "backend": {"params": {"batch": 64, "imgsz": 640, "device": 0, "workers": 4, "amp": True}},
     "evaluation": {"primary_metric": "map50_95", "test_scope": "seen", "evaluate_checkpoints": ["last", "best"]},
 }
 

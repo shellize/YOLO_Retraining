@@ -95,25 +95,56 @@ def test_subprocess_failure_reports_log(tmp_path: Path) -> None:
     assert log_path.is_file()
 
 
-def test_training_subprocess_keeps_detailed_log_and_prints_coarse_progress(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_training_subprocess_compacts_progress_and_repeated_warnings(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     log_path = tmp_path / "training.log"
     program = (
         "import sys; "
-        "sys.stdout.write('0/2 detailed batch progress\\r'); sys.stdout.flush(); "
+        "sys.stdout.write('train: Scanning data...: 0%|          | 0/2 00:00\\n'); sys.stdout.flush(); "
+        "sys.stdout.write('train: Scanning data...: 100%|##########| 2/2 00:00\\n'); sys.stdout.flush(); "
+        "sys.stdout.write('val: Scanning data...: 0%|          | 0/1 00:00\\n'); sys.stdout.flush(); "
+        "sys.stdout.write('val: Scanning data...: 100%|##########| 1/1 00:00\\n'); sys.stdout.flush(); "
+        "sys.stdout.write('train: WARNING /data/a.jpg: incomplete JPEG accepted read-only\\n'); sys.stdout.flush(); "
+        "sys.stdout.write('val: WARNING /data/b.jpg: incomplete JPEG accepted read-only\\n'); sys.stdout.flush(); "
+        "sys.stdout.write('       0/2 1.0G 0.1 0.2 0.3 4 640: 0%|          | 0/2 00:00\\n'); sys.stdout.flush(); "
+        "sys.stdout.write('       0/2 1.0G 0.1 0.2 0.3 4 640: 100%|##########| 2/2 00:01\\n'); sys.stdout.flush(); "
+        "sys.stdout.write('       1/2 1.0G 0.1 0.2 0.3 4 640: 100%|##########| 2/2 00:01\\n'); sys.stdout.flush(); "
         "sys.stdout.write('all 16 20 0.8 0.7 0.6 0.4\\n'); sys.stdout.flush(); "
-        "sys.stdout.write('1/2 another detailed batch progress\\r'); sys.stdout.flush(); "
         "sys.stdout.write('3 epochs completed in 0.100 hours.\\n'); sys.stdout.flush()"
     )
 
     run_command([sys.executable, "-u", "-c", program], cwd=tmp_path, log_path=log_path, progress_epochs=3)
 
     terminal = capsys.readouterr().out
-    detailed = log_path.read_text(encoding="utf-8")
+    compact = log_path.read_text(encoding="utf-8")
     assert "[YOLOv5] epoch 1/3 running" in terminal
     assert "[YOLOv5] epoch 2/3 running" in terminal
     assert "[YOLOv5] validation: all 16 20 0.8 0.7 0.6 0.4" in terminal
     assert "epochs completed" in terminal
-    assert "detailed batch progress" not in terminal
+    assert compact.count("train: Scanning data...") == 1
+    assert "100%|##########| 2/2 00:00" in compact
+    assert compact.count("val: Scanning data...") == 1
+    assert "100%|##########| 1/1 00:00" in compact
+    assert compact.count("train-epoch") == 0
+    assert "0/2 1.0G 0.1 0.2 0.3 4 640: 100%|##########| 2/2 00:01" in compact
+    assert "all 16 20 0.8 0.7 0.6 0.4" in compact
+    assert "coalesced warning: incomplete JPEG accepted read-only; count=2; by_source=train=1, val=1" in compact
+    assert compact.count("warning example:") == 2
+    assert ": 0%|" not in compact
+
+
+def test_training_subprocess_full_log_mode_keeps_detailed_output(tmp_path: Path) -> None:
+    log_path = tmp_path / "training-full.log"
+    program = (
+        "import sys; "
+        "sys.stdout.write('0/2 detailed batch progress\\r'); sys.stdout.flush(); "
+        "sys.stdout.write('1/2 another detailed batch progress\\r'); sys.stdout.flush()"
+    )
+
+    run_command([sys.executable, "-u", "-c", program], cwd=tmp_path, log_path=log_path, log_mode="full")
+
+    detailed = log_path.read_text(encoding="utf-8")
     assert "detailed batch progress" in detailed
     assert "another detailed batch progress" in detailed
 

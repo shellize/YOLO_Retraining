@@ -33,7 +33,7 @@ def evaluate(args: argparse.Namespace) -> dict[str, Any]:
         exist_ok=True,
         half=args.half,
         plots=False,
-        verbose=True,
+        verbose=False,
     )
     precision, recall, map50, map50_95 = results[:4]
     return {

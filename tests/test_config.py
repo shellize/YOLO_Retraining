@@ -11,7 +11,7 @@ def test_deep_merge_replaces_lists_and_merges_dicts() -> None:
 
 def test_checked_in_task_config_and_override() -> None:
     root = Path(__file__).parents[1]
-    config = load_config(root / "configs" / "task" / "full_cold.yaml", ["backend.params.batch=64", "task.seed=43"])
+    config = load_config(root / "configs" / "task" / "full_cold.yaml", ["task.seed=43"])
     assert config["backend"]["params"]["batch"] == 64
     assert config["task"]["seed"] == 43
     assert config["model"] == {"backend": "yolov5", "definition": "yolov5s.yaml"}

@@ -12,7 +12,7 @@ htmlcov/
 # Only the repository-root dataset is excluded. Files such as configs/data/
 # and data_analyse/ remain version controlled.
 /data/
-
+/runs/
 # Reproducible/generated experiment artifacts
 runs/
 weights/

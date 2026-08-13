@@ -15,7 +15,7 @@ groups:
     images: [images/0720_3, images/0720_4]
   stage0:
     split: train
-    # Larger base-training set: 2996 trainable images.
+    # Larger base-training set: 4496 trainable images across 9 batches.
     images:
       - images/0720_5
       - images/0720_6
@@ -23,15 +23,18 @@ groups:
       - images/0720_8
       - images/0720_9
       - images/0720_10
+      - images/0720_11
+      - images/0720_12
+      - images/0720_13
   stage1:
     split: train
-    # Increment 1: 1500 images.
-    images: [images/0720_11, images/0720_12, images/0720_13]
+    # Increment 1: 1000 trainable images across 2 batches.
+    images: [images/0720_14, images/0720_15]
   stage2:
     split: train
-    # Increment 2: 1500 images.
-    images: [images/0720_14, images/0720_15, images/0720_16]
+    # Increment 2: 1000 trainable images across 2 batches.
+    images: [images/0720_16, images/0720_17]
   stage3:
     split: train
-    # Increment 3: 1575 images.
-    images: [images/0720_17, images/0720_18, images/0720_19, images/0720_20]
+    # Increment 3: 1075 trainable images across 3 batches.
+    images: [images/0720_18, images/0720_19, images/0720_20]
