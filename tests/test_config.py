@@ -14,6 +14,8 @@ def test_checked_in_task_config_and_override() -> None:
     config = load_config(root / "configs" / "task" / "full_cold.yaml", ["backend.params.batch=64", "task.seed=43"])
     assert config["backend"]["params"]["batch"] == 64
     assert config["task"]["seed"] == 43
+    assert config["model"] == {"backend": "yolov5", "definition": "yolov5s.yaml"}
+    assert config["initialization"] == {"source": "pretrained", "checkpoint": "yolov5s.pt"}
     assert Path(config["data"]["catalog"]["stage0"]).is_absolute()
 
 
@@ -21,4 +23,3 @@ def test_warm_config_requires_parent() -> None:
     root = Path(__file__).parents[1]
     with pytest.raises(ValueError, match="parent initialization"):
         load_config(root / "configs" / "task" / "full_warm.yaml")
-

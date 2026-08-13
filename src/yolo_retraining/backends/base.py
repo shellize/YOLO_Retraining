@@ -7,6 +7,10 @@ from typing import Any, Mapping
 
 class DetectionBackend(ABC):
     capabilities: frozenset[str] = frozenset()
+    output_namespace = "backend"
+
+    def provenance(self, config: Mapping[str, Any]) -> dict[str, Any]:
+        return {"name": self.output_namespace}
 
     @abstractmethod
     def validate_config(self, config: Mapping[str, Any]) -> None:
@@ -28,4 +32,3 @@ def require_artifact(path: Path, description: str) -> Path:
     if not path.is_file():
         raise FileNotFoundError(f"{description} was not produced: {path}")
     return path
-

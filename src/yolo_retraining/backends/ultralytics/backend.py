@@ -12,6 +12,10 @@ from .trainer import estimated_optimizer_steps, read_training_history, training_
 
 class UltralyticsBackend(DetectionBackend):
     capabilities = frozenset({"static_training", "evaluation", "prediction", "distributed_training"})
+    output_namespace = "ultralytics"
+
+    def provenance(self, config: Mapping[str, Any]) -> dict[str, Any]:
+        return {"name": "ultralytics", "family": "ultralytics", "definition": str(config["model"].get("definition", ""))}
 
     def validate_config(self, config: Mapping[str, Any]) -> None:
         if config["model"].get("backend") != "ultralytics":
@@ -108,4 +112,3 @@ class UltralyticsBackend(DetectionBackend):
         sources = [registry["records"][sample_id]["image_path"] for sample_id in sample_ids]
         results = YOLO(str(request["checkpoint"])).predict(source=sources, verbose=False, save=False)
         return {sample_id: result for sample_id, result in zip(sample_ids, results, strict=True)}
-

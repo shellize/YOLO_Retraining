@@ -1,8 +1,7 @@
-name: yolo-cl
+name: yolo-retraining-v5
 channels:
   - defaults
 dependencies:
-  - python=3.11
+  - python=3.10
   - pip
   - git
-

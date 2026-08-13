@@ -1,6 +1,8 @@
 # YOLO Retraining
 
-Research-oriented baseline retraining experiments for Ultralytics YOLOv8 and YOLO11. The framework separates one independent `Task` from a `SequenceExperiment` that invokes multiple Tasks in arrival order.
+Research-oriented sequential retraining experiments. The default detector is the original, anchor-based YOLOv5s from Ultralytics YOLOv5 v7.0 at commit `915bbf294bb74c859f0b41f1c23bc395014ea679`. The newer `ultralytics` package remains an optional backend rather than a default dependency.
+
+The framework separates one independent `Task` from a `SequenceExperiment`, which invokes complete Tasks in arrival order and passes the previous result directory explicitly.
 
 ## Phase 1 baselines
 
@@ -15,27 +17,37 @@ VPS, AFSS, resume, COCO input, and dynamic epoch sampling are deliberately out o
 
 ## Environment
 
-Reuse the existing `yolo-cl` Conda environment without changing its dependencies:
+Create the isolated Python 3.10 environment, install PyTorch 2.2.2/CUDA 12.1 dependencies, clone the fixed YOLOv5 source revision, and download `yolov5s.pt`:
 
 ```powershell
-./scripts/use_existing_env.ps1
+.\scripts\bootstrap.ps1
 ```
 
 ```bash
-./scripts/use_existing_env.sh
+./scripts/bootstrap.sh
 ```
 
-The scripts validate Python 3.11, PyTorch 2.6.0, torchvision 0.21.0, and Ultralytics 8.4.102, then install this package with `--no-deps --no-build-isolation`. They do not download or upgrade dependencies. Use `bootstrap.ps1` or `bootstrap.sh` only when the environment is missing or an explicit repair is intended.
+The default environment is `yolo-retraining-v5`. YOLOv5 is stored in the ignored `.third_party/yolov5` directory. Set `YOLOV5_ROOT` before running a script to use an existing server checkout. The checkout must be clean and exactly match the fixed commit; scripts never reset or overwrite a mismatched source tree.
+
+The large CUDA wheels are downloaded into ignored `.third_party/wheels` files with retry and resume support. A server mirror can be selected with `YOLO_RETRAINING_TORCH_WHEEL_URL` and `YOLO_RETRAINING_TORCHVISION_WHEEL_URL`; the default URLs remain the official PyTorch CUDA 12.1 index.
+
+If the environment and source already exist, use `use_existing_env.ps1` or `use_existing_env.sh`. Bootstrap refuses to mutate an existing environment unless explicitly allowed with `-AllowExistingEnvironmentUpdate` on Windows or `YOLO_RETRAINING_ALLOW_ENV_UPDATE=1` on Linux.
+
+The optional modern Ultralytics backend can be installed separately:
+
+```powershell
+conda run -n yolo-retraining-v5 python -m pip install -r requirements/ultralytics.lock
+```
 
 ## Data
 
-Each arrival points to an Ultralytics-compatible YOLO data YAML containing `path`, `train`, `val`, `test`, and `names`. Images must use the native `images/...` and `labels/...` layout. Algorithms operate stable IDs of the form:
+Each arrival points to a YOLO data YAML containing `path`, `train`, `val`, `test`, and `names`. Images must use the native `images/...` and `labels/...` layout. Split entries may be directories, individual images, or text manifests containing image paths. Algorithms operate stable IDs of the form:
 
 ```text
 group_id::relative/path/to/image.jpg
 ```
 
-Selected images are passed to Ultralytics through a small text manifest. Images and labels are never copied, moved, hard-linked, or soft-linked.
+Selected images are passed to the detector through a small text manifest. Images and labels are never copied, moved, hard-linked, or soft-linked.
 
 ## Run
 
@@ -64,14 +76,26 @@ Every completed Task contains resolved `task.yaml`, selected ID files, `last.pt`
 ## Tests
 
 ```powershell
-conda run -n yolo-cl python -m pytest -q
+conda run -n yolo-retraining-v5 python -m pytest -q
 ```
 
-Default tests use a fake backend and require no network or GPU. Real one-epoch smoke tests are opt-in:
+Default tests use a fake backend and require no network or GPU:
 
 ```powershell
-$env:YOLO_RETRAINING_RUN_SMOKE=1
-conda run -n yolo-cl python -m pytest -q -m smoke
+conda run -n yolo-retraining-v5 python -m pytest -q
 ```
 
-Two-GPU server smoke tests use `YOLO_RETRAINING_RUN_DDP_SMOKE=1` and require `device=[0,1]`.
+The original YOLOv5s real-data smoke deterministically selects `64 train / 16 val / 16 test` samples from `YOLO_RETRAINING_REAL_DATA_ROOT`, `data/organized`, or the current local fallback `data/self_improving` (in that priority order), and trains one epoch:
+
+```powershell
+$env:YOLO_RETRAINING_RUN_V5_SMOKE="1"
+conda run -n yolo-retraining-v5 python -m pytest -q tests/test_yolov5_smoke.py
+```
+
+This sample crosses the original batches only to test the engineering pipeline; it is not a paper experiment. Optional Ultralytics tests use `YOLO_RETRAINING_RUN_ULTRALYTICS_SMOKE=1`. Two-GPU server tests use `YOLO_RETRAINING_RUN_DDP_SMOKE=1` and `device=[0,1]`.
+
+## YOLOv5 semantics
+
+Training calls the original `train.py` in an isolated subprocess. Its SGD, augmentation, AutoAnchor, AMP checks, and checkpoint rules remain intact. `best.pt` therefore uses the original fitness `0.1 × mAP50 + 0.9 × mAP50-95`. A later Task initializes from the previous `last.pt` as weights, not as an optimizer/scheduler resume.
+
+The subprocess invokes the fixed source's original `train.main()` through a narrow adapter. YOLOv5 v7.0 normally rewrites JPEG files whose end marker is incomplete; the adapter suppresses only that write-back and accepts the image read-only. This preserves immutable source data without copying images or modifying the pinned YOLOv5 checkout, and the adaptation is recorded in `task_result.json` provenance.

@@ -1,4 +1,4 @@
-include: [../defaults.yaml, ../model/yolo11n.yaml]
+include: [../defaults.yaml, ../model/yolov5s.yaml]
 task:
   label: full-cold
 data:
@@ -7,6 +7,5 @@ data:
   candidate: [stage0]
   validation: [stage0]
   test: [stage0]
-initialization: {source: pretrained, checkpoint: yolo11n.pt}
+initialization: {source: pretrained, checkpoint: yolov5s.pt}
 select_policy: {name: full, params: {}}
-

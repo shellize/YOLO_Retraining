@@ -149,8 +149,8 @@ def validate_task_config(config: Mapping[str, Any]) -> None:
         raise ValueError("data.current groups must be a subset of data.candidate groups")
     if config["budget"].get("type") != "epochs" or int(config["budget"].get("value", 0)) <= 0:
         raise ValueError("budget must be a positive epochs budget")
-    if config["model"].get("backend") != "ultralytics":
-        raise ValueError("phase 1 supports only model.backend=ultralytics")
+    if config["model"].get("backend") not in {"yolov5", "ultralytics"}:
+        raise ValueError("phase 1 supports model.backend=yolov5 or ultralytics")
     source = config["initialization"].get("source")
     if source not in {"pretrained", "parent", "explicit"}:
         raise ValueError("initialization.source must be pretrained, parent, or explicit")
@@ -191,4 +191,3 @@ def validate_sequence_config(config: Mapping[str, Any]) -> None:
 def dump_yaml(payload: Mapping[str, Any], path: Path) -> None:
     clean = {key: value for key, value in payload.items() if not key.startswith("_")}
     path.write_text(yaml.safe_dump(clean, sort_keys=False, allow_unicode=True), encoding="utf-8")
-

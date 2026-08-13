@@ -1,0 +1,3 @@
+model:
+  backend: yolov5
+  definition: yolov5s.yaml

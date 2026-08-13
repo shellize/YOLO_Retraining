@@ -1,4 +1,4 @@
-include: [../defaults.yaml, ../model/yolo11n.yaml]
+include: [../defaults.yaml, ../model/yolov5s.yaml]
 task:
   label: random-replay
   parent_result: null
@@ -12,4 +12,3 @@ initialization: {source: parent, checkpoint: last}
 select_policy:
   name: random_replay
   params: {replay_size: 500}
-

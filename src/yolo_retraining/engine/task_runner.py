@@ -42,6 +42,7 @@ class TaskRunner:
             self._write_selection(selection, selected_ids)
             initial_checkpoint = self._resolve_initialization(registry["names"])
             self.backend.validate_config(self.config)
+            backend_dir = self.output_dir / "backend" / self.backend.output_namespace
             write_json(status_path, status_payload("training", selected_count=len(selected_ids)))
             training = self.backend.train(
                 {
@@ -51,7 +52,7 @@ class TaskRunner:
                     "validation_ids": scope["validation_ids"],
                     "initial_checkpoint": initial_checkpoint,
                     "standard_dir": self.output_dir,
-                    "raw_dir": self.output_dir / "backend" / "ultralytics",
+                    "raw_dir": backend_dir,
                 }
             )
             write_csv(self.output_dir / "metrics" / "train_history.csv", training.get("history", []))
@@ -133,7 +134,7 @@ class TaskRunner:
                         "registry": registry,
                         "sample_ids": sample_ids,
                         "checkpoint": checkpoints[checkpoint_name],
-                        "output_dir": self.output_dir / "backend" / "ultralytics" / "evaluations" / checkpoint_name / group,
+                        "output_dir": self.output_dir / "backend" / self.backend.output_namespace / "evaluations" / checkpoint_name / group,
                     }
                 )
                 elapsed += float(result.get("evaluation_seconds", 0.0))
@@ -142,6 +143,9 @@ class TaskRunner:
         return all_metrics, elapsed
 
     def _result(self, registry: Mapping[str, Any], selection: Mapping[str, Any], training: Mapping[str, Any], metrics: Mapping[str, Any], cost: Mapping[str, Any]) -> dict[str, Any]:
+        backend_provenance = training.get("backend_provenance")
+        if backend_provenance is None:
+            backend_provenance = self.backend.provenance(self.config)
         return {
             "schema_version": 1,
             "status": "completed",
@@ -149,6 +153,7 @@ class TaskRunner:
             "output_dir": str(self.output_dir.resolve()),
             "parent_result": self.config["task"].get("parent_result"),
             "label_schema": registry["names"],
+            "backend": backend_provenance,
             "artifacts": {
                 "last_checkpoint": relative_to(training["last_checkpoint"], self.output_dir),
                 "best_checkpoint": relative_to(training["best_checkpoint"], self.output_dir),
@@ -168,4 +173,3 @@ class TaskRunner:
         if str(device).lower() == "cpu":
             return 0
         return 1
-

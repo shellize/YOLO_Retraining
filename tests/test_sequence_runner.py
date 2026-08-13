@@ -12,13 +12,13 @@ def sequence_config(tmp_path: Path, catalog: dict[str, str]) -> dict:
         "sequence": {"name": "unit", "label": "full-warm", "seed": 42, "output_root": str(tmp_path / "sequences")},
         "arrivals": [{"id": key, "data": catalog[key]} for key in ("stage0", "stage1", "stage2")],
         "scope_rule": {"candidate": "all_seen", "evaluation": "seen"},
-        "initialization": {"first": {"source": "pretrained", "checkpoint": "yolo11n.pt"}, "subsequent": {"source": "parent", "checkpoint": "last"}},
+        "initialization": {"first": {"source": "pretrained", "checkpoint": "yolov5s.pt"}, "subsequent": {"source": "parent", "checkpoint": "last"}},
         "task_template": {
-            "model": {"backend": "ultralytics", "definition": "yolo11n.yaml"},
+            "model": {"backend": "yolov5", "definition": "yolov5s.yaml"},
             "select_policy": {"name": "full", "params": {}},
             "epoch_policy": {"name": "static", "params": {}},
             "budget": {"type": "epochs", "value": 1},
-            "backend": {"params": {"batch": 2, "imgsz": 32, "device": "cpu", "workers": 0, "amp": False}},
+            "backend": {"params": {"batch": 2, "imgsz": 32, "device": "cpu", "workers": 0, "amp": True}},
             "evaluation": {"primary_metric": "map50_95", "test_scope": "seen", "evaluate_checkpoints": ["last", "best"]},
         },
         "task_overrides": {},
@@ -59,7 +59,7 @@ def test_sequence_stops_after_failure(monkeypatch, tmp_path: Path, catalog: dict
 @pytest.mark.parametrize(
     ("label", "candidate_rule", "selection", "subsequent", "expected_candidates", "expected_selected"),
     [
-        ("full-cold", "all_seen", {"name": "full", "params": {}}, {"source": "pretrained", "checkpoint": "yolo11n.pt"}, 4, 4),
+        ("full-cold", "all_seen", {"name": "full", "params": {}}, {"source": "pretrained", "checkpoint": "yolov5s.pt"}, 4, 4),
         ("full-warm", "all_seen", {"name": "full", "params": {}}, {"source": "parent", "checkpoint": "last"}, 4, 4),
         ("current-only", "current", {"name": "full", "params": {}}, {"source": "parent", "checkpoint": "last"}, 2, 2),
         ("random-replay", "all_seen", {"name": "random_replay", "params": {"replay_size": 1}}, {"source": "parent", "checkpoint": "last"}, 4, 3),

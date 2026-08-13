@@ -1,4 +1,4 @@
-include: [../defaults.yaml, ../model/yolo11n.yaml]
+include: [../defaults.yaml, ../model/yolov5s.yaml]
 task:
   label: current-only
   parent_result: null
@@ -10,4 +10,3 @@ data:
   test: [stage0]
 initialization: {source: parent, checkpoint: last}
 select_policy: {name: full, params: {}}
-

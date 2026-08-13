@@ -7,13 +7,14 @@ htmlcov/
 .venv/
 .idea/
 .vscode/
+.third_party/
 
 # Experiment data and artifacts
 datasets/
+data/
 runs/
 weights/
 *.pt
 *.onnx
 *.engine
 *.cache
-

@@ -7,10 +7,10 @@ arrivals:
   - {id: stage0, data: ../data/example.yaml}
 scope_rule: {candidate: all_seen, evaluation: seen}
 initialization:
-  first: {source: pretrained, checkpoint: yolo11n.pt}
+  first: {source: pretrained, checkpoint: yolov5s.pt}
   subsequent: {source: parent, checkpoint: last}
 task_template:
-  model: {backend: ultralytics, definition: yolo11n.yaml}
+  model: {backend: yolov5, definition: yolov5s.yaml}
   select_policy: {name: random_replay, params: {replay_size: 500}}
   epoch_policy: {name: static, params: {}}
   budget: {type: epochs, value: 100}
@@ -18,4 +18,3 @@ task_template:
     params: {batch: 32, imgsz: 640, device: [0, 1], workers: 8, amp: true}
   evaluation: {primary_metric: map50_95, test_scope: seen, evaluate_checkpoints: [last, best]}
 task_overrides: {}
-

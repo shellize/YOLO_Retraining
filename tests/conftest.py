@@ -48,12 +48,12 @@ def task_config(tmp_path: Path, catalog: Mapping[str, str], *, current: list[str
     return {
         "task": {"name": "unit", "label": label, "seed": 42, "output_root": str(tmp_path / "runs"), "parent_result": None},
         "data": {"catalog": dict(catalog), "current": current, "candidate": candidate, "validation": candidate, "test": candidate},
-        "model": {"backend": "ultralytics", "definition": "yolo11n.yaml"},
-        "initialization": {"source": "pretrained", "checkpoint": "yolo11n.pt"},
+        "model": {"backend": "yolov5", "definition": "yolov5s.yaml"},
+        "initialization": {"source": "pretrained", "checkpoint": "yolov5s.pt"},
         "select_policy": selection or {"name": "full", "params": {}},
         "epoch_policy": {"name": "static", "params": {}},
         "budget": {"type": "epochs", "value": 1},
-        "backend": {"params": {"batch": 2, "imgsz": 32, "device": "cpu", "workers": 0, "amp": False}},
+        "backend": {"params": {"batch": 2, "imgsz": 32, "device": "cpu", "workers": 0, "amp": True}},
         "evaluation": {"primary_metric": "map50_95", "test_scope": "seen", "evaluate_checkpoints": ["last", "best"]},
     }
 
@@ -86,4 +86,3 @@ class FakeBackend(DetectionBackend):
         group = first.split("::", 1)[0]
         score = 0.5 + int(group.replace("stage", "")) * 0.01
         return {"map50_95": score, "map50": score + 0.1, "precision": 0.7, "recall": 0.6, "per_class_ap": {"object": score}, "sample_count": len(request["sample_ids"]), "evaluation_seconds": 0.1}
-
