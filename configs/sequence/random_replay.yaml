@@ -8,18 +8,6 @@ arrivals:
   - {id: stage1}
   - {id: stage2}
   - {id: stage3}
-  - {id: stage4}
-  - {id: stage5}
-  - {id: stage6}
-  - {id: stage7}
-  - {id: stage8}
-  - {id: stage9}
-  - {id: stage10}
-  - {id: stage11}
-  - {id: stage12}
-  - {id: stage13}
-  - {id: stage14}
-  - {id: stage15}
 data:
   layout: ../data/self_improving.yaml
   validation: [val]
