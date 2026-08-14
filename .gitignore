@@ -20,7 +20,7 @@ weights/
 *.onnx
 *.engine
 *.cache
-
+*.sh
 # Keep analysis method scripts and Markdown reports; ignore generated analysis data.
 /result_analysis/**
 !/result_analysis/
