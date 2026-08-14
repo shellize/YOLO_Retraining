@@ -1,0 +1,24 @@
+include: [../defaults.yaml, ../model/yolov5s.yaml]
+
+task:
+  label: full-cold-stage0123
+
+data:
+  layout: ../data/self_improving.yaml
+  current: [stage0, stage1, stage2, stage3]
+  candidate: [stage0, stage1, stage2, stage3]
+  validation: [val]
+  test: [test]
+
+initialization: {source: pretrained, checkpoint: yolov5s.pt}
+select_policy: {name: full, params: {}}
+budget: {type: epochs, value: 300}
+backend:
+  params:
+    batch: 64
+    imgsz: 640
+    device: 0
+    workers: 16
+    amp: true
+    patience: 100
+    best_metric: map50
