@@ -38,6 +38,7 @@ def test_single_gpu_train_command(tmp_path: Path, catalog: dict[str, str]) -> No
     assert "torch.distributed.run" not in command
     assert command[command.index("--device") + 1] == "0"
     assert command[command.index("--weights") + 1].endswith("yolov5s.pt")
+    assert command[command.index("--best-metric") + 1] == "map50"
 
 
 def test_two_gpu_train_command(tmp_path: Path, catalog: dict[str, str]) -> None:
@@ -54,12 +55,26 @@ def test_two_gpu_train_command(tmp_path: Path, catalog: dict[str, str]) -> None:
     assert command[command.index("--device") + 1] == "0,1"
 
 
+def test_original_yolov5_fitness_can_be_selected(tmp_path: Path, catalog: dict[str, str]) -> None:
+    config = task_config(tmp_path, {"stage0": catalog["stage0"]}, current=["stage0"], candidate=["stage0"])
+    config["backend"]["params"]["best_metric"] = "yolov5_fitness"
+    command = build_train_command(
+        config,
+        source_root=tmp_path / "yolov5",
+        checkpoint=tmp_path / "yolov5s.pt",
+        data_yaml=tmp_path / "data.yaml",
+        output_dir=tmp_path / "output",
+    )
+    assert command[command.index("--best-metric") + 1] == "yolov5_fitness"
+
+
 @pytest.mark.parametrize(
     ("change", "message"),
     [
         ({"amp": False}, "amp=false"),
         ({"custom": 1}, "unknown YOLOv5 backend params"),
         ({"device": [0, 1], "batch": 3}, "divisible"),
+        ({"best_metric": "map50_95"}, "best_metric must be map50 or yolov5_fitness"),
     ],
 )
 def test_yolov5_backend_rejects_unsupported_params(

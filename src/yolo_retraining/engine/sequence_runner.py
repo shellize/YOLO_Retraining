@@ -11,6 +11,9 @@ from .output import create_output, read_json, sanitize, sequence_output_path, st
 from .task_runner import TaskRunner
 
 
+DEFAULT_PARENT_CHECKPOINT = "best"
+
+
 class SequenceRunner:
     def __init__(self, config: Mapping[str, Any]) -> None:
         self.config = dict(config)
@@ -80,7 +83,11 @@ class SequenceRunner:
         else:
             evaluation_groups = list(seen_groups) if self.config["scope_rule"].get("evaluation", "seen") == "seen" else [group_id]
             task_config["data"] = {"catalog": dict(catalog), "current": [group_id], "candidate": candidate_groups, "validation": evaluation_groups, "test": evaluation_groups}
-        task_config["initialization"] = dict(self.config["initialization"]["first" if index == 0 else "subsequent"])
+        initialization_key = "first" if index == 0 else "subsequent"
+        initialization = dict(self.config["initialization"][initialization_key])
+        if initialization_key == "subsequent" and initialization.get("source") == "parent":
+            initialization.setdefault("checkpoint", DEFAULT_PARENT_CHECKPOINT)
+        task_config["initialization"] = initialization
         validate_task_config(task_config)
         return task_config
 

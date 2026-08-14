@@ -22,8 +22,10 @@ backend:
     batch: 64
     imgsz: 640
     device: 0
-    workers: 8
+    workers: 16
     amp: true
+    # Criterion used to save best.pt: map50 or yolov5_fitness.
+    best_metric: map50
 
 evaluation:
   primary_metric: map50_95

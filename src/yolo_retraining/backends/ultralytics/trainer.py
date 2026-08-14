@@ -8,10 +8,13 @@ from typing import Any, Mapping
 
 def training_arguments(config: Mapping[str, Any], *, data_yaml: Path, output_dir: Path) -> dict[str, Any]:
     params = dict(config["backend"].get("params", {}))
-    allowed = {"batch", "imgsz", "device", "workers", "amp", "cache", "optimizer", "lr0", "lrf", "patience", "deterministic"}
+    allowed = {"batch", "imgsz", "device", "workers", "amp", "cache", "optimizer", "lr0", "lrf", "patience", "deterministic", "best_metric"}
     unknown = set(params) - allowed
     if unknown:
         raise ValueError(f"unknown Ultralytics backend params: {sorted(unknown)}")
+    # best_metric controls the original YOLOv5 adapter only. It is accepted
+    # in shared defaults but must not be forwarded to Ultralytics.
+    params.pop("best_metric", None)
     params.update(
         data=str(data_yaml),
         epochs=int(config["budget"]["value"]),
@@ -46,4 +49,3 @@ def _number(value: str | None) -> Any:
 
 def estimated_optimizer_steps(sample_count: int, batch: int, epochs: int) -> int:
     return math.ceil(sample_count / max(1, batch)) * epochs
-

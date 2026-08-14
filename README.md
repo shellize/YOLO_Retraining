@@ -9,9 +9,9 @@ The framework separates one independent `Task` from a `SequenceExperiment`, whic
 | Baseline | Initialization | Training data |
 |---|---|---|
 | Full Cold | pretrained | all seen groups |
-| Full Warm | previous Task `last.pt` | all seen groups |
-| Current-only | previous Task `last.pt` | current group |
-| Random Replay | previous Task `last.pt` | current + fixed random history subset |
+| Full Warm | previous Task `best.pt` by default | all seen groups |
+| Current-only | previous Task `best.pt` by default | current group |
+| Random Replay | previous Task `best.pt` by default | current + fixed random history subset |
 
 VPS, AFSS, resume, COCO input, and dynamic epoch sampling are deliberately out of scope for phase 1.
 
@@ -36,7 +36,7 @@ If the environment and source already exist, use `requirements/use_existing_env.
 Environment setup scripts live under `requirements/`; experiment launchers live under `scripts/`. To run the formal Full Cold base task with pretrained YOLOv5s weights and all of `stage0` on the second physical GPU:
 
 ```bash
-CUDA_VISIBLE_DEVICES=1 bash scripts/run_full_cold_stage0.sh
+bash scripts/run_full_cold_stage0.sh
 ```
 
 The selected physical GPU is exposed as logical `device=0` inside the training process. Experiment parameters such as seed, epochs, batch size, and output location are defined by the YAML configuration.
@@ -51,7 +51,7 @@ bash scripts/run_full_cold_current_only.sh
 bash scripts/run_full_warm_random_replay.sh
 ```
 
-The allocation is GPU 0: Full Cold then Current-only; GPU 1: Full Warm then Random Replay. Set `CUDA_VISIBLE_DEVICES` explicitly before either command to override its default GPU.
+The allocation is fixed: GPU 0 runs Full Cold then Current-only; GPU 1 runs Full Warm then Random Replay. The launcher scripts write these physical GPU IDs directly.
 
 The optional modern Ultralytics backend can be installed separately:
 
@@ -108,6 +108,12 @@ Sequence:
 yolo-retraining sequence --config configs/sequence/random_replay.yaml
 ```
 
+For sequence experiments, `initialization.subsequent.checkpoint` controls the
+parent checkpoint and defaults to `best`. Use an override such as
+`--set initialization.subsequent.checkpoint=last` when the final epoch
+checkpoint is the intended baseline. This is a weight-only warm start, not an
+optimizer or scheduler resume.
+
 The checked-in Task and Sequence configs use the logical layout. Sequence arrivals list only stage IDs; the common layout supplies their physical folders and the fixed validation/test groups.
 
 ## Results
@@ -139,6 +145,6 @@ This sample crosses the original batches only to test the engineering pipeline; 
 
 ## YOLOv5 semantics
 
-Training calls the original `train.py` in an isolated subprocess. Its SGD, augmentation, AutoAnchor, AMP checks, and checkpoint rules remain intact. `best.pt` therefore uses the original fitness `0.1 × mAP50 + 0.9 × mAP50-95`. A later Task initializes from the previous `last.pt` as weights, not as an optimizer/scheduler resume.
+Training calls the original `train.py` in an isolated subprocess. Its SGD, augmentation, AutoAnchor, and AMP checks remain intact. By default, `best.pt` is selected by validation `mAP50`; set `backend.params.best_metric: yolov5_fitness` to retain the original `0.1 × mAP50 + 0.9 × mAP50-95` rule. The selected rule is recorded in Task provenance. A later Sequence Task initializes from the previous `best.pt` by default, or from the checkpoint selected by `initialization.subsequent.checkpoint`; this is a weight-only warm start, not an optimizer/scheduler resume.
 
 The subprocess invokes the fixed source's original `train.main()` through a narrow adapter. YOLOv5 v7.0 normally rewrites JPEG files whose end marker is incomplete; the adapter suppresses only that write-back and accepts the image read-only. This preserves immutable source data without copying images or modifying the pinned YOLOv5 checkout, and the adaptation is recorded in `task_result.json` provenance.

@@ -13,7 +13,7 @@ def sequence_config(tmp_path: Path, catalog: dict[str, str]) -> dict:
         "sequence": {"name": "unit", "label": "full-warm", "seed": 42, "output_root": str(tmp_path / "sequences")},
         "arrivals": [{"id": key, "data": catalog[key]} for key in ("stage0", "stage1", "stage2")],
         "scope_rule": {"candidate": "all_seen", "evaluation": "seen"},
-        "initialization": {"first": {"source": "pretrained", "checkpoint": "yolov5s.pt"}, "subsequent": {"source": "parent", "checkpoint": "last"}},
+        "initialization": {"first": {"source": "pretrained", "checkpoint": "yolov5s.pt"}, "subsequent": {"source": "parent"}},
         "task_template": {
             "model": {"backend": "yolov5", "definition": "yolov5s.yaml"},
             "select_policy": {"name": "full", "params": {}},
@@ -31,13 +31,24 @@ def test_sequence_expands_all_seen_and_parent_results(monkeypatch, tmp_path: Pat
     output = SequenceRunner(sequence_config(tmp_path, catalog)).run()
     tasks = sorted((output / "tasks").iterdir())
     assert len(tasks) == 3
-    second_config = (tasks[1] / "task.yaml").read_text(encoding="utf-8")
-    assert "stage0" in second_config and "stage1" in second_config
+    second_config = yaml.safe_load((tasks[1] / "task.yaml").read_text(encoding="utf-8"))
+    assert "stage0" in str(second_config) and "stage1" in str(second_config)
+    assert second_config["initialization"]["checkpoint"] == "best"
     second_result = json.loads((tasks[1] / "task_result.json").read_text(encoding="utf-8"))
     assert second_result["parent_result"] == str(tasks[0].resolve())
     sequence_result = json.loads((output / "sequence_result.json").read_text(encoding="utf-8"))
     assert sequence_result["status"] == "completed"
     assert len(sequence_result["summary"]["matrix"]) == 3
+
+
+def test_sequence_parent_checkpoint_can_be_overridden(monkeypatch, tmp_path: Path, catalog: dict[str, str]) -> None:
+    monkeypatch.setattr("yolo_retraining.engine.task_runner.create_backend", lambda config: FakeBackend())
+    config = sequence_config(tmp_path, catalog)
+    config["initialization"]["subsequent"]["checkpoint"] = "last"
+    output = SequenceRunner(config).run()
+    tasks = sorted((output / "tasks").iterdir())
+    second_config = yaml.safe_load((tasks[1] / "task.yaml").read_text(encoding="utf-8"))
+    assert second_config["initialization"]["checkpoint"] == "last"
 
 
 def test_sequence_stops_after_failure(monkeypatch, tmp_path: Path, catalog: dict[str, str]) -> None:

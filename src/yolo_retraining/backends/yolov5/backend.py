@@ -28,6 +28,8 @@ class Yolov5Backend(DetectionBackend):
 
     def provenance(self, config: Mapping[str, Any]) -> dict[str, Any]:
         source = validate_yolov5_source()
+        best_metric = str(config["backend"].get("params", {}).get("best_metric", "map50"))
+        best_selection_metric = "map50" if best_metric == "map50" else "0.1*map50+0.9*map50_95"
         return {
             "name": "yolov5",
             "family": "original-yolov5",
@@ -35,7 +37,7 @@ class Yolov5Backend(DetectionBackend):
             "source_commit": source["commit"],
             "source_tag": source["tag"],
             "initial_weight": Path(str(config["initialization"].get("checkpoint", ""))).name,
-            "best_selection_metric": "0.1*map50+0.9*map50_95",
+            "best_selection_metric": best_selection_metric,
             "data_loader_adaptation": "read_only_incomplete_jpeg",
         }
 

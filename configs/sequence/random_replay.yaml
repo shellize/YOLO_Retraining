@@ -15,13 +15,13 @@ data:
 scope_rule: {candidate: all_seen}
 initialization:
   first: {source: pretrained, checkpoint: yolov5s.pt}
-  subsequent: {source: parent, checkpoint: last}
+  subsequent: {source: parent, checkpoint: best}
 task_template:
   model: {backend: yolov5, definition: yolov5s.yaml}
   select_policy: {name: random_replay, params: {replay_size: 500}}
   epoch_policy: {name: static, params: {}}
   budget: {type: epochs, value: 100}
   backend:
-    params: {batch: 64, imgsz: 640, device: 0, workers: 8, amp: true}
+    params: {batch: 64, imgsz: 640, device: 0, workers: 16, amp: true}
   evaluation: {primary_metric: map50_95, test_scope: seen, evaluate_checkpoints: [last, best]}
 task_overrides: {}

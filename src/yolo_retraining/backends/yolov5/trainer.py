@@ -10,7 +10,8 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 
-ALLOWED_PARAMS = {"batch", "imgsz", "device", "workers", "cache", "optimizer", "patience", "amp"}
+ALLOWED_PARAMS = {"batch", "imgsz", "device", "workers", "cache", "optimizer", "patience", "amp", "best_metric"}
+BEST_METRICS = {"map50", "yolov5_fitness"}
 
 
 def device_argument(device: Any) -> str:
@@ -36,6 +37,9 @@ def validate_training_params(config: Mapping[str, Any]) -> None:
     optimizer = str(params.get("optimizer", "SGD"))
     if optimizer not in {"SGD", "Adam", "AdamW"}:
         raise ValueError("backend.params.optimizer must be SGD, Adam, or AdamW")
+    best_metric = str(params.get("best_metric", "map50"))
+    if best_metric not in BEST_METRICS:
+        raise ValueError("backend.params.best_metric must be map50 or yolov5_fitness")
     device = params.get("device", "cpu")
     if isinstance(device, list) and len(device) > 1 and batch % len(device) != 0:
         raise ValueError("backend.params.batch must be divisible by the number of DDP devices")
@@ -79,6 +83,8 @@ def build_train_command(
             str(params.get("optimizer", "SGD")),
             "--patience",
             str(int(params.get("patience", 100))),
+            "--best-metric",
+            str(params.get("best_metric", "map50")),
             "--seed",
             str(int(config["task"]["seed"])),
             "--project",
