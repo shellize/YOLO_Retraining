@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export CUDA_VISIBLE_DEVICES=1
 export YOLOV5_ROOT="${YOLOV5_ROOT:-$PROJECT_ROOT/.third_party/yolov5}"
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
 for baseline in full_warm random_replay; do
