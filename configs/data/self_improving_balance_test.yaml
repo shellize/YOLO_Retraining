@@ -1,0 +1,38 @@
+# Balanced whole-batch holdout protocol.
+# Test: batch 02 + 19; validation: batch 04 + 15.
+# Remaining batches stay in temporal order while preserving the original
+# per-stage image budgets: 4496 / 1000 / 1000 / 1075.
+path: ../../data/self_improving
+names:
+  0: large luggage
+  1: stroller
+  2: wheelchair
+  3: flatbed truck
+groups:
+  test:
+    split: test
+    images: [images/0720_2, images/0720_19]
+  val:
+    split: val
+    images: [images/0720_4, images/0720_15]
+  stage0:
+    split: train
+    images:
+      - images/0720_1
+      - images/0720_3
+      - images/0720_5
+      - images/0720_6
+      - images/0720_7
+      - images/0720_8
+      - images/0720_9
+      - images/0720_10
+      - images/0720_11
+  stage1:
+    split: train
+    images: [images/0720_12, images/0720_13]
+  stage2:
+    split: train
+    images: [images/0720_14, images/0720_16]
+  stage3:
+    split: train
+    images: [images/0720_17, images/0720_18, images/0720_20]
