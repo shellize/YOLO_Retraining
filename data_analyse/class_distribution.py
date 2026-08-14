@@ -22,18 +22,19 @@ except ImportError:  # Supports direct execution from this directory.
 
 DEFAULT_DATA_ROOT = Path(__file__).resolve().parents[1] / "data"
 
-# Images and labels batch folders use date-prefixed names (0720_01), while the
-# annotation archive keeps the canonical batch_XX names.
+# Images and labels batch folders use date-prefixed names without leading
+# zeros (0720_1, 0720_5, 0720_20), while the annotation archive keeps the
+# canonical batch_XX names (batch_01, batch_05, batch_20).
 DATASET_FOLDER_PREFIX = "0720"
 
 
 def dataset_folder(batch: str) -> str:
     """Return the images/labels folder name for a canonical batch name.
 
-    ``batch_01`` -> ``0720_01``
+    ``batch_05`` -> ``0720_5``, ``batch_10`` -> ``0720_10``
     """
 
-    return f"{DATASET_FOLDER_PREFIX}_{batch.rsplit('_', 1)[-1]}"
+    return f"{DATASET_FOLDER_PREFIX}_{int(batch.rsplit('_', 1)[-1])}"
 
 
 def parse_args() -> argparse.Namespace:
