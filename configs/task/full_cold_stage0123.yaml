@@ -12,7 +12,7 @@ data:
 
 initialization: {source: pretrained, checkpoint: yolov5s.pt}
 select_policy: {name: full, params: {}}
-budget: {type: epochs, value: 300}
+budget: {type: epochs, value: 100}
 backend:
   params:
     batch: 64
@@ -20,5 +20,5 @@ backend:
     device: 0
     workers: 16
     amp: true
-    patience: 100
+    patience: 0
     best_metric: map50
