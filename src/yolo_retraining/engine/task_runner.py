@@ -10,6 +10,7 @@ from yolo_retraining.config import dump_yaml, validate_task_config
 from yolo_retraining.data import build_registry, catalog_from_data_config, resolve_scope
 from yolo_retraining.evaluation import build_cost
 from yolo_retraining.policies import create_epoch_policy, create_selection_policy
+from yolo_retraining.visualization import write_task_tensorboard
 
 from .output import create_output, read_json, relative_to, status_payload, task_output_path, write_csv, write_json, write_lines
 
@@ -82,7 +83,14 @@ class TaskRunner:
             cost = build_cost(selection_seconds, training, evaluation_seconds, device_count)
             cost.update(candidate_count=len(scope["candidate_ids"]), selected_count=len(selected_ids), replay_count=len(selection.get("groups", {}).get("replay", [])))
             write_json(self.output_dir / "metrics" / "cost.json", cost)
-            result = self._result(registry, selection, training, metrics, cost)
+            tensorboard_dir = write_task_tensorboard(
+                self.output_dir,
+                self.config,
+                training.get("history", []),
+                metrics,
+                cost,
+            )
+            result = self._result(registry, selection, training, metrics, cost, tensorboard_dir=tensorboard_dir)
             write_json(self.output_dir / "task_result.json", result)
             write_json(status_path, status_payload("completed"))
             print(
@@ -173,7 +181,16 @@ class TaskRunner:
             all_metrics[checkpoint_name] = checkpoint_metrics
         return all_metrics, elapsed
 
-    def _result(self, registry: Mapping[str, Any], selection: Mapping[str, Any], training: Mapping[str, Any], metrics: Mapping[str, Any], cost: Mapping[str, Any]) -> dict[str, Any]:
+    def _result(
+        self,
+        registry: Mapping[str, Any],
+        selection: Mapping[str, Any],
+        training: Mapping[str, Any],
+        metrics: Mapping[str, Any],
+        cost: Mapping[str, Any],
+        *,
+        tensorboard_dir: Path,
+    ) -> dict[str, Any]:
         backend_provenance = training.get("backend_provenance")
         if backend_provenance is None:
             backend_provenance = self.backend.provenance(self.config)
@@ -191,6 +208,7 @@ class TaskRunner:
                 "metrics": "metrics/evaluation.json",
                 "cost": "metrics/cost.json",
                 "selection": "selection/summary.json",
+                "tensorboard": relative_to(tensorboard_dir, self.output_dir),
             },
             "selection": {"metadata": selection.get("metadata", {}), "group_counts": {key: len(value) for key, value in selection.get("groups", {}).items()}},
             "metrics": metrics,

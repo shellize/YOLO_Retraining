@@ -120,6 +120,14 @@ The checked-in Task and Sequence configs use the logical layout. Sequence arriva
 
 Every completed Task contains resolved `task.yaml`, selected ID files, `last.pt`, `best.pt`, train/evaluation metrics, cost accounting, and `task_result.json`. A failed Task writes `task_status.json` and `logs/error.txt`, does not write `task_result.json`, and stops its Sequence. Resume and overwrite are not supported.
 
+Each completed Task also writes local TensorBoard events under its `tensorboard/` directory. To compare all Tasks and Sequence Tasks under the project `runs` directory, start TensorBoard from the project root:
+
+```powershell
+conda run -n yolo-retraining-v5 tensorboard --logdir .\runs --port 6006
+```
+
+Open `http://localhost:6006`. The event files contain training history, evaluation metrics, cost metrics, and the resolved experiment configuration. No Comet/ClearML account or upload is involved. Existing runs can be viewed only when their event files already exist; `results.csv` alone is not automatically imported by TensorBoard.
+
 YOLOv5 subprocess logs are compact by default: progress bars keep their final state per scan/epoch/evaluation, and repeated read-only incomplete-JPEG warnings are written as a count with a few examples. The terminal keeps coarse epoch and validation progress. Set `YOLO_RETRAINING_LOG_MODE=full` when the complete subprocess stream is needed for debugging.
 
 ## Tests
