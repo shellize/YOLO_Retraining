@@ -1,0 +1,6 @@
+-r runtime.lock
+
+# Kept out of the training environment. These packages are only required by
+# result-analysis tools such as FP/FN review and AnyLabeling ONNX export.
+onnx==1.22.0
+onnxruntime==1.23.2

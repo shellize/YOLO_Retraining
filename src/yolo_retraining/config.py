@@ -69,6 +69,10 @@ def _resolve_paths(payload: dict[str, Any], base: Path) -> dict[str, Any]:
     initialization = resolved.get("initialization", {})
     if isinstance(initialization, dict) and initialization.get("source") == "explicit":
         initialization["checkpoint"] = _absolute(base, initialization.get("checkpoint"))
+    backend = resolved.get("backend", {})
+    if isinstance(backend, dict) and isinstance(backend.get("params"), dict):
+        if backend["params"].get("hyp") is not None:
+            backend["params"]["hyp"] = _absolute(base, backend["params"]["hyp"])
     return resolved
 
 

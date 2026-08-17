@@ -30,6 +30,7 @@ from typing import Any, Iterable, Mapping, Sequence
 
 import numpy as np
 import yaml
+from tqdm import tqdm
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -514,7 +515,13 @@ class YoloV5Runtime:
         ground_truth_rows: list[dict[str, Any]] = []
         class_names = list(registry["names"])
         with self.torch.inference_mode():
-            for batch_i, (images, targets, paths, shapes) in enumerate(dataloader):
+            progress = tqdm(
+                dataloader,
+                desc=f"{context['split']} inference",
+                unit="batch",
+                dynamic_ncols=True,
+            )
+            for batch_i, (images, targets, paths, shapes) in enumerate(progress):
                 images = images.to(self.device, non_blocking=True)
                 targets = targets.to(self.device, non_blocking=True)
                 images = images.half() if model.fp16 else images.float()

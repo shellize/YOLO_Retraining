@@ -68,6 +68,21 @@ def test_original_yolov5_fitness_can_be_selected(tmp_path: Path, catalog: dict[s
     assert command[command.index("--best-metric") + 1] == "yolov5_fitness"
 
 
+def test_custom_hyperparameter_file_is_forwarded(tmp_path: Path, catalog: dict[str, str]) -> None:
+    hyp = tmp_path / "hyp.yaml"
+    hyp.write_text("mosaic: 0.0\nscale: 0.5\n", encoding="utf-8")
+    config = task_config(tmp_path, {"stage0": catalog["stage0"]}, current=["stage0"], candidate=["stage0"])
+    config["backend"]["params"]["hyp"] = str(hyp)
+    command = build_train_command(
+        config,
+        source_root=tmp_path / "yolov5",
+        checkpoint=tmp_path / "yolov5s.pt",
+        data_yaml=tmp_path / "data.yaml",
+        output_dir=tmp_path / "output",
+    )
+    assert command[command.index("--hyp") + 1] == str(hyp.resolve())
+
+
 @pytest.mark.parametrize(
     ("change", "message"),
     [

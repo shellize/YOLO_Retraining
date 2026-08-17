@@ -10,7 +10,18 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 
-ALLOWED_PARAMS = {"batch", "imgsz", "device", "workers", "cache", "optimizer", "patience", "amp", "best_metric"}
+ALLOWED_PARAMS = {
+    "batch",
+    "imgsz",
+    "device",
+    "workers",
+    "cache",
+    "optimizer",
+    "patience",
+    "amp",
+    "best_metric",
+    "hyp",
+}
 BEST_METRICS = {"map50", "yolov5_fitness"}
 
 
@@ -40,6 +51,9 @@ def validate_training_params(config: Mapping[str, Any]) -> None:
     best_metric = str(params.get("best_metric", "map50"))
     if best_metric not in BEST_METRICS:
         raise ValueError("backend.params.best_metric must be map50 or yolov5_fitness")
+    hyp = params.get("hyp")
+    if hyp is not None and not Path(str(hyp)).is_file():
+        raise FileNotFoundError(f"YOLOv5 hyperparameter file does not exist: {hyp}")
     device = params.get("device", "cpu")
     if isinstance(device, list) and len(device) > 1 and batch % len(device) != 0:
         raise ValueError("backend.params.batch must be divisible by the number of DDP devices")
@@ -95,6 +109,9 @@ def build_train_command(
             "--noplots",
         ]
     )
+    hyp = params.get("hyp")
+    if hyp is not None:
+        command.extend(["--hyp", str(Path(str(hyp)).resolve())])
     cache = params.get("cache", False)
     if cache:
         command.append("--cache")
