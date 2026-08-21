@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import sys
 import os
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
-from conftest import task_config
+from conftest import make_yolo_group, task_config
 from yolo_retraining.backends import create_backend
 from yolo_retraining.backends.yolov5 import Yolov5Backend
 from yolo_retraining.backends.yolov5.backend import normalize_evaluation
@@ -215,3 +216,37 @@ def test_train_entry_worker_can_inherit_source_root() -> None:
         check=False,
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_gradient_score_bridge_runs_on_one_image(tmp_path: Path) -> None:
+    root = Path(__file__).parents[1]
+    source_root = root / ".third_party" / "yolov5"
+    weights = source_root / "yolov5s.pt"
+    if not source_root.is_dir() or not weights.is_file():
+        pytest.skip("fixed YOLOv5 source and local yolov5s.pt are required")
+    data_yaml = make_yolo_group(tmp_path, "gradient")
+    payload = __import__("yaml").safe_load(data_yaml.read_text(encoding="utf-8"))
+    image = next((Path(payload["path"]) / "images" / "train").glob("*.jpg"))
+    manifest = tmp_path / "images.txt"
+    manifest.write_text(f"{image}\n", encoding="utf-8")
+    output = tmp_path / "scores.json"
+    bridge = root / "src" / "yolo_retraining" / "backends" / "yolov5" / "bridge.py"
+    run_command(
+        [
+            sys.executable,
+            str(bridge),
+            "gradient-score",
+            "--root", str(source_root),
+            "--weights", str(weights),
+            "--images", str(manifest),
+            "--imgsz", "64",
+            "--device", "cpu",
+            "--seed", "42",
+            "--output", str(output),
+        ],
+        cwd=source_root,
+        log_path=tmp_path / "gradient.log",
+    )
+    records = json.loads(output.read_text(encoding="utf-8"))
+    assert len(records) == 1
+    assert records[0]["gradient_norm"] > 0.0

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import time
 import traceback
 from pathlib import Path
@@ -42,7 +43,16 @@ class TaskRunner:
             selection_started = time.perf_counter()
             selection_policy = create_selection_policy(self.config["select_policy"])
             epoch_policy = create_epoch_policy(self.config["epoch_policy"])
-            selection = selection_policy.select({**scope, "seed": int(self.config["task"]["seed"]), "registry": registry})
+            selection = selection_policy.select(
+                {
+                    **scope,
+                    "seed": int(self.config["task"]["seed"]),
+                    "registry": registry,
+                    "config": self.config,
+                    "backend": self.backend,
+                    "output_dir": self.output_dir,
+                }
+            )
             selected_ids = epoch_policy.build_plan(selection["selected_ids"], epoch=0, seed=int(self.config["task"]["seed"]))
             if not selected_ids:
                 raise ValueError("selection policy returned no training samples")
@@ -116,9 +126,21 @@ class TaskRunner:
     def _write_selection(self, selection: Mapping[str, Any], selected_ids: list[str]) -> None:
         write_lines(self.output_dir / "data" / "selected_ids.txt", selected_ids)
         groups = selection.get("groups", {})
+        current = list(groups.get("current", []))
+        history = list(groups.get("history", []))
+        if current:
+            write_lines(self.output_dir / "selection" / "current_selected_ids.txt", current)
+        if history:
+            write_lines(self.output_dir / "selection" / "history_selected_ids.txt", history)
         replay = list(groups.get("replay", []))
         if replay:
             write_lines(self.output_dir / "selection" / "replay_ids.txt", replay)
+        records = list(selection.get("records", []))
+        if records:
+            write_lines(
+                self.output_dir / "selection" / "sample_scores.jsonl",
+                [json.dumps(record, ensure_ascii=False, separators=(",", ":")) for record in records],
+            )
         summary = {"selected_count": len(selected_ids), "group_counts": {key: len(value) for key, value in groups.items()}, "metadata": selection.get("metadata", {})}
         write_json(self.output_dir / "selection" / "summary.json", summary)
 
@@ -167,6 +189,8 @@ class TaskRunner:
                         "registry": registry,
                         "sample_ids": sample_ids,
                         "checkpoint": checkpoints[checkpoint_name],
+                        "checkpoint_name": checkpoint_name,
+                        "evaluation_group": group,
                         "output_dir": self.output_dir / "backend" / self.backend.output_namespace / "evaluations" / checkpoint_name / group,
                     }
                 )

@@ -15,6 +15,7 @@ htmlcov/
 /runs/
 # Reproducible/generated experiment artifacts
 runs/
+charts/
 weights/
 *.pt
 *.onnx

@@ -1,0 +1,4 @@
+include: [_base_current_warm.yaml, _fixed_teachers.yaml]
+sequence: {label: random-topk__current-warm}
+task_template:
+  select_policy: {name: random_topk, params: {cumulative: false}}

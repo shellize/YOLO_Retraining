@@ -14,7 +14,7 @@ from .trainer import build_train_command, device_argument, estimated_optimizer_s
 
 
 class Yolov5Backend(DetectionBackend):
-    capabilities = frozenset({"static_training", "evaluation", "prediction", "distributed_training"})
+    capabilities = frozenset({"static_training", "evaluation", "prediction", "sample_analysis", "gradient_scoring", "distributed_training"})
     output_namespace = "yolov5"
 
     def validate_config(self, config: Mapping[str, Any]) -> None:
@@ -95,6 +95,14 @@ class Yolov5Backend(DetectionBackend):
         data_yaml = write_backend_data_yaml(manifest, manifest, registry["names"], output_dir / "data.yaml")
         source = validate_yolov5_source()
         params = request["config"]["backend"]["params"]
+        evaluation_config = request["config"].get("evaluation", {})
+        checkpoint_name = str(request.get("checkpoint_name", ""))
+        evaluation_group = str(request.get("evaluation_group", ""))
+        artifact_checkpoints = {str(value) for value in evaluation_config.get("prediction_artifact_checkpoints", ["best"])}
+        artifact_groups = {str(value) for value in evaluation_config.get("prediction_artifact_groups", ["test"])}
+        save_prediction_artifacts = bool(evaluation_config.get("save_prediction_artifacts", True))
+        save_prediction_artifacts = save_prediction_artifacts and checkpoint_name in artifact_checkpoints and evaluation_group in artifact_groups
+        confidence_thresholds = evaluation_config.get("confidence_sweep_thresholds", [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
         result_path = output_dir / "metrics.json"
         command = [
             sys.executable,
@@ -121,6 +129,16 @@ class Yolov5Backend(DetectionBackend):
         ]
         if params.get("amp", True) and str(params.get("device", "cpu")).lower() != "cpu":
             command.append("--half")
+        if save_prediction_artifacts:
+            command.extend(
+                [
+                    "--save-artifacts",
+                    "--artifacts-dir",
+                    str(output_dir),
+                    "--confidence-thresholds",
+                    *[str(float(value)) for value in confidence_thresholds],
+                ]
+            )
         started = time.perf_counter()
         run_command(command, cwd=Path(source["root"]), log_path=output_dir / "evaluation.log")
         elapsed = time.perf_counter() - started
@@ -158,6 +176,101 @@ class Yolov5Backend(DetectionBackend):
         run_command(command, cwd=Path(source["root"]), log_path=output_dir / "prediction.log")
         payload = json.loads(result_path.read_text(encoding="utf-8"))
         return {sample_id: payload[str(index)] for index, sample_id in enumerate(sample_ids)}
+
+    def analyze_samples(self, request: Mapping[str, Any]) -> list[dict[str, Any]]:
+        registry = request["registry"]
+        sample_ids = list(request["sample_ids"])
+        output_dir = Path(request["output_dir"])
+        output_dir.mkdir(parents=True, exist_ok=True)
+        manifest = write_image_manifest(registry, sample_ids, output_dir / "images.txt")
+        data_yaml = write_backend_data_yaml(manifest, manifest, registry["names"], output_dir / "data.yaml")
+        source = validate_yolov5_source()
+        params = request["config"]["backend"]["params"]
+        result_path = output_dir / "metrics.json"
+        command = [
+            sys.executable,
+            str(Path(__file__).with_name("bridge.py")),
+            "evaluate",
+            "--root", source["root"],
+            "--weights", str(Path(request["checkpoint"]).resolve()),
+            "--data", str(data_yaml),
+            "--project", str(output_dir),
+            "--batch", str(int(params["batch"])),
+            "--imgsz", str(int(params["imgsz"])),
+            "--device", device_argument(params.get("device", "cpu")),
+            "--workers", str(int(params.get("workers", 4))),
+            "--save-artifacts",
+            "--artifacts-dir", str(output_dir),
+            "--confidence-thresholds", str(float(request["confidence"])),
+            "--output", str(result_path),
+        ]
+        if params.get("amp", True) and str(params.get("device", "cpu")).lower() != "cpu":
+            command.append("--half")
+        run_command(command, cwd=Path(source["root"]), log_path=output_dir / "analysis.log")
+        by_path = {str(Path(record["image_path"]).resolve()): sample_id for sample_id, record in registry["records"].items() if sample_id in set(sample_ids)}
+        records: list[dict[str, Any]] = []
+        confidence = float(request["confidence"])
+        iou_index = int(round((float(request["iou"]) - 0.5) / 0.05))
+        if not 0 <= iou_index < 10:
+            raise ValueError("YOLOv5 sample analysis supports IoU thresholds 0.50 through 0.95 in 0.05 steps")
+        artifact = output_dir / "predictions.jsonl"
+        for line in artifact.read_text(encoding="utf-8").splitlines():
+            payload = json.loads(line)
+            image_path = str(Path(payload["image_path"]).resolve())
+            if image_path not in by_path:
+                raise ValueError(f"prediction artifact contains an unknown image: {image_path}")
+            predictions = [item for item in payload["predictions"] if float(item["confidence"]) >= confidence]
+            tp = sum(bool(item["correct_iou"][iou_index]) for item in predictions)
+            fp = len(predictions) - tp
+            gt_count = len(payload["target_class_ids"])
+            records.append(
+                {
+                    "sample_id": by_path[image_path],
+                    "image_path": image_path,
+                    "gt_count": gt_count,
+                    "prediction_count": len(predictions),
+                    "tp": tp,
+                    "fp": fp,
+                    "fn": max(gt_count - tp, 0),
+                }
+            )
+        if len(records) != len(sample_ids):
+            raise RuntimeError(f"sample analysis produced {len(records)} records for {len(sample_ids)} samples")
+        return sorted(records, key=lambda record: str(record["sample_id"]))
+
+    def gradient_scores(self, request: Mapping[str, Any]) -> list[dict[str, Any]]:
+        registry = request["registry"]
+        sample_ids = list(request["sample_ids"])
+        output_dir = Path(request["output_dir"])
+        output_dir.mkdir(parents=True, exist_ok=True)
+        manifest = write_image_manifest(registry, sample_ids, output_dir / "images.txt")
+        result_path = output_dir / "gradient_scores.json"
+        source = validate_yolov5_source()
+        params = request["config"]["backend"]["params"]
+        command = [
+            sys.executable,
+            str(Path(__file__).with_name("bridge.py")),
+            "gradient-score",
+            "--root", source["root"],
+            "--weights", str(Path(request["checkpoint"]).resolve()),
+            "--images", str(manifest),
+            "--imgsz", str(int(params["imgsz"])),
+            "--device", device_argument(params.get("device", "cpu")),
+            "--seed", str(int(request["config"]["task"]["seed"])),
+            "--output", str(result_path),
+        ]
+        run_command(command, cwd=Path(source["root"]), log_path=output_dir / "gradient_scoring.log")
+        payload = json.loads(result_path.read_text(encoding="utf-8"))
+        by_path = {str(Path(registry["records"][sample_id]["image_path"]).resolve()): sample_id for sample_id in sample_ids}
+        records = []
+        for item in payload:
+            image_path = str(Path(item["image_path"]).resolve())
+            if image_path not in by_path:
+                raise ValueError(f"gradient artifact contains an unknown image: {image_path}")
+            records.append({"sample_id": by_path[image_path], **item})
+        if len(records) != len(sample_ids):
+            raise RuntimeError(f"gradient scoring produced {len(records)} records for {len(sample_ids)} samples")
+        return records
 
 
 def normalize_evaluation(

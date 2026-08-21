@@ -13,7 +13,15 @@ BUILTIN_DEFAULTS: dict[str, Any] = {
     "epoch_policy": {"name": "static", "params": {}},
     "budget": {"type": "epochs", "value": 100},
     "backend": {"params": {"batch": 64, "imgsz": 640, "device": 0, "workers": 16, "amp": True, "best_metric": "map50"}},
-    "evaluation": {"primary_metric": "map50_95", "test_scope": "seen", "evaluate_checkpoints": ["last", "best"]},
+    "evaluation": {
+        "primary_metric": "map50_95",
+        "test_scope": "seen",
+        "evaluate_checkpoints": ["last", "best"],
+        "save_prediction_artifacts": True,
+        "prediction_artifact_checkpoints": ["best"],
+        "prediction_artifact_groups": ["test"],
+        "confidence_sweep_thresholds": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8],
+    },
 }
 
 TASK_KEYS = {"task", "data", "model", "initialization", "select_policy", "epoch_policy", "budget", "backend", "evaluation"}
@@ -53,8 +61,11 @@ def _resolve_paths(payload: dict[str, Any], base: Path) -> dict[str, Any]:
         if task.get("parent_result") is not None:
             task["parent_result"] = _absolute(base, task["parent_result"])
     sequence = resolved.get("sequence", {})
-    if isinstance(sequence, dict) and sequence.get("output_root") is not None:
-        sequence["output_root"] = _absolute(base, sequence["output_root"])
+    if isinstance(sequence, dict):
+        if sequence.get("output_root") is not None:
+            sequence["output_root"] = _absolute(base, sequence["output_root"])
+        if sequence.get("bootstrap_result") is not None:
+            sequence["bootstrap_result"] = _absolute(base, sequence["bootstrap_result"])
     data = resolved.get("data", {})
     if isinstance(data, dict):
         if isinstance(data.get("catalog"), dict):
@@ -73,6 +84,13 @@ def _resolve_paths(payload: dict[str, Any], base: Path) -> dict[str, Any]:
     if isinstance(backend, dict) and isinstance(backend.get("params"), dict):
         if backend["params"].get("hyp") is not None:
             backend["params"]["hyp"] = _absolute(base, backend["params"]["hyp"])
+    for task_holder in [resolved.get("task_template", {}), *list((resolved.get("task_overrides", {}) or {}).values())]:
+        if not isinstance(task_holder, dict):
+            continue
+        select_policy = task_holder.get("select_policy", {})
+        params = select_policy.get("params", {}) if isinstance(select_policy, dict) else {}
+        if isinstance(params, dict) and params.get("teacher_result") is not None:
+            params["teacher_result"] = _absolute(base, params["teacher_result"])
     return resolved
 
 
@@ -167,8 +185,9 @@ def validate_task_config(config: Mapping[str, Any]) -> None:
         raise ValueError("initialization.source must be pretrained, parent, or explicit")
     if source == "parent" and not task.get("parent_result"):
         raise ValueError("parent initialization requires task.parent_result")
-    if config["select_policy"].get("name") not in {"full", "random_replay"}:
-        raise ValueError("phase 1 supports selection policies: full, random_replay")
+    selection_policies = {"full", "random_replay", "positive_only", "pred_positive", "error_hard", "gradnorm_topk", "random_topk"}
+    if config["select_policy"].get("name") not in selection_policies:
+        raise ValueError(f"unknown selection policy; choices={sorted(selection_policies)}")
     if config["epoch_policy"].get("name") != "static":
         raise ValueError("phase 1 supports only epoch_policy.name=static")
 
@@ -205,6 +224,9 @@ def validate_sequence_config(config: Mapping[str, Any]) -> None:
     sequence = config["sequence"]
     if not sequence.get("output_root"):
         raise ValueError("sequence.output_root is required")
+    bootstrap_result = sequence.get("bootstrap_result")
+    if bootstrap_result is not None and not (Path(str(bootstrap_result)) / "task_result.json").is_file():
+        raise FileNotFoundError(f"sequence.bootstrap_result is not a completed task directory: {bootstrap_result}")
     if config["scope_rule"].get("candidate") not in {"all_seen", "current"}:
         raise ValueError("scope_rule.candidate must be all_seen or current")
     initialization = config["initialization"]

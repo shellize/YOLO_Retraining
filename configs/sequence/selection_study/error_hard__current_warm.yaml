@@ -1,0 +1,4 @@
+include: [_base_current_warm.yaml, _fixed_teachers.yaml]
+sequence: {label: error-hard__current-warm}
+task_template:
+  select_policy: {name: error_hard, params: {cumulative: false}}

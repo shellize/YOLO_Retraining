@@ -1,0 +1,4 @@
+include: [_base_cum_cold.yaml, _fixed_teachers.yaml]
+sequence: {label: pred-positive__cum-cold}
+task_template:
+  select_policy: {name: pred_positive, params: {cumulative: true}}

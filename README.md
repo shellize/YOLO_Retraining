@@ -116,9 +116,23 @@ optimizer or scheduler resume.
 
 The checked-in Task and Sequence configs use the logical layout. Sequence arrivals list only stage IDs; the common layout supplies their physical folders and the fixed validation/test groups.
 
+### B640 selection study
+
+The ten configs under `configs/sequence/selection_study` compare `positive_only`, `pred_positive`, `error_hard`, `gradnorm_topk`, and the equal-budget `random_topk` control under cumulative-cold and current-warm updates. They use the Balance Test layout, `imgsz=640`, and GPU device 0. Every sequence bootstraps from the completed Balance Test Full Warm Stage 0 task, so Stage 0 is not retrained. Teacher-based selection also reuses that completed Full Warm lineage's Stage 0/1/2 `best.pt` checkpoints at confidence 0.25 and IoU 0.5.
+
+On the server, launch the whole study only after physical GPU0 has been observed idle for ten continuous minutes:
+
+```bash
+bash scripts/run_selection_study_when_gpu0_idle.sh
+```
+
+The waiter samples GPU state every 60 seconds, resets the ten-minute timer after any busy sample, rejects concurrent waiters through a lock, runs a full config/checkpoint preflight, and then executes all ten sequences serially. Completed sequences are skipped; an incomplete pre-existing output stops the launch for manual inspection.
+
 ## Results
 
-Every completed Task contains resolved `task.yaml`, selected ID files, `last.pt`, `best.pt`, train/evaluation metrics, cost accounting, and `task_result.json`. A failed Task writes `task_status.json` and `logs/error.txt`, does not write `task_result.json`, and stops its Sequence. Resume and overwrite are not supported.
+Every completed Task contains resolved `task.yaml`, selected ID files, `last.pt`, `best.pt`, train/evaluation metrics, cost accounting, and `task_result.json`. By default, each `best/test` evaluation also writes compact `predictions.jsonl` and `confidence_sweep.json` next to `metrics.json`; these are generated from the same predictions used for mAP and do not trigger a second inference pass. A failed Task writes `task_status.json` and `logs/error.txt`, does not write `task_result.json`, and stops its Sequence. Resume and overwrite are not supported.
+
+`predictions.jsonl` has one line per test image and stores the image path, ground-truth class IDs, prediction confidence/class, and correctness at the ten IoU thresholds from 0.50 to 0.95. It intentionally omits box coordinates to keep the artifact compact. By default, `confidence_sweep.json` records the seven fixed thresholds `0.2` through `0.8` at `0.1` intervals, including macro/micro Precision, Recall, F1, TP, FP, and FN, plus per-class curves. To change the default scope or threshold list, set `evaluation.prediction_artifact_checkpoints`, `evaluation.prediction_artifact_groups`, or `evaluation.confidence_sweep_thresholds`; set `evaluation.save_prediction_artifacts: false` to disable them.
 
 Each completed Task also writes local TensorBoard events under its `tensorboard/` directory. To compare all Tasks and Sequence Tasks under the project `runs` directory, start TensorBoard from the project root:
 

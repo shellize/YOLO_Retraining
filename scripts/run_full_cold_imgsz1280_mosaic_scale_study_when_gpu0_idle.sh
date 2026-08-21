@@ -70,4 +70,4 @@ while (( idle_checks < REQUIRED_IDLE_CHECKS )); do
 done
 
 echo "[GPU wait] GPU $GPU_INDEX passed ${REQUIRED_IDLE_CHECKS} consecutive idle checks; starting study"
-exec "$PROJECT_ROOT/scripts/run_full_cold_imgsz1280_mosaic_scale_study.sh"
+exec bash "$PROJECT_ROOT/scripts/run_full_cold_imgsz1280_mosaic_scale_study.sh"

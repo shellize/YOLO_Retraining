@@ -27,6 +27,12 @@ class DetectionBackend(ABC):
     def predict(self, request: Mapping[str, Any]) -> dict[str, Any]:
         raise NotImplementedError(f"{type(self).__name__} does not implement predict")
 
+    def analyze_samples(self, request: Mapping[str, Any]) -> list[dict[str, Any]]:
+        raise NotImplementedError(f"{type(self).__name__} does not implement sample analysis")
+
+    def gradient_scores(self, request: Mapping[str, Any]) -> list[dict[str, Any]]:
+        raise NotImplementedError(f"{type(self).__name__} does not implement gradient scoring")
+
 
 def require_artifact(path: Path, description: str) -> Path:
     if not path.is_file():

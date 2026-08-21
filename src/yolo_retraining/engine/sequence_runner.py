@@ -32,7 +32,22 @@ class SequenceRunner:
         seen_groups: list[str] = []
         previous_result: Path | None = None
         try:
-            for index, arrival in enumerate(self.config["arrivals"]):
+            start_index = 0
+            bootstrap_result = self.config["sequence"].get("bootstrap_result")
+            if bootstrap_result:
+                previous_result = Path(str(bootstrap_result)).resolve()
+                bootstrap = read_json(previous_result / "task_result.json")
+                if bootstrap.get("status") != "completed":
+                    raise ValueError(f"bootstrap task is not completed: {previous_result}")
+                results.append(bootstrap)
+                first_arrival = self.config["arrivals"][0]
+                first_group = str(first_arrival["id"])
+                seen_groups.append(first_group)
+                if "data" in first_arrival:
+                    catalog[first_group] = str(first_arrival["data"])
+                start_index = 1
+                write_json(status_path, status_payload("running", completed_tasks=1, bootstrap_result=str(previous_result)))
+            for index, arrival in enumerate(self.config["arrivals"][start_index:], start=start_index):
                 group_id = str(arrival["id"])
                 seen_groups.append(group_id)
                 if "data" in arrival:
@@ -44,7 +59,10 @@ class SequenceRunner:
                 results.append(result)
                 previous_result = result_dir
                 write_json(status_path, status_payload("running", completed_tasks=len(results), current_task=index + 1))
-            summary = summarize_matrix([{"last_metrics": result["metrics"].get("last", {})} for result in results])
+            summary = summarize_matrix(
+                [{"metrics": result["metrics"].get("best", {})} for result in results],
+                stage_ids=[str(arrival["id"]) for arrival in self.config["arrivals"]],
+            )
             self._write_summaries(results, summary)
             write_json(self.output_dir / "sequence_result.json", {"schema_version": 1, "status": "completed", "output_dir": str(self.output_dir.resolve()), "tasks": [result["output_dir"] for result in results], "summary": summary})
             write_json(status_path, status_payload("completed", completed_tasks=len(results)))
@@ -97,8 +115,11 @@ class SequenceRunner:
         selection_rows: list[dict[str, Any]] = []
         for index, result in enumerate(results):
             row: dict[str, Any] = {"task": index, "task_label": result["task_label"]}
-            for group, metrics in result["metrics"].get("last", {}).items():
+            for group, metrics in result["metrics"].get("best", {}).items():
                 row[f"{group}.map50_95"] = metrics["map50_95"]
+                row[f"{group}.map50"] = metrics["map50"]
+                row[f"{group}.precision"] = metrics["precision"]
+                row[f"{group}.recall"] = metrics["recall"]
             row["seen_mean"] = summary["seen_mean"][index]
             metric_rows.append(row)
             cost_rows.append({"task": index, **result["cost"]})

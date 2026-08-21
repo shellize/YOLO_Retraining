@@ -1,0 +1,4 @@
+include: _base_cum_cold.yaml
+sequence: {label: positive-only__cum-cold}
+task_template:
+  select_policy: {name: positive_only, params: {cumulative: true}}

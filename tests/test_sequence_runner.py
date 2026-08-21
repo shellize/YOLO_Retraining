@@ -150,3 +150,25 @@ def test_sequence_layout_keeps_validation_and_test_fixed(monkeypatch, tmp_path: 
     assert resolved["data"]["validation"] == ["val"]
     assert resolved["data"]["test"] == ["test"]
     assert len((second_task / "data" / "candidate_ids.txt").read_text(encoding="utf-8").splitlines()) == 4
+
+
+def test_sequence_can_reuse_completed_stage0_without_retraining(monkeypatch, tmp_path: Path, catalog: dict[str, str]) -> None:
+    monkeypatch.setattr("yolo_retraining.engine.task_runner.create_backend", lambda _config: FakeBackend())
+    bootstrap_config = sequence_config(tmp_path / "bootstrap", catalog)
+    bootstrap_config["arrivals"] = bootstrap_config["arrivals"][:1]
+    bootstrap_output = SequenceRunner(bootstrap_config).run()
+    bootstrap_task = next((bootstrap_output / "tasks").iterdir())
+
+    config = sequence_config(tmp_path / "study", catalog)
+    config["arrivals"] = config["arrivals"][:2]
+    config["sequence"]["bootstrap_result"] = str(bootstrap_task)
+    output = SequenceRunner(config).run()
+
+    tasks = sorted((output / "tasks").iterdir())
+    assert len(tasks) == 1
+    assert tasks[0].name.startswith("001__stage1")
+    resolved = yaml.safe_load((tasks[0] / "task.yaml").read_text(encoding="utf-8"))
+    assert resolved["task"]["parent_result"] == str(bootstrap_task.resolve())
+    result = json.loads((output / "sequence_result.json").read_text(encoding="utf-8"))
+    assert len(result["tasks"]) == 2
+    assert result["summary"]["checkpoint"] == "best"

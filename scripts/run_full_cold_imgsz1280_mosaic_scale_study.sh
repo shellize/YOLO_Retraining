@@ -11,7 +11,7 @@ HYP_DIR="$PROJECT_ROOT/configs/hyp"
 TASK_SUFFIX="__full-cold-stage0123__stage0+stage1+stage2+stage3__yolov5s__s42"
 
 run_task() {
-  "$PROJECT_ROOT/scripts/run_full_cold_task.sh" "$@"
+  bash "$PROJECT_ROOT/scripts/run_full_cold_task.sh" "$@"
 }
 
 task_dir() {

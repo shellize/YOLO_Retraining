@@ -1,0 +1,19 @@
+task_overrides:
+  stage1:
+    select_policy:
+      params:
+        teacher_result: ../../../runs/sequences/Balance_Test__seq-full-warm__stage0-stage3__yolov5s__s42/tasks/000__stage0__full-warm
+        confidence: 0.25
+        iou: 0.5
+  stage2:
+    select_policy:
+      params:
+        teacher_result: ../../../runs/sequences/Balance_Test__seq-full-warm__stage0-stage3__yolov5s__s42/tasks/001__stage1__full-warm
+        confidence: 0.25
+        iou: 0.5
+  stage3:
+    select_policy:
+      params:
+        teacher_result: ../../../runs/sequences/Balance_Test__seq-full-warm__stage0-stage3__yolov5s__s42/tasks/002__stage2__full-warm
+        confidence: 0.25
+        iou: 0.5

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from yolo_retraining.policies import create_epoch_policy, create_selection_policy
@@ -29,3 +31,35 @@ def test_random_replay_requires_positive_size() -> None:
     with pytest.raises(ValueError, match="positive replay_size"):
         create_selection_policy({"name": "random_replay", "params": {"replay_size": 0}})
 
+
+def test_positive_only_keeps_valid_nonempty_labels(tmp_path: Path) -> None:
+    positive = tmp_path / "positive.txt"
+    empty = tmp_path / "empty.txt"
+    positive.write_text("0 0.5 0.5 0.25 0.25\n", encoding="utf-8")
+    empty.write_text("", encoding="utf-8")
+    context = {
+        "current_ids": ["positive", "empty"],
+        "candidate_ids": ["positive", "empty"],
+        "registry": {"records": {"positive": {"label_path": str(positive)}, "empty": {"label_path": str(empty)}}},
+        "config": {"task": {"parent_result": None}},
+    }
+    result = create_selection_policy({"name": "positive_only", "params": {}}).select(context)
+    assert result["selected_ids"] == ["positive"]
+    assert result["metadata"]["current_selected_count"] == 1
+
+
+def test_cumulative_positive_only_reuses_parent_selection(tmp_path: Path) -> None:
+    parent = tmp_path / "parent"
+    (parent / "data").mkdir(parents=True)
+    (parent / "data" / "selected_ids.txt").write_text("stage0::a\n", encoding="utf-8")
+    label = tmp_path / "current.txt"
+    label.write_text("0 0.5 0.5 0.25 0.25\n", encoding="utf-8")
+    context = {
+        "current_ids": ["stage1::b"],
+        "candidate_ids": ["stage0::a", "stage1::b"],
+        "registry": {"records": {"stage1::b": {"label_path": str(label)}}},
+        "config": {"task": {"parent_result": str(parent)}},
+    }
+    result = create_selection_policy({"name": "positive_only", "params": {"cumulative": True}}).select(context)
+    assert result["selected_ids"] == ["stage0::a", "stage1::b"]
+    assert result["groups"]["history"] == ["stage0::a"]
