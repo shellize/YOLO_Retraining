@@ -5,6 +5,8 @@ from typing import Any, Mapping
 
 import yaml
 
+from .manifests import read_image_manifest
+
 
 IMAGE_SUFFIXES = {".bmp", ".dng", ".jpeg", ".jpg", ".mpo", ".png", ".tif", ".tiff", ".webp", ".pfm", ".heic"}
 
@@ -44,15 +46,23 @@ def _load_layout_group(group_id: str, yaml_path: Path, payload: Mapping[str, Any
     if split not in {"train", "val", "test"}:
         raise ValueError(f"layout group {group_id!r} split must be train, val, or test")
     images = group_spec.get("images")
-    if not isinstance(images, (str, list)) or not images:
-        raise ValueError(f"layout group {group_id!r} requires a non-empty images entry")
+    manifest = group_spec.get("manifest")
+    if images is not None and manifest is not None:
+        raise ValueError(f"layout group {group_id!r} must use exactly one of images or manifest")
+    entry = manifest if manifest is not None else images
+    if not isinstance(entry, (str, list)) or not entry:
+        raise ValueError(f"layout group {group_id!r} requires a non-empty images or manifest entry")
+    if manifest is not None:
+        manifest_entries = manifest if isinstance(manifest, list) else [manifest]
+        if not all(isinstance(value, str) and Path(value).suffix.lower() == ".txt" for value in manifest_entries):
+            raise ValueError(f"layout group {group_id!r} manifest entries must be .txt paths")
     declared_root = Path(payload.get("path", yaml_path.parent)).expanduser()
     root = (yaml_path.parent / declared_root).resolve() if not declared_root.is_absolute() else declared_root.resolve()
     return {
         "yaml_path": str(yaml_path),
         "root": str(root),
         "names": _normalize_names(payload.get("names")),
-        "splits": {name: images if name == split else None for name in ("train", "val", "test")},
+        "splits": {name: entry if name == split else None for name in ("train", "val", "test")},
     }
 
 
@@ -65,18 +75,18 @@ def _images_from_entry(root: Path, entry: str | list[str]) -> list[Path]:
         if path.is_dir():
             files.extend(item.resolve() for item in path.rglob("*") if item.is_file() and item.suffix.lower() in IMAGE_SUFFIXES)
         elif path.is_file() and path.suffix.lower() == ".txt":
-            for line in path.read_text(encoding="utf-8").splitlines():
-                line = line.strip()
-                if not line:
-                    continue
-                image = Path(line).expanduser()
-                image = (path.parent / image).resolve() if not image.is_absolute() else image.resolve()
-                files.append(image)
+            files.extend(read_image_manifest(path, dataset_root=root))
         elif path.is_file() and path.suffix.lower() in IMAGE_SUFFIXES:
             files.append(path)
         else:
             raise FileNotFoundError(f"YOLO split entry does not exist or contains no supported images: {path}")
-    unique = sorted(set(files), key=lambda item: item.as_posix())
+    invalid = [item for item in files if item.suffix.lower() not in IMAGE_SUFFIXES]
+    if invalid:
+        raise ValueError(f"manifest contains an unsupported image suffix: {invalid[0]}")
+    normalized = [str(item).casefold() for item in files]
+    if len(normalized) != len(set(normalized)):
+        raise ValueError(f"YOLO split entry contains duplicate images: {entry!r}")
+    unique = sorted(files, key=lambda item: item.as_posix())
     if not unique:
         raise ValueError(f"YOLO split contains no images: {entry!r}")
     return unique

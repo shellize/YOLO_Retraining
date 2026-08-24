@@ -84,6 +84,23 @@ group_id::relative/path/to/image.jpg
 
 Selected images are passed to the detector through a small text manifest. Images and labels are never copied, moved, hard-linked, or soft-linked.
 
+A logical group may also use an explicit UTF-8 TXT manifest. Each non-comment
+line is an image path relative to the TXT file (absolute paths are accepted but
+less portable):
+
+```yaml
+groups:
+  stage0:
+    split: train
+    manifest: ../../data_analyse/custom_dataset/results/manual/stage0.txt
+```
+
+Use `data_analyse/custom_dataset/custom_dataset.py` to write manifests, build
+or validate layouts, and create a deliberate random-frame diagnostic split
+while preserving the existing group names and exact budgets. Use
+`data_analyse/dataset_redundancy/redundancy_analysis.py` for the independent
+YOLOv5s-feature redundancy audit and matched-size random controls.
+
 Existing datasets named `0720_01` through `0720_09` can be normalized once on each machine. The command renames both image and label directories and rewrites the dataset-local `data.yaml` with `path: .` and the fixed train/val/test split:
 
 ```bash

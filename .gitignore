@@ -29,3 +29,5 @@ weights/
 !/result_analysis/**/
 !/result_analysis/**/*.py
 !/result_analysis/**/*.md
+/data_analyse/custom_dataset/results/
+/data_analyse/dataset_redundancy/results/
