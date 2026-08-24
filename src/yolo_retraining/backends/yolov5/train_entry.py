@@ -5,7 +5,14 @@ import os
 import sys
 from pathlib import Path
 
+from yolo_retraining.backends.yolov5.process_start import configure_safe_start_method
 from yolo_retraining.backends.yolov5.readonly_patch import install_read_only_verifier
+
+
+# Configure multiprocessing before importing YOLOv5 or torch.  YOLOv5 moves
+# the model to CUDA before it creates DataLoader workers, so Linux's default
+# ``fork`` start method is not safe here.
+configure_safe_start_method()
 
 
 def _extract_source_root(arguments: list[str]) -> tuple[Path, list[str], str]:
@@ -23,7 +30,7 @@ SOURCE_ROOT, TRAIN_ARGUMENTS, BEST_METRIC = _extract_source_root(sys.argv[1:])
 os.environ["YOLO_RETRAINING_YOLOV5_ROOT"] = str(SOURCE_ROOT)
 sys.path.insert(0, str(SOURCE_ROOT))
 
-# This runs at module import time so Windows multiprocessing workers install the
+# This runs at module import time so spawned multiprocessing workers install the
 # same read-only verifier before YOLOv5 creates its label-cache process pool.
 import utils.dataloaders as dataloaders  # noqa: E402
 

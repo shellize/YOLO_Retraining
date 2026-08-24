@@ -41,6 +41,7 @@ class Yolov5Backend(DetectionBackend):
             "best_selection_metric": best_selection_metric,
             "hyperparameter_file": str(params["hyp"]) if params.get("hyp") else "yolov5-default:hyp.scratch-low.yaml",
             "data_loader_adaptation": "read_only_incomplete_jpeg",
+            "multiprocessing_start_method": "spawn",
         }
 
     def train(self, request: Mapping[str, Any]) -> dict[str, Any]:

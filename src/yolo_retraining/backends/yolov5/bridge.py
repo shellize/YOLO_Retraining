@@ -6,6 +6,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from yolo_retraining.backends.yolov5.process_start import configure_safe_start_method
+
+
+# Evaluation also initializes CUDA before constructing a multi-worker
+# DataLoader.  Keep it on the same CUDA-safe process model as training.
+configure_safe_start_method()
+
 import numpy as np
 import yaml
 

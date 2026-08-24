@@ -12,6 +12,7 @@ from conftest import make_yolo_group, task_config
 from yolo_retraining.backends import create_backend
 from yolo_retraining.backends.yolov5 import Yolov5Backend
 from yolo_retraining.backends.yolov5.backend import normalize_evaluation
+from yolo_retraining.backends.yolov5.process_start import SAFE_START_METHOD
 from yolo_retraining.backends.yolov5.readonly_patch import install_read_only_verifier
 from yolo_retraining.backends.yolov5.trainer import build_train_command, read_training_history, run_command
 
@@ -216,6 +217,55 @@ def test_train_entry_worker_can_inherit_source_root() -> None:
         check=False,
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_yolov5_entry_points_replace_fork_with_spawn() -> None:
+    program = (
+        "import multiprocessing as mp; "
+        "mp.set_start_method('fork', force=True); "
+        "from yolo_retraining.backends.yolov5.process_start import configure_safe_start_method; "
+        "print(configure_safe_start_method())"
+    )
+    result = __import__("subprocess").run(
+        [sys.executable, "-c", program],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert result.stdout.strip() == SAFE_START_METHOD
+
+
+def test_spawned_dataloader_workers_return_batches(tmp_path: Path) -> None:
+    probe = tmp_path / "spawn_dataloader_probe.py"
+    probe.write_text(
+        """
+import multiprocessing as mp
+
+from torch.utils.data import DataLoader, TensorDataset
+
+from yolo_retraining.backends.yolov5.process_start import configure_safe_start_method
+
+
+def main():
+    configure_safe_start_method()
+    dataset = TensorDataset(__import__("torch").arange(8))
+    values = [int(value) for batch in DataLoader(dataset, batch_size=2, num_workers=2) for value in batch[0]]
+    print(mp.get_start_method(), values)
+
+
+if __name__ == "__main__":
+    main()
+""".lstrip(),
+        encoding="utf-8",
+    )
+    result = __import__("subprocess").run(
+        [sys.executable, str(probe)],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=30,
+    )
+    assert result.stdout.strip() == "spawn [0, 1, 2, 3, 4, 5, 6, 7]"
 
 
 def test_gradient_score_bridge_runs_on_one_image(tmp_path: Path) -> None:
