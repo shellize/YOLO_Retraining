@@ -4,9 +4,11 @@ import argparse
 import csv
 import hashlib
 import json
+import multiprocessing as mp
 import os
 import random
 import sys
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -428,6 +430,121 @@ def write_pair_gallery(
     canvas.save(path, quality=90)
 
 
+_THRESHOLD_WORKER_CONTEXT: dict[str, object] = {}
+
+
+def _init_threshold_worker(
+    records: Sequence[ImageRecord],
+    names: Sequence[str],
+    dataset_root: Path,
+    output_dir: Path,
+    temporal_edges: Sequence[SimilarityEdge],
+    temporal_score: dict[tuple[int, int], float],
+    group_records: dict[str, list[ImageRecord]],
+    train_indices_by_group: dict[str, list[int]],
+    random_seeds: Sequence[int],
+) -> None:
+    global _THRESHOLD_WORKER_CONTEXT
+    _THRESHOLD_WORKER_CONTEXT = {
+        "records": records,
+        "names": names,
+        "dataset_root": dataset_root,
+        "output_dir": output_dir,
+        "temporal_edges": temporal_edges,
+        "temporal_score": temporal_score,
+        "group_records": group_records,
+        "train_indices_by_group": train_indices_by_group,
+        "random_seeds": random_seeds,
+    }
+
+
+def _analyze_threshold(
+    *,
+    threshold: float,
+    records: Sequence[ImageRecord],
+    names: Sequence[str],
+    dataset_root: Path,
+    output_dir: Path,
+    temporal_edges: Sequence[SimilarityEdge],
+    temporal_score: dict[tuple[int, int], float],
+    group_records: dict[str, list[ImageRecord]],
+    train_indices_by_group: dict[str, list[int]],
+    random_seeds: Sequence[int],
+) -> dict:
+    label = _threshold_label(threshold)
+    write_pair_gallery(
+        output_dir / "audit" / f"boundary_tau_{label}.jpg",
+        records,
+        temporal_edges,
+        target_score=threshold,
+    )
+    selected_by_group: dict[str, list[Path]] = {}
+    cluster_rows: list[dict] = []
+    cluster_sizes: list[int] = []
+    for group_id, indices in train_indices_by_group.items():
+        groups = representative_groups(indices, temporal_edges, threshold)
+        selected_by_group[group_id] = [records[representative].path for representative, _ in groups]
+        for cluster_number, (representative, members) in enumerate(groups):
+            cluster_sizes.append(len(members))
+            for member in members:
+                score = 1.0 if member == representative else temporal_score[(min(representative, member), max(representative, member))]
+                cluster_rows.append(
+                    {
+                        "group": group_id,
+                        "cluster_id": f"{group_id}_{cluster_number:06d}",
+                        "image": records[member].path.relative_to(dataset_root).as_posix(),
+                        "representative": records[representative].path.relative_to(dataset_root).as_posix(),
+                        "score_to_representative": f"{score:.8f}",
+                        "cluster_size": len(members),
+                    }
+                )
+    variant_dir = output_dir / "variants" / f"dedup_tau_{label}"
+    layout = _variant_layout(
+        output_dir=variant_dir,
+        dataset_root=dataset_root,
+        names=names,
+        group_records=group_records,
+        selected_train=selected_by_group,
+    )
+    with (variant_dir / "clusters.csv").open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["group", "cluster_id", "image", "representative", "score_to_representative", "cluster_size"])
+        writer.writeheader()
+        writer.writerows(cluster_rows)
+
+    original_train = sum(len(indices) for indices in train_indices_by_group.values())
+    effective_train = sum(len(images) for images in selected_by_group.values())
+    summary = {
+        "layout": str(layout),
+        "original_train_images": original_train,
+        "effective_train_images": effective_train,
+        "retained_fraction": effective_train / original_train,
+        "redundant_images": original_train - effective_train,
+        "non_singleton_clusters": sum(size > 1 for size in cluster_sizes),
+        "max_cluster_size": max(cluster_sizes, default=1),
+        "per_group_effective": {group: len(images) for group, images in selected_by_group.items()},
+    }
+    for seed in random_seeds:
+        rng = random.Random(seed)
+        random_selected = {
+            group_id: rng.sample([records[index].path for index in indices], len(selected_by_group[group_id]))
+            for group_id, indices in train_indices_by_group.items()
+        }
+        _variant_layout(
+            output_dir=output_dir / "variants" / f"random_matched_tau_{label}_s{seed}",
+            dataset_root=dataset_root,
+            names=names,
+            group_records=group_records,
+            selected_train=random_selected,
+        )
+    return {"threshold": threshold, **summary}
+
+
+def _run_threshold_worker(threshold: float) -> dict:
+    if not _THRESHOLD_WORKER_CONTEXT:
+        raise RuntimeError("threshold worker context was not initialized")
+    return _analyze_threshold(threshold=threshold, **_THRESHOLD_WORKER_CONTEXT)
+
+
 def analyze(
     *,
     records: Sequence[ImageRecord],
@@ -441,7 +558,10 @@ def analyze(
     block_size: int,
     device: str,
     random_seeds: Sequence[int],
+    threshold_workers: int = 1,
 ) -> dict:
+    if threshold_workers < 1:
+        raise ValueError("threshold_workers must be at least 1")
     min_threshold = min(thresholds)
     temporal_edges = temporal_similarity_edges(records, embeddings, window=temporal_window, min_similarity=min_threshold)
     global_edges = global_knn_edges(embeddings, top_k=top_k, block_size=block_size, device_name=device)
@@ -464,72 +584,46 @@ def analyze(
         (min(edge.left, edge.right), max(edge.left, edge.right)): edge.score
         for edge in temporal_edges
     }
-    for threshold in thresholds:
-        label = _threshold_label(threshold)
-        write_pair_gallery(
-            output_dir / "audit" / f"boundary_tau_{label}.jpg",
-            records,
-            temporal_edges,
-            target_score=threshold,
-        )
-        selected_by_group: dict[str, list[Path]] = {}
-        cluster_rows: list[dict] = []
-        cluster_sizes: list[int] = []
-        for group_id, indices in train_indices_by_group.items():
-            groups = representative_groups(indices, temporal_edges, threshold)
-            selected_by_group[group_id] = [records[representative].path for representative, _ in groups]
-            for cluster_number, (representative, members) in enumerate(groups):
-                cluster_sizes.append(len(members))
-                for member in members:
-                    score = 1.0 if member == representative else temporal_score[(min(representative, member), max(representative, member))]
-                    cluster_rows.append(
-                        {
-                            "group": group_id,
-                            "cluster_id": f"{group_id}_{cluster_number:06d}",
-                            "image": records[member].path.relative_to(dataset_root).as_posix(),
-                            "representative": records[representative].path.relative_to(dataset_root).as_posix(),
-                            "score_to_representative": f"{score:.8f}",
-                            "cluster_size": len(members),
-                        }
-                    )
-        variant_dir = output_dir / "variants" / f"dedup_tau_{label}"
-        layout = _variant_layout(
-            output_dir=variant_dir,
-            dataset_root=dataset_root,
-            names=names,
-            group_records=group_records,
-            selected_train=selected_by_group,
-        )
-        with (variant_dir / "clusters.csv").open("w", newline="", encoding="utf-8") as handle:
-            writer = csv.DictWriter(handle, fieldnames=["group", "cluster_id", "image", "representative", "score_to_representative", "cluster_size"])
-            writer.writeheader()
-            writer.writerows(cluster_rows)
+    worker_context = (
+        records,
+        names,
+        dataset_root,
+        output_dir,
+        temporal_edges,
+        temporal_score,
+        group_records,
+        train_indices_by_group,
+        random_seeds,
+    )
+    if threshold_workers == 1 or len(thresholds) == 1:
+        threshold_results = [_analyze_threshold(threshold=threshold, **dict(zip(
+            ("records", "names", "dataset_root", "output_dir", "temporal_edges", "temporal_score", "group_records", "train_indices_by_group", "random_seeds"),
+            worker_context,
+        ))) for threshold in thresholds]
+    else:
+        worker_count = min(threshold_workers, len(thresholds))
+        # Spawn avoids inheriting a possibly initialized CUDA context when the
+        # matrix stages ran on a GPU before threshold post-processing.
+        mp_context = mp.get_context("spawn")
+        with ProcessPoolExecutor(
+            max_workers=worker_count,
+            mp_context=mp_context,
+            initializer=_init_threshold_worker,
+            initargs=worker_context,
+        ) as executor:
+            futures = {executor.submit(_run_threshold_worker, threshold): threshold for threshold in thresholds}
+            threshold_results = []
+            for future in as_completed(futures):
+                result = future.result()
+                threshold_results.append(result)
+                print(
+                    f"threshold {result['threshold']:.3f} completed; retained={result['retained_fraction']:.3%}",
+                    flush=True,
+                )
+        threshold_results.sort(key=lambda result: result["threshold"])
 
-        original_train = sum(len(indices) for indices in train_indices_by_group.values())
-        effective_train = sum(len(images) for images in selected_by_group.values())
-        threshold_summaries[str(threshold)] = {
-            "layout": str(layout),
-            "original_train_images": original_train,
-            "effective_train_images": effective_train,
-            "retained_fraction": effective_train / original_train,
-            "redundant_images": original_train - effective_train,
-            "non_singleton_clusters": sum(size > 1 for size in cluster_sizes),
-            "max_cluster_size": max(cluster_sizes, default=1),
-            "per_group_effective": {group: len(images) for group, images in selected_by_group.items()},
-        }
-        for seed in random_seeds:
-            rng = random.Random(seed)
-            random_selected = {
-                group_id: rng.sample([records[index].path for index in indices], len(selected_by_group[group_id]))
-                for group_id, indices in train_indices_by_group.items()
-            }
-            _variant_layout(
-                output_dir=output_dir / "variants" / f"random_matched_tau_{label}_s{seed}",
-                dataset_root=dataset_root,
-                names=names,
-                group_records=group_records,
-                selected_train=random_selected,
-            )
+    for result in threshold_results:
+        threshold_summaries[str(result.pop("threshold"))] = result
 
     leakage_scores = [score for _, _, score in leakage]
     summary = {
@@ -567,11 +661,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--top-k", type=int, default=20)
     parser.add_argument("--block-size", type=int, default=512)
     parser.add_argument("--random-seeds", type=parse_int_list, default=[41, 42, 43])
+    parser.add_argument("--threshold-workers", type=int, default=1, help="parallel worker processes for independent threshold post-processing")
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.threshold_workers < 1:
+        raise ValueError("--threshold-workers must be at least 1")
     output_dir = args.output_dir.expanduser().resolve()
     layout = args.layout.expanduser().resolve()
     records, names, dataset_root, group_ids = load_layout_records(layout, args.groups)
@@ -607,6 +704,7 @@ def main(argv: list[str] | None = None) -> int:
         "temporal_window": args.temporal_window,
         "top_k": args.top_k,
         "random_seeds": args.random_seeds,
+        "threshold_workers": args.threshold_workers,
     }
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "run_metadata.json").write_text(json.dumps(run_metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -622,6 +720,7 @@ def main(argv: list[str] | None = None) -> int:
         block_size=args.block_size,
         device=args.device,
         random_seeds=args.random_seeds,
+        threshold_workers=args.threshold_workers,
     )
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     return 0

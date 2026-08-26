@@ -10,6 +10,9 @@ GPU_POLL_INTERVAL_SECONDS="${YOLO_RETRAINING_GPU_POLL_SECONDS:-600}"
 GPU_REQUIRED_IDLE_CHECKS="${YOLO_RETRAINING_GPU_REQUIRED_IDLE_CHECKS:-2}"
 GPU_IDLE_UTILIZATION_PCT="${YOLO_RETRAINING_GPU_IDLE_UTILIZATION_PCT:-5}"
 GPU_IDLE_MEMORY_MIB="${YOLO_RETRAINING_GPU_IDLE_MEMORY_MIB:-1024}"
+SKIP_GPU_WAIT="${YOLO_RETRAINING_SKIP_GPU_WAIT:-0}"
+REDUNDANCY_DEVICE="${REDUNDANCY_DEVICE:-cpu}"
+REDUNDANCY_THRESHOLD_WORKERS="${REDUNDANCY_THRESHOLD_WORKERS:-8}"
 TRAIN_BATCH="${TRAIN_BATCH:-64}"
 EMBED_BATCH="${EMBED_BATCH:-32}"
 WORKERS="${WORKERS:-16}"
@@ -24,8 +27,9 @@ STUDY_ID="${STUDY_ID:-$(date +%Y%m%d-%H%M%S)}"
 BASE_LAYOUT="${BASE_LAYOUT:-$PROJECT_ROOT/configs/data/self_improving.yaml}"
 YOLOV5_ROOT="${YOLOV5_ROOT:-$PROJECT_ROOT/.third_party/yolov5}"
 
-DEDUP_THRESHOLDS=(0.970 0.997 0.999)
-THRESHOLD_CSV="$(IFS=,; echo "${DEDUP_THRESHOLDS[*]}")"
+DEDUP_CANDIDATE_THRESHOLDS=(0.900 0.910 0.920 0.930 0.940 0.950 0.960 0.970)
+DEDUP_CANDIDATE_THRESHOLD_CSV="$(IFS=,; echo "${DEDUP_CANDIDATE_THRESHOLDS[*]}")"
+DEDUP_TARGET_RETAINED_FRACTION="${DEDUP_TARGET_RETAINED_FRACTION:-0.42857142857142855}"
 
 if [[ ! "$STUDY_ID" =~ ^[A-Za-z0-9._-]+$ ]]; then
   echo "STUDY_ID may contain only letters, numbers, dot, underscore, and dash: $STUDY_ID" >&2
@@ -53,6 +57,10 @@ if ! [[ "$GPU_REQUIRED_IDLE_CHECKS" =~ ^[0-9]+$ ]] || (( GPU_REQUIRED_IDLE_CHECK
 fi
 if ! [[ "$GPU_IDLE_UTILIZATION_PCT" =~ ^[0-9]+$ && "$GPU_IDLE_MEMORY_MIB" =~ ^[0-9]+$ ]]; then
   echo "GPU idle utilization and memory limits must be non-negative integers" >&2
+  exit 2
+fi
+if ! [[ "$REDUNDANCY_THRESHOLD_WORKERS" =~ ^[1-9][0-9]*$ ]]; then
+  echo "REDUNDANCY_THRESHOLD_WORKERS must be a positive integer" >&2
   exit 2
 fi
 
@@ -186,10 +194,9 @@ run_sequence() {
   echo "[Study] completed sequence=$experiment_name"
 }
 
-wait_for_consecutive_gpu_idle_checks
-
 echo "[Study] id=$STUDY_ID root=$STUDY_ROOT GPU=$GPU_ID"
-echo "[Study] thresholds=$THRESHOLD_CSV temporal_window=$TEMPORAL_WINDOW"
+echo "[Study] candidate_thresholds=$DEDUP_CANDIDATE_THRESHOLD_CSV target_retained=$DEDUP_TARGET_RETAINED_FRACTION temporal_window=$TEMPORAL_WINDOW"
+echo "[Study] redundancy_device=$REDUNDANCY_DEVICE threshold_workers=$REDUNDANCY_THRESHOLD_WORKERS"
 
 echo "[Study] environment preflight"
 run_python -m yolo_retraining.doctor --project-root "$PROJECT_ROOT" \
@@ -200,7 +207,7 @@ run_python data_analyse/custom_dataset/custom_dataset.py validate --layout "$BAS
   2>&1 | tee "$LOG_ROOT/base_layout_validation.log"
 
 DEDUP_LAYOUTS_READY=1
-for threshold in "${DEDUP_THRESHOLDS[@]}"; do
+for threshold in "${DEDUP_CANDIDATE_THRESHOLDS[@]}"; do
   label="$(threshold_label "$threshold")"
   if [[ ! -f "$REDUNDANCY_ROOT/variants/dedup_tau_${label}/layout.yaml" ]]; then
     DEDUP_LAYOUTS_READY=0
@@ -210,15 +217,16 @@ done
 if [[ "$DEDUP_LAYOUTS_READY" -eq 1 && -f "$REDUNDANCY_ROOT/summary.json" ]]; then
   echo "[Study] reuse completed redundancy analysis: $REDUNDANCY_ROOT"
 else
-  echo "[Study] extract YOLOv5s features and build three adjacent-frame deduplicated layouts"
+  echo "[Study] extract YOLOv5s features and build candidate adjacent-frame deduplicated layouts"
   REDUNDANCY_ARGS=(
     data_analyse/dataset_redundancy/redundancy_analysis.py
     --layout "$BASE_LAYOUT"
     --output-dir "$REDUNDANCY_ROOT"
-    --device 0
+    --device "$REDUNDANCY_DEVICE"
     --imgsz "$IMGSZ"
     --batch-size "$EMBED_BATCH"
-    --thresholds "$THRESHOLD_CSV"
+    --thresholds "$DEDUP_CANDIDATE_THRESHOLD_CSV"
+    --threshold-workers "$REDUNDANCY_THRESHOLD_WORKERS"
     --temporal-window "$TEMPORAL_WINDOW"
     --top-k "$TOP_K"
     --random-seeds 41,42,43
@@ -229,20 +237,77 @@ else
   run_python "${REDUNDANCY_ARGS[@]}" 2>&1 | tee "$LOG_ROOT/redundancy_analysis.log"
 fi
 
-for threshold in "${DEDUP_THRESHOLDS[@]}"; do
+for threshold in "${DEDUP_CANDIDATE_THRESHOLDS[@]}"; do
   label="$(threshold_label "$threshold")"
   run_python data_analyse/custom_dataset/custom_dataset.py validate \
     --layout "$REDUNDANCY_ROOT/variants/dedup_tau_${label}/layout.yaml" \
     >"$LOG_ROOT/dedup_tau_${label}_validation.log"
 done
 
-run_python scripts/validate_redundancy_protocol.py \
-  --summary "$REDUNDANCY_ROOT/summary.json" \
-  --thresholds "$THRESHOLD_CSV" \
-  --aggressive-max-retained 0.5 \
-  --conservative-min-retained 0.65 \
-  --output "$REPORT_ROOT/redundancy_protocol.json" \
-  2>&1 | tee "$LOG_ROOT/redundancy_protocol.log"
+echo "[Study] select deduplication threshold closest to retained fraction 3/7"
+SELECTED_DEDUP_THRESHOLD="$(
+  run_python - \
+    "$REDUNDANCY_ROOT/summary.json" \
+    "$REPORT_ROOT/redundancy_threshold_selection.json" \
+    "$DEDUP_TARGET_RETAINED_FRACTION" \
+    "${DEDUP_CANDIDATE_THRESHOLDS[@]}" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+
+summary_path = Path(sys.argv[1])
+report_path = Path(sys.argv[2])
+target = float(sys.argv[3])
+thresholds = [float(value) for value in sys.argv[4:]]
+summary = json.loads(summary_path.read_text(encoding="utf-8"))
+summary_thresholds = summary.get("thresholds")
+if not isinstance(summary_thresholds, dict):
+    raise SystemExit("redundancy summary has no thresholds mapping")
+
+
+def get_result(threshold: float) -> dict:
+    for key in (str(threshold), f"{threshold:.3f}", f"{threshold:g}"):
+        result = summary_thresholds.get(key)
+        if isinstance(result, dict):
+            return result
+    raise SystemExit(f"redundancy summary has no result for threshold {threshold:.3f}")
+
+
+rows = []
+for threshold in thresholds:
+    result = get_result(threshold)
+    rows.append(
+        {
+            "threshold": threshold,
+            "retained_fraction": float(result["retained_fraction"]),
+            "effective_train_images": int(result["effective_train_images"]),
+            "original_train_images": int(result["original_train_images"]),
+            "layout": result["layout"],
+        }
+    )
+
+if rows[0]["retained_fraction"] > target:
+    selected = rows[0]
+    selection_reason = "lower_bound_0.900_already_above_target"
+else:
+    selected = min(rows, key=lambda row: (abs(row["retained_fraction"] - target), row["threshold"]))
+    selection_reason = "closest_retained_fraction"
+
+report = {
+    "target_retained_fraction": target,
+    "selection_reason": selection_reason,
+    "selected": selected,
+    "candidates": rows,
+}
+report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+print(f"{selected['threshold']:.3f}")
+PY
+)"
+DEDUP_THRESHOLDS=("$SELECTED_DEDUP_THRESHOLD")
+THRESHOLD_CSV="$SELECTED_DEDUP_THRESHOLD"
+SELECTED_DEDUP_LABEL="$(threshold_label "$SELECTED_DEDUP_THRESHOLD")"
+echo "[Study] selected threshold=$SELECTED_DEDUP_THRESHOLD layout=$REDUNDANCY_ROOT/variants/dedup_tau_${SELECTED_DEDUP_LABEL}/layout.yaml"
 
 if [[ -f "$RANDOM_SPLIT_ROOT/layout.yaml" ]]; then
   echo "[Study] reuse random-frame layout: $RANDOM_SPLIT_ROOT/layout.yaml"
@@ -259,6 +324,12 @@ run_python data_analyse/custom_dataset/custom_dataset.py validate \
   >"$LOG_ROOT/random_frame_validation.log"
 
 SUMMARY_ARGS=()
+
+if [[ "$SKIP_GPU_WAIT" == "1" ]]; then
+  echo "[GPU wait] skipped by explicit operator confirmation; using current GPU $GPU_ID state"
+else
+  wait_for_consecutive_gpu_idle_checks
+fi
 
 run_sequence "full_all" "$BASE_LAYOUT"
 SUMMARY_ARGS+=(--sequence "full_all=$(sequence_dir full_all)")

@@ -21,6 +21,7 @@ conda run --no-capture-output -n yolo-retraining-v5 python `
   --layout configs/data/self_improving.yaml `
   --output-dir data_analyse/dataset_redundancy/results/self_improving_yolov5s `
   --device 0 `
+  --threshold-workers 8 `
   --temporal-window 1
 ```
 
@@ -43,6 +44,11 @@ Important outputs:
 - `audit/top_temporal_pairs.jpg`: visual audit sheet;
 - `variants/dedup_tau_*/layout.yaml`: deduplicated training layouts;
 - `variants/random_matched_tau_*_s*/layout.yaml`: same-size random controls.
+
+`--threshold-workers` parallelizes independent threshold post-processing with
+separate CPU processes. It preserves the threshold grouping algorithm and
+output layout; use `1` for serial reproduction. The similarity matrix stages
+still follow `--device`.
 
 The threshold sweep is an audit, not permission to select the best threshold by
 test mAP. Choose the primary threshold from visual pair review before training.
@@ -74,7 +80,8 @@ The script runs, in order:
 Useful server overrides:
 
 ```bash
-GPU_ID=1 TRAIN_BATCH=64 EMBED_BATCH=64 WORKERS=16 STUDY_ID=data-study-v1 \
+GPU_ID=1 REDUNDANCY_DEVICE=cpu REDUNDANCY_THRESHOLD_WORKERS=8 \
+  TRAIN_BATCH=64 EMBED_BATCH=64 WORKERS=16 STUDY_ID=data-study-v1 \
   sh scripts/run_fullcold_redundancy_shift_study.sh
 ```
 
