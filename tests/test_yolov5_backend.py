@@ -108,11 +108,19 @@ def test_yolov5_backend_rejects_unsupported_params(
 
 def test_evaluation_and_results_csv_conversion(tmp_path: Path) -> None:
     converted = normalize_evaluation(
-        {"map50_95": 0.4, "map50": 0.7, "precision": 0.8, "recall": 0.6, "per_class_ap": [0.3, 0.5]},
+        {
+            "map50_95": 0.4,
+            "map50": 0.7,
+            "precision": 0.8,
+            "recall": 0.6,
+            "per_class_ap50": [0.6, 0.8],
+            "per_class_ap": [0.3, 0.5],
+        },
         ["car", "bus"],
         sample_count=16,
         evaluation_seconds=1.25,
     )
+    assert converted["per_class_ap50"] == {"car": 0.6, "bus": 0.8}
     assert converted["per_class_ap"] == {"car": 0.3, "bus": 0.5}
     assert converted["sample_count"] == 16
     results = tmp_path / "results.csv"

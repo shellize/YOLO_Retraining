@@ -21,6 +21,7 @@ conda run --no-capture-output -n yolo-retraining-v5 python `
   --layout configs/data/self_improving.yaml `
   --output-dir data_analyse/dataset_redundancy/results/self_improving_yolov5s `
   --device 0 `
+  --thresholds 0.900,0.910,0.920,0.930,0.940,0.950,0.960,0.970,0.980,0.990 `
   --threshold-workers 8 `
   --temporal-window 1
 ```
@@ -43,7 +44,22 @@ Important outputs:
 - `cross_split_nearest.csv`: each validation/test image's closest train frame;
 - `audit/top_temporal_pairs.jpg`: visual audit sheet;
 - `variants/dedup_tau_*/layout.yaml`: deduplicated training layouts;
+- `variants/dedup_tau_*/mixed_clusters.csv`: clusters containing both labeled and unlabeled images;
+- `variants/dedup_tau_*/mixed_cluster_members.csv`: image-level members of those mixed clusters;
 - `variants/random_matched_tau_*_s*/layout.yaml`: same-size random controls.
+
+The label split treats a YOLO label file with at least one non-empty row as
+labeled. Missing or empty label files are unlabeled. To annotate already
+generated `dedup*` variants without rerunning feature extraction:
+
+```bash
+python data_analyse/dataset_redundancy/extract_mixed_clusters.py \
+  --results-root data_analyse/dataset_redundancy/results/20260824-182608
+```
+
+This writes the mixed-cluster reports inside each variant directory and an
+aggregate `mixed_clusters_summary.json` in the result root. It does not copy or
+move source images.
 
 `--threshold-workers` parallelizes independent threshold post-processing with
 separate CPU processes. It preserves the threshold grouping algorithm and
@@ -68,8 +84,8 @@ sh scripts/run_fullcold_redundancy_shift_study.sh
 The script runs, in order:
 
 1. environment and layout validation;
-2. one full YOLOv5s embedding pass and three adjacent-frame layouts at cosine
-   thresholds 0.970, 0.997, and 0.999;
+2. one full YOLOv5s embedding pass and adjacent-frame layouts across the
+   candidate cosine thresholds, including 0.980 and 0.990;
 3. the original full-data full-cold baseline;
 4. three deduplicated full-cold sequences (aggressive, middle, conservative);
 5. a frame-random train/validation/test reassignment with unchanged group

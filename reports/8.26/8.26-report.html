@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>8.26 汇报｜从数据组织到模型表现诊断</title>
+  <meta name="description" content="YOLO 持续更新实验的 8.26 汇报：数据划分、四种 baseline、样本筛选对照与模型表现诊断。">
+  <style>
+    :root {
+      --paper: #fbf8f2;
+      --canvas: #e8e6e1;
+      --ink: #1d2732;
+      --muted: #62707b;
+      --line: #d7d9d8;
+      --soft: #f1f0eb;
+      --blue: #2c638f;
+      --blue-soft: #eaf2f7;
+      --green: #3f7657;
+      --green-soft: #edf5ee;
+      --orange: #a65d36;
+      --orange-soft: #fbefe8;
+      --red: #a74949;
+      --red-soft: #faeeee;
+      --purple: #765f96;
+      --shadow: 0 10px 30px rgba(43, 48, 54, .08);
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif;
+      font-size: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; color: var(--ink); background: var(--canvas); line-height: 1.65; }
+    a { color: var(--blue); }
+    code { padding: .12em .35em; border-radius: 4px; background: var(--soft); font-family: Consolas, monospace; font-size: .88em; }
+
+    .shell { max-width: 1500px; margin: 0 auto; background: var(--paper); box-shadow: var(--shadow); }
+    .topbar { position: sticky; top: 0; z-index: 10; display: flex; gap: 18px; align-items: center; justify-content: space-between; padding: 12px 34px; border-bottom: 1px solid var(--line); background: rgba(251, 248, 242, .94); backdrop-filter: blur(12px); }
+    .brand { color: var(--blue); font-size: 14px; font-weight: 800; letter-spacing: .08em; }
+    .topnav { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; }
+    .topnav a { color: var(--muted); text-decoration: none; }
+    .topnav a:hover { color: var(--blue); }
+    .print-button { padding: 5px 10px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--muted); cursor: pointer; font-size: 12px; }
+
+    main { padding: 48px clamp(20px, 5vw, 80px) 70px; }
+    .hero { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr); gap: 44px; align-items: end; padding: 10px 0 42px; }
+    .eyebrow { margin: 0 0 12px; color: var(--blue); font-size: 14px; font-weight: 800; letter-spacing: .12em; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { max-width: 850px; margin-bottom: 18px; font-size: clamp(2.2rem, 4.8vw, 4.2rem); line-height: 1.15; letter-spacing: -.045em; }
+    .hero-lead { max-width: 820px; margin-bottom: 0; color: var(--muted); font-size: 1.12rem; }
+    .thesis { padding: 22px 24px; border: 1px solid #c7d6df; border-left: 5px solid var(--blue); background: var(--blue-soft); }
+    .thesis strong { display: block; margin-bottom: 8px; color: var(--blue); font-size: 13px; letter-spacing: .08em; }
+    .thesis p { margin-bottom: 0; font-size: 1.03rem; }
+
+    .key-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0 0 54px; }
+    .key-card { min-height: 128px; padding: 20px; border: 1px solid var(--line); background: #fffdf9; }
+    .key-value { display: block; margin-bottom: 4px; color: var(--blue); font-size: 2.05rem; font-weight: 800; line-height: 1.1; }
+    .key-label { color: var(--muted); font-size: 13px; }
+    .key-note { margin-top: 8px; color: var(--muted); font-size: 12px; }
+
+    .section { scroll-margin-top: 70px; padding: 42px 0 58px; border-top: 1px solid var(--line); }
+    .section-head { display: flex; gap: 20px; align-items: baseline; justify-content: space-between; margin-bottom: 24px; }
+    .section-kicker { margin-bottom: 7px; color: var(--blue); font-size: 13px; font-weight: 800; letter-spacing: .1em; }
+    h2 { margin-bottom: 0; font-size: clamp(1.65rem, 3vw, 2.35rem); letter-spacing: -.025em; line-height: 1.25; }
+    h3 { margin-bottom: 8px; font-size: 1.06rem; }
+    .section-desc { max-width: 760px; margin: 0 0 26px; color: var(--muted); }
+    .section-tag { flex: none; padding: 5px 10px; border-radius: 999px; background: var(--soft); color: var(--muted); font-size: 12px; }
+
+    .panel { padding: 24px; border: 1px solid var(--line); background: #fffdf9; }
+    .panel.soft { background: var(--soft); }
+    .panel-title { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+    .panel-title h3 { margin: 0; }
+    .small-note { color: var(--muted); font-size: 12px; }
+    .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .three-col { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .four-col { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .baseline-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 18px; }
+    .chart-wrap { min-height: 340px; }
+    .chart-wrap svg { display: block; width: 100%; height: auto; overflow: visible; }
+    .chart-legend { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-top: 7px; color: var(--muted); font-size: 12px; }
+    .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+    .legend-line { display: inline-block; width: 23px; border-top: 3px solid currentColor; }
+    .legend-line.dashed { border-top-style: dashed; }
+
+    .split-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr); gap: 18px; align-items: stretch; }
+    .batch-figure { padding: 18px 16px 12px; border: 1px solid var(--line); background: #fffdf9; }
+    .batch-figure svg { display: block; width: 100%; height: auto; }
+    .figure-caption { margin-top: 9px; color: var(--muted); font-size: 12px; }
+    .split-legend { display: grid; gap: 10px; align-content: start; }
+    .legend-row { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding-bottom: 9px; border-bottom: 1px solid var(--line); }
+    .swatch { width: 13px; height: 13px; border-radius: 50%; }
+    .legend-row strong { font-size: 14px; }
+    .legend-row span:last-child { color: var(--muted); font-size: 12px; text-align: right; }
+    .budget-list { display: grid; gap: 11px; margin-top: 18px; }
+    .budget-row { display: grid; grid-template-columns: 104px 1fr 76px; gap: 10px; align-items: center; color: var(--muted); font-size: 12px; }
+    .budget-bar { height: 10px; overflow: hidden; border-radius: 99px; background: #e6e4df; }
+    .budget-bar i { display: block; height: 100%; border-radius: inherit; background: var(--blue); }
+    .budget-row b { color: var(--ink); text-align: right; font-weight: 700; }
+    .annotation { margin-top: 18px; padding: 14px 16px; border-left: 4px solid var(--orange); background: var(--orange-soft); color: #704127; font-size: 13px; }
+
+    .method-card { min-height: 292px; padding: 18px; border: 1px solid var(--line); background: #fffdf9; }
+    .method-card h3 { margin-bottom: 5px; }
+    .method-card p { min-height: 42px; margin-bottom: 4px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .method-card svg { display: block; width: 100%; height: 200px; }
+    .method-pill { display: inline-block; margin-top: 4px; padding: 3px 8px; border-radius: 999px; background: var(--soft); color: var(--muted); font-size: 11px; }
+    .diagram-key { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: -4px 0 18px; color: var(--muted); font-size: 12px; }
+    .diagram-key span { display: inline-flex; align-items: center; gap: 6px; }
+    .diagram-key i { display: inline-block; width: 18px; height: 9px; border-radius: 3px; background: var(--green); }
+    .diagram-key i.weight { background: var(--blue-soft); border: 1px solid var(--blue); }
+    .diagram-key i.history { background: #e1e1df; border: 1px dashed #969a99; }
+    .diagram-key i.arrival { background: var(--purple); }
+    .diagram-key i.replay { background: var(--orange-soft); border: 1px dashed var(--orange); }
+
+    .callout { margin-top: 18px; padding: 17px 20px; border: 1px solid #c9d6cb; border-left: 5px solid var(--green); background: var(--green-soft); }
+    .callout strong { color: var(--green); }
+    .callout p { margin: 5px 0 0; color: #375541; }
+    .warning { border-color: #ecd0c4; border-left-color: var(--orange); background: var(--orange-soft); }
+    .warning strong, .warning p { color: #704127; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-size: 12px; font-weight: 700; background: var(--soft); }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    tr.highlight td { background: #f2f7f2; }
+    .table-scroll { overflow-x: auto; }
+
+    .path-card { padding: 15px 17px; border: 1px solid var(--line); background: #fffdf9; }
+    .path-card strong { display: block; margin-bottom: 5px; }
+    .path-card p { margin: 0; color: var(--muted); font-size: 13px; }
+    .status { display: inline-block; margin-left: 7px; padding: 2px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; vertical-align: 2px; }
+    .status.confirmed { background: var(--green-soft); color: var(--green); }
+    .status.pending { background: #f1eee8; color: #877a6d; }
+    .status.diagnostic { background: var(--blue-soft); color: var(--blue); }
+    .hypothesis-card { min-height: 170px; padding: 18px; border: 1px solid var(--line); background: #fffdf9; }
+    .hypothesis-card h3 { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .hypothesis-card p { margin-bottom: 0; color: var(--muted); font-size: 13px; }
+    .metric-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 16px 0; }
+    .metric-box { padding: 12px; background: var(--soft); }
+    .metric-box b { display: block; color: var(--blue); font-size: 1.35rem; line-height: 1.1; }
+    .metric-box span { color: var(--muted); font-size: 11px; }
+    .next-steps { display: grid; gap: 10px; margin: 0; padding-left: 20px; color: var(--muted); }
+    .footer { padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+
+    @media (max-width: 980px) {
+      .hero, .split-layout { grid-template-columns: 1fr; }
+      .key-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .four-col, .baseline-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 680px) {
+      .topbar { align-items: flex-start; padding: 10px 16px; }
+      .topnav { gap: 9px; }
+      main { padding: 34px 16px 50px; }
+      .key-grid, .two-col, .three-col, .four-col, .baseline-grid { grid-template-columns: 1fr; }
+      .section-head { display: block; }
+      .section-tag { display: inline-block; margin-top: 10px; }
+      .panel, .batch-figure { padding: 16px; }
+      .metric-row { grid-template-columns: 1fr; }
+    }
+    @media print {
+      body { background: white; }
+      .shell { max-width: none; box-shadow: none; }
+      .topbar { position: static; }
+      .topnav, .print-button { display: none; }
+      main { padding: 20px 0; }
+      .section { break-inside: avoid; }
+      .panel, .batch-figure, .method-card, .hypothesis-card { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">YOLO RETRAINING · 08.26</div>
+      <nav class="topnav" aria-label="报告导航">
+        <a href="#split">数据划分</a>
+        <a href="#baseline">Baseline</a>
+        <a href="#selection">指标筛选</a>
+        <a href="#diagnosis">原因诊断</a>
+        <a href="#sources">证据来源</a>
+      </nav>
+      <button class="print-button" type="button" onclick="window.print()">打印 / PDF</button>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <p class="eyebrow">8.26 阶段性汇报 · 实验逻辑整理</p>
+          <h1>从数据组织到模型表现诊断</h1>
+          <p class="hero-lead">本阶段围绕三个问题展开：数据如何组织，持续更新策略是否造成差异，以及样本选择标准是否能够改善模型表现。由于整体检测能力偏低，结果同时用于定位数据与训练环节的瓶颈。</p>
+        </div>
+        <aside class="thesis">
+          <strong>阶段结论</strong>
+          <p>四种 baseline 可以拉开差别，但都没有达到可靠检测水平；Full Cold 在 Stage 3 相对最好（mAP50=0.5012），当前最强证据指向明显的 train–test 泛化断裂，而重复数据与跨 split 偏移仍需补充分析。</p>
+        </aside>
+      </section>
+
+      <div class="key-grid" aria-label="关键数字">
+        <div class="key-card"><span class="key-value">20</span><span class="key-label">物理 batch</span><div class="key-note">以整批次组织，避免同一时序批次被拆散</div></div>
+        <div class="key-card"><span class="key-value">4</span><span class="key-label">test + val batch</span><div class="key-note">test 2 批，val 2 批；Balance_Test 口径</div></div>
+        <div class="key-card"><span class="key-value">4,496</span><span class="key-label">Stage 0 训练图像</span><div class="key-note">9 个 batch，是初始训练主体</div></div>
+        <div class="key-card"><span class="key-value">0.5012</span><span class="key-label">Full Cold · Stage 3 mAP50</span><div class="key-note">四条 baseline 最终阶段最高</div></div>
+      </div>
+
+      <section class="section" id="split">
+        <div class="section-head"><div><div class="section-kicker">01 · DATA ORGANIZATION</div><h2>先固定数据划分：20 个 batch 如何进入实验</h2></div><span class="section-tag">Balance_Test / whole-batch split</span></div>
+        <p class="section-desc">每个圆代表一个物理 batch；为了直接看清数据用途，不再按 batch 编号排成一条时间轴，而是把同一数据组放在同一行。每行内部保留真实 batch 编号。</p>
+        <div class="split-layout">
+          <figure class="batch-figure">
+            <svg id="batchDiagram" viewBox="0 0 820 500" role="img" aria-label="按数据组分行的20个batch划分示意图"></svg>
+            <figcaption class="figure-caption">图 1. Balance_Test 的整批次划分。每行是一个数据组：test={02,19}；val={04,15}；Stage 0={01,03,05–11}；Stage 1={12,13}；Stage 2={14,16}；Stage 3={17,18,20}。</figcaption>
+          </figure>
+          <div class="panel split-legend">
+            <div class="panel-title"><h3>划分与数据预算</h3><span class="small-note">按图像数统计</span></div>
+            <div class="legend-row"><i class="swatch" style="background:#9db3c1"></i><strong>Test</strong><span>2 batch · ≈1,000 图像</span></div>
+            <div class="legend-row"><i class="swatch" style="background:#caa77b"></i><strong>Val</strong><span>2 batch · ≈1,000 图像</span></div>
+            <div class="legend-row"><i class="swatch" style="background:#477c5b"></i><strong>Stage 0</strong><span>9 batch · 4,496 图像</span></div>
+            <div class="legend-row"><i class="swatch" style="background:#7d6aa2"></i><strong>Stage 1</strong><span>2 batch · 1,000 图像</span></div>
+            <div class="legend-row"><i class="swatch" style="background:#b56a43"></i><strong>Stage 2</strong><span>2 batch · 1,000 图像</span></div>
+            <div class="legend-row"><i class="swatch" style="background:#a74949"></i><strong>Stage 3</strong><span>3 batch · 1,075 图像</span></div>
+            <div class="budget-list" aria-label="训练图像预算">
+              <div class="budget-row"><span>Stage 0</span><div class="budget-bar"><i style="width:100%"></i></div><b>4496</b></div>
+              <div class="budget-row"><span>Stage 1</span><div class="budget-bar"><i style="width:22.2%;background:#7d6aa2"></i></div><b>1000</b></div>
+              <div class="budget-row"><span>Stage 2</span><div class="budget-bar"><i style="width:22.2%;background:#b56a43"></i></div><b>1000</b></div>
+              <div class="budget-row"><span>Stage 3</span><div class="budget-bar"><i style="width:23.9%;background:#a74949"></i></div><b>1075</b></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="baseline">
+        <div class="section-head"><div><div class="section-kicker">02 · BASELINES</div><h2>四种 baseline：能看出区别，但整体都偏差</h2></div><span class="section-tag">best checkpoint / test</span></div>
+        <p class="section-desc">四条路径分别改变初始化方式、训练时可见的数据范围或历史数据回放方式。结果用于比较不同训练路径的表现差异，不能单独作为方法优劣的因果证据。</p>
+        <div class="diagram-key" aria-label="流程图图例"><span><i class="weight"></i>蓝色：权重来源</span><span><i class="history"></i>灰色：历史数据未使用</span><span><i class="arrival"></i>彩色：本阶段到来数据</span><span><i class="replay"></i>橙色虚线：随机回放</span></div>
+        <div class="baseline-grid">
+          <article class="method-card"><h3>Full Cold</h3><svg viewBox="0 0 700 200" aria-label="Full Cold：历史数据和到来数据进入模型，权重来自预训练"><rect x="35" y="25" width="245" height="55" rx="8" fill="#dceae0" stroke="#477c5b" stroke-width="2"/><text x="157" y="59" text-anchor="middle" fill="#35684a" font-size="16" font-weight="700">历史数据</text><rect x="335" y="38" width="115" height="42" rx="6" fill="#7d6aa2"/><text x="392" y="64" text-anchor="middle" fill="white" font-size="14" font-weight="700">到来数据</text><circle cx="315" cy="145" r="38" fill="#35684a"/><text x="315" y="141" text-anchor="middle" fill="white" font-size="15" font-weight="700">模型</text><text x="315" y="160" text-anchor="middle" fill="white" font-size="11">M</text><path d="M157 80 L270 113 M392 80 L340 113" stroke="#477c5b" stroke-width="3"/><rect x="430" y="128" width="190" height="34" rx="6" fill="#eaf2f7" stroke="#2c638f" stroke-width="2"/><text x="525" y="150" text-anchor="middle" fill="#2c638f" font-size="13" font-weight="700">预训练权重</text><path d="M430 145 H355" stroke="#2c638f" stroke-width="3"/></svg></article>
+          <article class="method-card"><h3>Full Warm</h3><svg viewBox="0 0 700 200" aria-label="Full Warm：历史数据和到来数据进入模型，权重来自parent best"><rect x="35" y="25" width="245" height="55" rx="8" fill="#dceae0" stroke="#477c5b" stroke-width="2"/><text x="157" y="59" text-anchor="middle" fill="#35684a" font-size="16" font-weight="700">历史数据</text><rect x="335" y="38" width="115" height="42" rx="6" fill="#7d6aa2"/><text x="392" y="64" text-anchor="middle" fill="white" font-size="14" font-weight="700">到来数据</text><circle cx="315" cy="145" r="38" fill="#35684a"/><text x="315" y="141" text-anchor="middle" fill="white" font-size="15" font-weight="700">模型</text><text x="315" y="160" text-anchor="middle" fill="white" font-size="11">M</text><path d="M157 80 L270 113 M392 80 L340 113" stroke="#477c5b" stroke-width="3"/><rect x="430" y="128" width="190" height="34" rx="6" fill="#edf5ee" stroke="#477c5b" stroke-width="2"/><text x="525" y="150" text-anchor="middle" fill="#35684a" font-size="13" font-weight="700">parent best 权重</text><path d="M430 145 H355" stroke="#477c5b" stroke-width="3"/></svg></article>
+          <article class="method-card"><h3>Current Only</h3><svg viewBox="0 0 700 200" aria-label="Current Only：只有到来数据进入模型，权重来自parent best"><rect x="35" y="25" width="245" height="55" rx="8" fill="#e1e1df" stroke="#969a99" stroke-width="2" stroke-dasharray="6 4"/><text x="157" y="59" text-anchor="middle" fill="#777d7d" font-size="16" font-weight="700">历史数据</text><line x1="55" y1="35" x2="260" y2="70" stroke="#969a99" stroke-width="2"/><line x1="260" y1="35" x2="55" y2="70" stroke="#969a99" stroke-width="2"/><rect x="335" y="38" width="115" height="42" rx="6" fill="#7d6aa2"/><text x="392" y="64" text-anchor="middle" fill="white" font-size="14" font-weight="700">到来数据</text><circle cx="315" cy="145" r="38" fill="#765f96"/><text x="315" y="141" text-anchor="middle" fill="white" font-size="15" font-weight="700">模型</text><text x="315" y="160" text-anchor="middle" fill="white" font-size="11">M</text><path d="M392 80 L340 113" stroke="#765f96" stroke-width="3"/><rect x="430" y="128" width="190" height="34" rx="6" fill="#edf5ee" stroke="#477c5b" stroke-width="2"/><text x="525" y="150" text-anchor="middle" fill="#35684a" font-size="13" font-weight="700">parent best 权重</text><path d="M430 145 H355" stroke="#477c5b" stroke-width="3"/></svg></article>
+          <article class="method-card"><h3>Random Replay</h3><svg viewBox="0 0 700 200" aria-label="Random Replay：历史数据经过随机采样形成replay，再与到来数据进入模型"><rect x="20" y="25" width="180" height="55" rx="8" fill="#fbefe8" stroke="#a65d36" stroke-width="2"/><text x="110" y="59" text-anchor="middle" fill="#704127" font-size="16" font-weight="700">历史数据</text><rect x="225" y="25" width="115" height="55" rx="8" fill="#fff9f3" stroke="#a65d36" stroke-width="2" stroke-dasharray="6 4"/><text x="282" y="59" text-anchor="middle" fill="#704127" font-size="14" font-weight="700">随机采样</text><rect x="365" y="25" width="120" height="55" rx="8" fill="#f3ded1" stroke="#a65d36" stroke-width="2"/><text x="425" y="59" text-anchor="middle" fill="#704127" font-size="15" font-weight="700">Replay</text><rect x="510" y="38" width="115" height="42" rx="6" fill="#7d6aa2"/><text x="567" y="64" text-anchor="middle" fill="white" font-size="14" font-weight="700">到来数据</text><circle cx="315" cy="145" r="38" fill="#a65d36"/><text x="315" y="141" text-anchor="middle" fill="white" font-size="15" font-weight="700">模型</text><text x="315" y="160" text-anchor="middle" fill="white" font-size="11">M</text><path d="M200 52 H225 M340 52 H365 M425 80 L335 113 M567 80 L350 120" stroke="#a65d36" stroke-width="3" stroke-dasharray="7 4"/><rect x="430" y="128" width="190" height="34" rx="6" fill="#edf5ee" stroke="#477c5b" stroke-width="2"/><text x="525" y="150" text-anchor="middle" fill="#35684a" font-size="13" font-weight="700">parent best 权重</text><path d="M430 145 H355" stroke="#477c5b" stroke-width="3"/></svg></article>
+        </div>
+        <div class="two-col">
+          <div class="panel"><div class="panel-title"><h3>mAP50 随 stage 变化</h3><span class="small-note">越高越好；Stage 0 相同</span></div><div class="chart-wrap" id="baselineMapChart"></div><div class="chart-legend" id="baselineMapLegend"></div></div>
+          <div class="panel"><div class="panel-title"><h3>最终阶段的 P / R / mAP50</h3><span class="small-note">Stage 3 · best/test</span></div><div class="table-scroll"><table><thead><tr><th>路径</th><th class="num">Precision</th><th class="num">Recall</th><th class="num">mAP50</th></tr></thead><tbody>
+            <tr class="highlight"><td>Full Cold</td><td class="num">0.8049</td><td class="num">0.4497</td><td class="num"><strong>0.5012</strong></td></tr>
+            <tr><td>Random Replay</td><td class="num">0.5487</td><td class="num">0.4432</td><td class="num">0.4809</td></tr>
+            <tr><td>Full Warm</td><td class="num"><strong>0.8201</strong></td><td class="num">0.4223</td><td class="num">0.4785</td></tr>
+            <tr><td>Current Only</td><td class="num">0.8086</td><td class="num">0.4051</td><td class="num">0.4620</td></tr>
+          </tbody></table></div><div class="callout"><strong>结论：</strong><p>Full Cold 的相对优势主要体现为 mAP50；Full Warm 的 precision 更高，但 recall 没有同步提升。四条路径的最终 mAP50 均约在 0.46–0.50，整体检测能力仍然偏低。</p></div></div>
+        </div>
+        <div class="panel" style="margin-top:18px"><div class="panel-title"><h3>四种 baseline 相对 Full Cold 的 mAP50 差值</h3><span class="small-note">ΔmAP50 = 其他路径 − Full Cold</span></div><div class="chart-wrap" id="baselineDeltaChart"></div><div class="chart-legend" id="baselineDeltaLegend"></div><div class="table-scroll" style="margin-top:12px"><table><thead><tr><th>路径</th><th class="num">ΔPrecision</th><th class="num">ΔRecall</th><th class="num">ΔmAP50</th></tr></thead><tbody><tr><td>Full Warm</td><td class="num">+0.0152</td><td class="num">−0.0274</td><td class="num">−0.0227</td></tr><tr><td>Current Only</td><td class="num">+0.0037</td><td class="num">−0.0446</td><td class="num">−0.0392</td></tr><tr><td>Random Replay</td><td class="num">−0.2562</td><td class="num">−0.0065</td><td class="num">−0.0203</td></tr></tbody></table></div><div class="callout"><strong>结论：</strong><p>Stage 3 的 mAP50 差值为 −0.0392～−0.0203，四条 baseline 的总体性能接近；差异主要体现为 precision–recall 取舍，而不是稳定的 mAP50 提升。</p></div></div>
+      </section>
+
+      <section class="section" id="selection">
+        <div class="section-head"><div><div class="section-kicker">03 · SAMPLE SELECTION</div><h2>数据选择对照实验：不同选择标准与训练路径</h2></div><span class="section-tag">单次 seed · 描述性结果</span></div>
+        <p class="section-desc">对比 Positive Only、Pred Positive、Error Hard 三种选择标准，并分别考察 Cumulative Cold 与 Current Warm 两种训练路径。Full Cold 作为统一基准。</p>
+        <div class="panel" style="margin-bottom:18px"><div class="panel-title"><h3>样本选择标准</h3><span class="small-note">当前已完成的选择策略</span></div><div class="table-scroll"><table><thead><tr><th>选择标准</th><th>样本定义</th><th>对应训练路径</th></tr></thead><tbody>
+          <tr><td><strong>Positive Only</strong></td><td>仅保留标注中包含目标的正样本图像</td><td>Cum Cold / Current Warm</td></tr>
+          <tr><td><strong>Pred Positive</strong></td><td>保留 teacher 产生正预测的候选样本</td><td>Cum Cold / Current Warm</td></tr>
+          <tr><td><strong>Error Hard</strong></td><td>保留 teacher 预测错误或未检出的困难样本</td><td>Cum Cold</td></tr>
+          <tr><td><strong>Current Only</strong></td><td>不做样本筛选，使用本阶段全部到来数据</td><td>Current Warm baseline</td></tr>
+        </tbody></table></div></div>
+        <div class="two-col">
+          <div class="panel"><div class="panel-title"><h3>路径 A：Cumulative Cold</h3><span class="small-note">样本筛选后仍从预训练开始</span></div><div class="chart-wrap" id="selectionCumChart"></div><div class="chart-legend" id="selectionCumLegend"></div></div>
+          <div class="panel"><div class="panel-title"><h3>路径 B：Current Warm</h3><span class="small-note">样本筛选后继承 parent best</span></div><div class="chart-wrap" id="selectionCurrentChart"></div><div class="chart-legend" id="selectionCurrentLegend"></div></div>
+        </div>
+        <div class="panel" style="margin-top:18px"><div class="panel-title"><h3>Stage 3 相对 Full Cold 的差值</h3><span class="small-note">负值表示低于 baseline</span></div><div class="table-scroll"><table><thead><tr><th>方法</th><th>路径</th><th class="num">ΔmAP50</th><th class="num">ΔRecall</th><th class="num">ΔPrecision</th></tr></thead><tbody>
+          <tr><td>Positive Only</td><td>Cum Cold</td><td class="num">−0.0283</td><td class="num">−0.0372</td><td class="num">+0.0006</td></tr>
+          <tr><td>Pred Positive</td><td>Cum Cold</td><td class="num">−0.0184</td><td class="num">−0.0262</td><td class="num">−0.0149</td></tr>
+          <tr><td>Error Hard</td><td>Cum Cold</td><td class="num">−0.0343</td><td class="num">−0.0116</td><td class="num">−0.0485</td></tr>
+          <tr><td>Positive Only</td><td>Current Warm</td><td class="num">−0.0325</td><td class="num">−0.0347</td><td class="num">−0.0008</td></tr>
+          <tr><td>Pred Positive</td><td>Current Warm</td><td class="num">−0.0310</td><td class="num">−0.0302</td><td class="num">−0.2783</td></tr>
+          <tr><td>Current Only</td><td>Current Warm</td><td class="num">−0.0392</td><td class="num">−0.0446</td><td class="num">+0.0037</td></tr>
+        </tbody></table></div></div>
+        <div class="callout warning"><strong>结论：</strong><p>当前只有一个 seed，且已完成的筛选方法在 Stage 3 的 mAP50 均低于 Full Cold。局部阶段的 recall 或 precision 优势没有稳定延续，暂不能证明某个选择标准本质优于其他标准。</p></div>
+      </section>
+
+      <section class="section" id="diagnosis">
+        <div class="section-head"><div><div class="section-kicker">04 · DIAGNOSIS</div><h2>模型表现原因诊断：泛化、重复性与分布偏移</h2></div><span class="section-tag">证据状态</span></div>
+        <p class="section-desc">当前证据首先指向 train–test 泛化断裂。数据重复性与 train / val / test 分布偏移仍缺少全量统计，作为未完成的诊断项保留。</p>
+        <div class="three-col" style="margin-bottom:18px">
+          <article class="hypothesis-card"><h3>H1 · 过拟合严重 <span class="status confirmed">已有证据</span></h3><p>训练集 mAP50 接近 0.93–0.99，但测试集约 0.26–0.42；训练集与测试集之间存在大幅泛化断裂。</p></article>
+          <article class="hypothesis-card"><h3>H2 · 重复数据多 <span class="status pending">数据待补</span></h3><p>同一物理批次内的相邻帧可能使名义图像数高估有效监督量；全 20 个 batch 的重复率与有效独特样本统计尚未完成。</p></article>
+          <article class="hypothesis-card"><h3>H3 · split 存在偏移 <span class="status pending">数据待补</span></h3><p>test / val / train 可能在时间、场景、目标大小或类别组成上存在差异；跨 split 的分布和近邻分析尚未完成。</p></article>
+        </div>
+        <div class="two-col">
+          <div class="panel"><div class="panel-title"><h3>H1 证据：Train vs Test mAP50</h3><span class="small-note">统一 conf=0.25 的独立分析</span></div><div class="chart-wrap" id="overfitChart"></div><div class="chart-legend" id="overfitLegend"></div></div>
+          <div class="panel"><div class="panel-title"><h3>已观测到的泛化间隙</h3><span class="small-note">Stage 3 · mAP50</span></div><div class="metric-row"><div class="metric-box"><b>0.9335 → 0.4158</b><span>Full Cold：train → test</span></div><div class="metric-box"><b>0.9903 → 0.3958</b><span>Full Warm：train → test</span></div><div class="metric-box"><b>0.9874 → 0.2576</b><span>Random Replay：train → test</span></div></div><div class="callout warning"><strong>结论：</strong><p>训练集高分没有转化为测试集检测能力，当前主要瓶颈不是训练集拟合不足，而是泛化能力不足。</p></div></div>
+        </div>
+        <div class="panel soft" style="margin-top:18px"><div class="panel-title"><h3>未完成诊断项</h3><span class="small-note">尚未纳入当前结论</span></div><div class="three-col"><div class="path-card"><strong>H2 · 20 batch 重复性</strong><p>统计每 batch 内时间相邻重复率、跨 split 近邻率、embedding 距离分布，以及有效独特图像比例。</p></div><div class="path-card"><strong>H3 · split 分布偏移</strong><p>比较 train / val / test 的类别、目标尺寸、空背景率、图像来源与 embedding 分布。</p></div><div class="path-card"><strong>训练侧复核</strong><p>固定数据划分后复核 best / last、epoch 曲线、早停设置和统一阈值。</p></div></div></div>
+      </section>
+
+      <section class="section" id="sources">
+        <div class="section-head"><div><div class="section-kicker">05 · EVIDENCE MAP</div><h2>本页图表对应的原始证据</h2></div><span class="section-tag">可追溯 / 可复核</span></div>
+        <div class="three-col">
+          <div class="path-card"><strong>数据划分</strong><p><code>project_v2/configs/data/self_improving_balance_test.yaml</code><br>定义 test={02,19}、val={04,15} 以及 Stage 0–3 的 batch 归属和预算。</p></div>
+          <div class="path-card"><strong>四 baseline</strong><p><code>project_v2/charts/4balance_baseline/metrics.csv</code><br>来自四个 Balance_Test sequence 的 stage-wise best/test 结果；图 2 使用其 mAP50、P、R。</p></div>
+          <div class="path-card"><strong>筛选指标对照</strong><p><code>project_v2/charts/selection_study_comparison/metrics.csv</code><br>包含已完成的 Full Cold、Current Only、Positive Only、Pred Positive、Error Hard 路径。</p></div>
+          <div class="path-card"><strong>过拟合诊断</strong><p><code>project_v2/result_analysis/train_test_overfitting/20260814__best__stages-1_2_3__conf-0_25/comparison_fixed_threshold.csv</code><br>统一 conf=0.25 的 train/test 对照。</p></div>
+          <div class="path-card"><strong>评价口径</strong><p>baseline 和筛选图均读取 <code>best checkpoint / test</code>；mAP50 为 IoU=0.50 的类别平均 AP。</p></div>
+          <div class="path-card"><strong>分析状态</strong><p>重复率与跨 split 偏移尚无全量分析输出，H2/H3 暂不纳入阶段性结论。</p></div>
+        </div>
+        <div class="footer">阶段性结论：四种 baseline 存在差异，但整体检测能力偏低；当前样本选择标准没有显示出稳定优势；train–test 泛化断裂是现阶段最明确的诊断结果。</div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const splitData = {
+      1: ['stage0', 'Stage 0'], 2: ['test', 'Test'], 3: ['stage0', 'Stage 0'], 4: ['val', 'Val'],
+      5: ['stage0', 'Stage 0'], 6: ['stage0', 'Stage 0'], 7: ['stage0', 'Stage 0'], 8: ['stage0', 'Stage 0'],
+      9: ['stage0', 'Stage 0'], 10: ['stage0', 'Stage 0'], 11: ['stage0', 'Stage 0'], 12: ['stage1', 'Stage 1'],
+      13: ['stage1', 'Stage 1'], 14: ['stage2', 'Stage 2'], 15: ['val', 'Val'], 16: ['stage2', 'Stage 2'],
+      17: ['stage3', 'Stage 3'], 18: ['stage3', 'Stage 3'], 19: ['test', 'Test'], 20: ['stage3', 'Stage 3']
+    };
+    const colors = { test: '#9db3c1', val: '#caa77b', stage0: '#477c5b', stage1: '#7d6aa2', stage2: '#b56a43', stage3: '#a74949' };
+    const baseline = {
+      'Full Cold': [0.4689, 0.4777, 0.5313, 0.5012],
+      'Full Warm': [0.4689, 0.4551, 0.4480, 0.4785],
+      'Current Only': [0.4689, 0.4562, 0.4452, 0.4620],
+      'Random Replay': [0.4689, 0.4679, 0.4478, 0.4809]
+    };
+    const baselineDelta = {
+      'Full Warm': [0.0000, -0.0226, -0.0833, -0.0227],
+      'Current Only': [0.0000, -0.0215, -0.0861, -0.0392],
+      'Random Replay': [0.0000, -0.0098, -0.0835, -0.0203]
+    };
+    const selection = {
+      'Full Cold': [0.4689, 0.4777, 0.5313, 0.5012],
+      'Positive Only': [0.4689, 0.4735, 0.4883, 0.4729],
+      'Pred Positive': [0.4689, 0.4474, 0.4753, 0.4828],
+      'Error Hard': [0.4689, 0.4747, 0.4825, 0.4669],
+      'Current Only': [0.4689, 0.4562, 0.4452, 0.4620],
+      'Positive Only · Current Warm': [0.4689, 0.4635, 0.4609, 0.4687],
+      'Pred Positive · Current Warm': [0.4689, 0.4702, 0.4548, 0.4702]
+    };
+    const overfit = {
+      'Full Cold · train': [null, 0.8001, 0.9499, 0.9335], 'Full Cold · test': [null, 0.3916, 0.4265, 0.4158],
+      'Full Warm · train': [null, 0.9432, 0.9862, 0.9903], 'Full Warm · test': [null, 0.3959, 0.3795, 0.3958],
+      'Random Replay · train': [null, 0.6120, 0.6276, 0.9874], 'Random Replay · test': [null, 0.3856, 0.3013, 0.2576]
+    };
+    const palette = ['#2c638f', '#477c5b', '#765f96', '#a65d36', '#a74949', '#a67c2b', '#4d7e83'];
+
+    function svgNode(tag, attrs, text) {
+      const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
+      Object.entries(attrs || {}).forEach(([key, value]) => node.setAttribute(key, value));
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }
+
+    function renderBatchDiagram() {
+      const svg = document.getElementById('batchDiagram');
+      const title = svgNode('text', { x: 22, y: 25, fill: '#62707b', 'font-size': 13, 'font-weight': 700 }, '物理 batch（按数据组分行）');
+      svg.appendChild(title);
+      const groups = [
+        ['test', 'Test', [2, 19], '2 个 batch · ≈1,000 图像'],
+        ['val', 'Val', [4, 15], '2 个 batch · ≈1,000 图像'],
+        ['stage0', 'Stage 0', [1, 3, 5, 6, 7, 8, 9, 10, 11], '9 个 batch · 4,496 图像'],
+        ['stage1', 'Stage 1', [12, 13], '2 个 batch · 1,000 图像'],
+        ['stage2', 'Stage 2', [14, 16], '2 个 batch · 1,000 图像'],
+        ['stage3', 'Stage 3', [17, 18, 20], '3 个 batch · 1,075 图像']
+      ];
+      groups.forEach(([kind, label, batches, note], row) => {
+        const y = 68 + row * 66;
+        svg.appendChild(svgNode('line', { x1: 20, y1: y + 28, x2: 800, y2: y + 28, stroke: '#ecebe7' }));
+        svg.appendChild(svgNode('text', { x: 24, y: y - 4, fill: colors[kind], 'font-size': 14, 'font-weight': 800 }, label));
+        svg.appendChild(svgNode('text', { x: 24, y: y + 16, fill: '#62707b', 'font-size': 10 }, note));
+        batches.forEach((batch, col) => {
+          const x = 210 + col * 58;
+          svg.appendChild(svgNode('circle', { cx: x, cy: y, r: 22, fill: colors[kind], stroke: '#fffdf9', 'stroke-width': 3 }));
+          svg.appendChild(svgNode('text', { x, y: y + 5, 'text-anchor': 'middle', fill: '#ffffff', 'font-size': 13, 'font-weight': 800 }, String(batch).padStart(2, '0')));
+        });
+      });
+      svg.appendChild(svgNode('line', { x1: 20, y1: 454, x2: 800, y2: 454, stroke: '#d7d9d8' }));
+      svg.appendChild(svgNode('text', { x: 22, y: 479, fill: '#62707b', 'font-size': 12 }, '同组 batch 横向聚合；编号只用于追溯原始物理 batch，不代表图中排序依据'));
+    }
+
+    function renderLineChart(id, series, options = {}) {
+      const host = document.getElementById(id);
+      const width = 760, height = 320, margin = { top: 22, right: 24, bottom: 47, left: 50 };
+      const plotW = width - margin.left - margin.right, plotH = height - margin.top - margin.bottom;
+      const yMin = options.yMin ?? 0.2, yMax = options.yMax ?? 0.6;
+      const svg = svgNode('svg', { viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': options.ariaLabel || '折线图' });
+      const x = i => margin.left + (plotW * i / 3);
+      const y = value => margin.top + (yMax - value) / (yMax - yMin) * plotH;
+      const ticks = options.ticks || [0.2, 0.3, 0.4, 0.5, 0.6];
+      ticks.forEach(tick => {
+        const yy = y(tick);
+        svg.appendChild(svgNode('line', { x1: margin.left, y1: yy, x2: width - margin.right, y2: yy, stroke: '#d7d9d8', 'stroke-width': 1 }));
+        svg.appendChild(svgNode('text', { x: margin.left - 9, y: yy + 4, 'text-anchor': 'end', fill: '#62707b', 'font-size': 11 }, tick.toFixed(2)));
+      });
+      svg.appendChild(svgNode('line', { x1: margin.left, y1: margin.top + plotH, x2: width - margin.right, y2: margin.top + plotH, stroke: '#7a858c', 'stroke-width': 1.2 }));
+      ['Stage 0', 'Stage 1', 'Stage 2', 'Stage 3'].forEach((label, i) => svg.appendChild(svgNode('text', { x: x(i), y: height - 16, 'text-anchor': 'middle', fill: '#62707b', 'font-size': 12 }, label)));
+      const entries = Object.entries(series);
+      entries.forEach(([name, values], index) => {
+        const points = values.map((value, i) => value == null ? null : `${x(i)},${y(value)}`).filter(Boolean).join(' ');
+        if (!points) return;
+        const isDashed = options.dashed?.includes(name) || name.includes('· test');
+        const color = options.colorMap?.[name] || palette[index % palette.length];
+        svg.appendChild(svgNode('polyline', { points, fill: 'none', stroke: color, 'stroke-width': isDashed ? 2.2 : 3, 'stroke-dasharray': isDashed ? '7 5' : '', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
+        values.forEach((value, i) => { if (value != null) svg.appendChild(svgNode('circle', { cx: x(i), cy: y(value), r: isDashed ? 3 : 4, fill: '#fffdf9', stroke: color, 'stroke-width': 2 })); });
+      });
+      host.replaceChildren(svg);
+      const legendHost = document.getElementById(options.legendId || `${id}Legend`);
+      if (legendHost) {
+        legendHost.replaceChildren(...entries.map(([name], index) => {
+          const item = document.createElement('span'); item.className = 'legend-item';
+          const line = document.createElement('i'); line.className = 'legend-line' + ((options.dashed?.includes(name) || name.includes('· test')) ? ' dashed' : ''); line.style.color = options.colorMap?.[name] || palette[index % palette.length];
+          item.append(line, document.createTextNode(name)); return item;
+        }));
+      }
+    }
+
+    renderBatchDiagram();
+    renderLineChart('baselineMapChart', baseline, { legendId: 'baselineMapLegend', yMin: 0.40, yMax: 0.56, ticks: [0.40, 0.44, 0.48, 0.52, 0.56], ariaLabel: '四种baseline的mAP50阶段折线图' });
+    renderLineChart('baselineDeltaChart', baselineDelta, { legendId: 'baselineDeltaLegend', yMin: -0.10, yMax: 0.02, ticks: [-0.10, -0.05, 0.00, 0.02], ariaLabel: '三种baseline相对Full Cold的mAP50差值折线图' });
+    renderLineChart('selectionCumChart', { 'Full Cold': selection['Full Cold'], 'Positive Only': selection['Positive Only'], 'Pred Positive': selection['Pred Positive'], 'Error Hard': selection['Error Hard'] }, { legendId: 'selectionCumLegend', yMin: 0.40, yMax: 0.55, ticks: [0.40, 0.45, 0.50, 0.55], dashed: ['Full Cold'], ariaLabel: '累积冷启动的样本筛选方法mAP50折线图' });
+    renderLineChart('selectionCurrentChart', { 'Full Cold': selection['Full Cold'], 'Current Only': selection['Current Only'], 'Positive Only · Current Warm': selection['Positive Only · Current Warm'], 'Pred Positive · Current Warm': selection['Pred Positive · Current Warm'] }, { legendId: 'selectionCurrentLegend', yMin: 0.40, yMax: 0.55, ticks: [0.40, 0.45, 0.50, 0.55], dashed: ['Full Cold'], ariaLabel: '当前阶段热启动的样本筛选方法mAP50折线图' });
+    renderLineChart('overfitChart', overfit, { legendId: 'overfitLegend', yMin: 0.20, yMax: 1.00, ticks: [0.20, 0.40, 0.60, 0.80, 1.00], ariaLabel: '训练集与测试集mAP50过拟合折线图' });
+  </script>
+</body>
+</html>

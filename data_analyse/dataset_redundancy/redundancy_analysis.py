@@ -12,7 +12,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Iterable, Mapping, Sequence
 
 import cv2
 import numpy as np
@@ -23,7 +23,7 @@ from PIL import Image, ImageDraw, ImageOps
 
 from yolo_retraining.backends.yolov5.source import resolve_yolov5_root, validate_yolov5_source
 from yolo_retraining.data import build_registry, write_image_manifest
-from yolo_retraining.data.loaders import load_group
+from yolo_retraining.data.loaders import load_group, yolo_label_path
 
 
 @dataclass(frozen=True)
@@ -38,6 +38,41 @@ class SimilarityEdge:
     left: int
     right: int
     score: float
+
+
+@dataclass(frozen=True)
+class AnnotationInfo:
+    label_path: Path
+    file_exists: bool
+    has_annotation: bool
+    status: str
+
+
+def inspect_annotation(image_path: Path | str) -> AnnotationInfo:
+    """Return whether an image has at least one non-empty YOLO label row."""
+
+    image = Path(image_path).expanduser().resolve()
+    label_path = yolo_label_path(image)
+    if not label_path.is_file():
+        return AnnotationInfo(label_path=label_path, file_exists=False, has_annotation=False, status="missing")
+    has_annotation = any(line.strip() for line in label_path.read_text(encoding="utf-8-sig").splitlines())
+    return AnnotationInfo(
+        label_path=label_path,
+        file_exists=True,
+        has_annotation=has_annotation,
+        status="labeled" if has_annotation else "empty",
+    )
+
+
+def _canonical_image_key(value: str) -> str:
+    return Path(value).as_posix().casefold()
+
+
+def annotation_index(records: Sequence[ImageRecord], dataset_root: Path) -> dict[str, AnnotationInfo]:
+    return {
+        _canonical_image_key(record.path.relative_to(dataset_root).as_posix()): inspect_annotation(record.path)
+        for record in records
+    }
 
 
 def parse_thresholds(value: str) -> list[float]:
@@ -302,7 +337,11 @@ def representative_groups(indices: Sequence[int], edges: Sequence[SimilarityEdge
     while unassigned:
         representative = min(
             unassigned,
-            key=lambda index: (-len(set(adjacency[index]) & unassigned), -sum(adjacency[index].get(other, 0.0) for other in unassigned), index),
+            key=lambda index: (
+                -sum(other in unassigned for other in adjacency[index]),
+                -sum(score for other, score in adjacency[index].items() if other in unassigned),
+                index,
+            ),
         )
         members = sorted({representative} | (set(adjacency[representative]) & unassigned))
         groups.append((representative, members))
@@ -430,6 +469,147 @@ def write_pair_gallery(
     canvas.save(path, quality=90)
 
 
+def build_mixed_cluster_report(
+    cluster_rows: Sequence[Mapping[str, str]],
+    *,
+    annotations: Mapping[str, AnnotationInfo],
+    dataset_root: Path,
+) -> tuple[list[dict[str, object]], list[dict[str, object]], dict[str, object]]:
+    """Select clusters containing both annotated and unannotated images."""
+
+    clusters: dict[tuple[str, str], list[Mapping[str, str]]] = {}
+    for row in cluster_rows:
+        try:
+            key = (row["group"], row["cluster_id"])
+            image = row["image"]
+        except KeyError as error:
+            raise ValueError(f"cluster row is missing required field: {error.args[0]}") from error
+        if _canonical_image_key(image) not in annotations:
+            raise ValueError(f"no annotation status is available for cluster image: {image}")
+        clusters.setdefault(key, []).append(row)
+
+    mixed_clusters: list[dict[str, object]] = []
+    mixed_members: list[dict[str, object]] = []
+    by_group: dict[str, dict[str, int]] = {}
+    for (group, cluster_id), members in clusters.items():
+        member_annotations = [annotations[_canonical_image_key(row["image"])] for row in members]
+        annotated_count = sum(info.has_annotation for info in member_annotations)
+        unannotated_count = len(members) - annotated_count
+        if not annotated_count or not unannotated_count:
+            continue
+
+        representative_row = next(
+            (row for row in members if row["image"] == row["representative"]),
+            members[0],
+        )
+        representative_info = annotations[_canonical_image_key(representative_row["image"])]
+        mixed_clusters.append(
+            {
+                "group": group,
+                "cluster_id": cluster_id,
+                "cluster_size": len(members),
+                "annotated_count": annotated_count,
+                "unannotated_count": unannotated_count,
+                "representative": representative_row["representative"],
+                "representative_annotation_status": representative_info.status,
+            }
+        )
+        group_summary = by_group.setdefault(
+            group,
+            {"mixed_cluster_count": 0, "mixed_member_count": 0, "annotated_count": 0, "unannotated_count": 0},
+        )
+        group_summary["mixed_cluster_count"] += 1
+        group_summary["mixed_member_count"] += len(members)
+        group_summary["annotated_count"] += annotated_count
+        group_summary["unannotated_count"] += unannotated_count
+        for row, info in zip(members, member_annotations):
+            try:
+                label_file = info.label_path.relative_to(dataset_root).as_posix()
+            except ValueError:
+                label_file = str(info.label_path)
+            mixed_members.append(
+                {
+                    **dict(row),
+                    "annotation_status": info.status,
+                    "has_annotation": int(info.has_annotation),
+                    "label_file_exists": int(info.file_exists),
+                    "label_file": label_file,
+                }
+            )
+
+    summary: dict[str, object] = {
+        "total_clusters": len(clusters),
+        "mixed_cluster_count": len(mixed_clusters),
+        "mixed_member_count": len(mixed_members),
+        "annotated_count": sum(int(row["annotated_count"]) for row in mixed_clusters),
+        "unannotated_count": sum(int(row["unannotated_count"]) for row in mixed_clusters),
+        "by_group": by_group,
+    }
+    return mixed_clusters, mixed_members, summary
+
+
+def write_mixed_cluster_outputs(
+    variant_dir: Path,
+    cluster_rows: Sequence[Mapping[str, str]],
+    *,
+    annotations: Mapping[str, AnnotationInfo],
+    dataset_root: Path,
+) -> dict[str, object]:
+    """Write machine-readable reports for mixed annotation clusters."""
+
+    mixed_clusters, mixed_members, summary = build_mixed_cluster_report(
+        cluster_rows,
+        annotations=annotations,
+        dataset_root=dataset_root,
+    )
+    variant_dir.mkdir(parents=True, exist_ok=True)
+    with (variant_dir / "mixed_clusters.csv").open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=[
+                "group",
+                "cluster_id",
+                "cluster_size",
+                "annotated_count",
+                "unannotated_count",
+                "representative",
+                "representative_annotation_status",
+            ],
+        )
+        writer.writeheader()
+        writer.writerows(mixed_clusters)
+    with (variant_dir / "mixed_cluster_members.csv").open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=[
+                "group",
+                "cluster_id",
+                "image",
+                "representative",
+                "score_to_representative",
+                "cluster_size",
+                "annotation_status",
+                "has_annotation",
+                "label_file_exists",
+                "label_file",
+            ],
+        )
+        writer.writeheader()
+        writer.writerows(mixed_members)
+    report = {
+        **summary,
+        "files": {
+            "clusters": "mixed_clusters.csv",
+            "members": "mixed_cluster_members.csv",
+        },
+    }
+    (variant_dir / "mixed_cluster_summary.json").write_text(
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return report
+
+
 _THRESHOLD_WORKER_CONTEXT: dict[str, object] = {}
 
 
@@ -443,6 +623,7 @@ def _init_threshold_worker(
     group_records: dict[str, list[ImageRecord]],
     train_indices_by_group: dict[str, list[int]],
     random_seeds: Sequence[int],
+    annotations: Mapping[str, AnnotationInfo],
 ) -> None:
     global _THRESHOLD_WORKER_CONTEXT
     _THRESHOLD_WORKER_CONTEXT = {
@@ -455,6 +636,7 @@ def _init_threshold_worker(
         "group_records": group_records,
         "train_indices_by_group": train_indices_by_group,
         "random_seeds": random_seeds,
+        "annotations": annotations,
     }
 
 
@@ -470,6 +652,7 @@ def _analyze_threshold(
     group_records: dict[str, list[ImageRecord]],
     train_indices_by_group: dict[str, list[int]],
     random_seeds: Sequence[int],
+    annotations: Mapping[str, AnnotationInfo],
 ) -> dict:
     label = _threshold_label(threshold)
     write_pair_gallery(
@@ -510,6 +693,12 @@ def _analyze_threshold(
         writer = csv.DictWriter(handle, fieldnames=["group", "cluster_id", "image", "representative", "score_to_representative", "cluster_size"])
         writer.writeheader()
         writer.writerows(cluster_rows)
+    mixed_cluster_summary = write_mixed_cluster_outputs(
+        variant_dir,
+        cluster_rows,
+        annotations=annotations,
+        dataset_root=dataset_root,
+    )
 
     original_train = sum(len(indices) for indices in train_indices_by_group.values())
     effective_train = sum(len(images) for images in selected_by_group.values())
@@ -522,6 +711,7 @@ def _analyze_threshold(
         "non_singleton_clusters": sum(size > 1 for size in cluster_sizes),
         "max_cluster_size": max(cluster_sizes, default=1),
         "per_group_effective": {group: len(images) for group, images in selected_by_group.items()},
+        "mixed_clusters": mixed_cluster_summary,
     }
     for seed in random_seeds:
         rng = random.Random(seed)
@@ -584,6 +774,7 @@ def analyze(
         (min(edge.left, edge.right), max(edge.left, edge.right)): edge.score
         for edge in temporal_edges
     }
+    annotations = annotation_index(records, dataset_root)
     worker_context = (
         records,
         names,
@@ -594,10 +785,11 @@ def analyze(
         group_records,
         train_indices_by_group,
         random_seeds,
+        annotations,
     )
     if threshold_workers == 1 or len(thresholds) == 1:
         threshold_results = [_analyze_threshold(threshold=threshold, **dict(zip(
-            ("records", "names", "dataset_root", "output_dir", "temporal_edges", "temporal_score", "group_records", "train_indices_by_group", "random_seeds"),
+            ("records", "names", "dataset_root", "output_dir", "temporal_edges", "temporal_score", "group_records", "train_indices_by_group", "random_seeds", "annotations"),
             worker_context,
         ))) for threshold in thresholds]
     else:
@@ -656,7 +848,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--layers", type=parse_int_list, default=[17, 20, 23])
     parser.add_argument("--pool-grids", type=parse_int_list, default=[4, 2, 1])
-    parser.add_argument("--thresholds", type=parse_thresholds, default=[0.90, 0.95, 0.97, 0.99, 0.995, 0.997, 0.999])
+    parser.add_argument("--thresholds", type=parse_thresholds, default=[0.90, 0.95, 0.97, 0.98, 0.99, 0.995, 0.997, 0.999])
     parser.add_argument("--temporal-window", type=int, default=1)
     parser.add_argument("--top-k", type=int, default=20)
     parser.add_argument("--block-size", type=int, default=512)

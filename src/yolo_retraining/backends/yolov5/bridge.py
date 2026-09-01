@@ -44,6 +44,7 @@ def evaluate(args: argparse.Namespace) -> dict[str, Any]:
     original_ap_per_class = val.ap_per_class
     confidence_floor = 0.001
     captured_stats: dict[str, tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]] = {}
+    captured_class_metrics: dict[str, np.ndarray] = {}
     run_options = {
         "data": str(args.data),
         "weights": str(args.weights),
@@ -71,26 +72,31 @@ def evaluate(args: argparse.Namespace) -> dict[str, Any]:
             collector.record_correct(result)
             return result
 
-        def capture_ap_per_class(tp, conf, pred_cls, target_cls, *extra, **kwargs):
+    def capture_ap_per_class(tp, conf, pred_cls, target_cls, *extra, **kwargs):
+        if collector is not None:
             captured_stats["stats"] = (
                 np.asarray(tp).copy(),
                 np.asarray(conf).copy(),
                 np.asarray(pred_cls).copy(),
                 np.asarray(target_cls).copy(),
             )
-            return original_ap_per_class(tp, conf, pred_cls, target_cls, *extra, **kwargs)
+        result = original_ap_per_class(tp, conf, pred_cls, target_cls, *extra, **kwargs)
+        captured_class_metrics["ap"] = np.asarray(result[5]).copy()
+        captured_class_metrics["class_ids"] = np.asarray(result[6], dtype=int).copy()
+        return result
 
+    if collector is not None:
         val.process_batch = collect_process_batch
-        val.ap_per_class = capture_ap_per_class
         run_options["callbacks"] = callbacks
+    val.ap_per_class = capture_ap_per_class
 
     try:
         results, maps, _ = val.run(**run_options)
     finally:
+        val.ap_per_class = original_ap_per_class
         if collector is not None:
             collector.close()
             val.process_batch = original_process_batch
-            val.ap_per_class = original_ap_per_class
 
     if collector is not None:
         stats = captured_stats.get("stats", collector.raw_stats())
@@ -105,11 +111,19 @@ def evaluate(args: argparse.Namespace) -> dict[str, Any]:
             encoding="utf-8",
         )
     precision, recall, map50, map50_95 = results[:4]
+    class_count = len(_load_class_names(args.data))
+    per_class_ap50 = np.zeros(class_count, dtype=float) + float(map50)
+    class_ap = captured_class_metrics.get("ap")
+    class_ids = captured_class_metrics.get("class_ids")
+    if class_ap is not None and class_ids is not None:
+        for row, class_id in enumerate(class_ids):
+            per_class_ap50[int(class_id)] = float(class_ap[row, 0])
     return {
         "map50_95": float(map50_95),
         "map50": float(map50),
         "precision": float(precision),
         "recall": float(recall),
+        "per_class_ap50": [float(value) for value in per_class_ap50],
         "per_class_ap": [float(value) for value in maps],
     }
 

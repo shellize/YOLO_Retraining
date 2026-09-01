@@ -288,7 +288,7 @@ def normalize_evaluation(
     maps = list(payload["per_class_ap"])
     if len(maps) != len(names):
         raise ValueError(f"YOLOv5 returned {len(maps)} per-class AP values for {len(names)} classes")
-    return {
+    result = {
         "map50_95": float(payload["map50_95"]),
         "map50": float(payload["map50"]),
         "precision": float(payload["precision"]),
@@ -297,3 +297,9 @@ def normalize_evaluation(
         "sample_count": sample_count,
         "evaluation_seconds": evaluation_seconds,
     }
+    if "per_class_ap50" in payload:
+        maps50 = list(payload["per_class_ap50"])
+        if len(maps50) != len(names):
+            raise ValueError(f"YOLOv5 returned {len(maps50)} per-class AP50 values for {len(names)} classes")
+        result["per_class_ap50"] = {name: float(maps50[index]) for index, name in enumerate(names)}
+    return result

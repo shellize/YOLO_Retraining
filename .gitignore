@@ -16,6 +16,11 @@ htmlcov/
 # Reproducible/generated experiment artifacts
 runs/
 charts/
+!charts/
+charts/*
+!charts/balance_learning_curve_2batch/
+charts/balance_learning_curve_2batch/*
+!charts/balance_learning_curve_2batch/generate_report.py
 weights/
 *.pt
 *.onnx

@@ -27,7 +27,7 @@ STUDY_ID="${STUDY_ID:-$(date +%Y%m%d-%H%M%S)}"
 BASE_LAYOUT="${BASE_LAYOUT:-$PROJECT_ROOT/configs/data/self_improving.yaml}"
 YOLOV5_ROOT="${YOLOV5_ROOT:-$PROJECT_ROOT/.third_party/yolov5}"
 
-DEDUP_CANDIDATE_THRESHOLDS=(0.900 0.910 0.920 0.930 0.940 0.950 0.960 0.970)
+DEDUP_CANDIDATE_THRESHOLDS=(0.900 0.910 0.920 0.930 0.940 0.950 0.960 0.970 0.980 0.990)
 DEDUP_CANDIDATE_THRESHOLD_CSV="$(IFS=,; echo "${DEDUP_CANDIDATE_THRESHOLDS[*]}")"
 DEDUP_TARGET_RETAINED_FRACTION="${DEDUP_TARGET_RETAINED_FRACTION:-0.42857142857142855}"
 
@@ -243,6 +243,11 @@ for threshold in "${DEDUP_CANDIDATE_THRESHOLDS[@]}"; do
     --layout "$REDUNDANCY_ROOT/variants/dedup_tau_${label}/layout.yaml" \
     >"$LOG_ROOT/dedup_tau_${label}_validation.log"
 done
+
+echo "[Study] extract mixed annotation clusters from every dedup variant"
+run_python data_analyse/dataset_redundancy/extract_mixed_clusters.py \
+  --results-root "$REDUNDANCY_ROOT" \
+  2>&1 | tee "$LOG_ROOT/mixed_clusters.log"
 
 echo "[Study] select deduplication threshold closest to retained fraction 3/7"
 SELECTED_DEDUP_THRESHOLD="$(
