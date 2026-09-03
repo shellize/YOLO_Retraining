@@ -1,0 +1,8 @@
+train: /home/lijinhe/work/YOLO_Retraining/runs/sequences/0814-094211__seq-current-only__stage0-stage3__yolov5s__s42/tasks/002__stage2__current-only/backend/yolov5/evaluations/last/test/images.txt
+val: /home/lijinhe/work/YOLO_Retraining/runs/sequences/0814-094211__seq-current-only__stage0-stage3__yolov5s__s42/tasks/002__stage2__current-only/backend/yolov5/evaluations/last/test/images.txt
+nc: 4
+names:
+  0: large luggage
+  1: stroller
+  2: wheelchair
+  3: flatbed truck

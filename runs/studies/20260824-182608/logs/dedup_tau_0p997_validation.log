@@ -1,0 +1,20 @@
+{
+  "layout": "/home/lijinhe/work/YOLO_Retraining/data_analyse/dataset_redundancy/results/20260824-182608/variants/dedup_tau_0p997/layout.yaml",
+  "images": 8036,
+  "groups": {
+    "test": 1000,
+    "stage0": 3746,
+    "stage1": 660,
+    "stage2": 778,
+    "stage3": 852,
+    "val": 1000
+  },
+  "background_images": 4109,
+  "missing_label_files": 0,
+  "class_instances": {
+    "large luggage": 3965,
+    "stroller": 1194,
+    "wheelchair": 248,
+    "flatbed truck": 29
+  }
+}

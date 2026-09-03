@@ -1,0 +1,52 @@
+task:
+  name: null
+  label: full-cold-stage0123
+  seed: 42
+  parent_result: null
+  output_root: /home/lijinhe/work/YOLO_Retraining/runs/tasks
+select_policy:
+  name: full
+  params: {}
+epoch_policy:
+  name: static
+  params: {}
+budget:
+  type: epochs
+  value: 300
+backend:
+  params:
+    batch: 64
+    imgsz: 640
+    device: 0
+    workers: 16
+    amp: true
+    best_metric: map50
+    patience: 100
+evaluation:
+  primary_metric: map50_95
+  test_scope: seen
+  evaluate_checkpoints:
+  - last
+  - best
+model:
+  backend: yolov5
+  definition: yolov5s.yaml
+data:
+  layout: /home/lijinhe/work/YOLO_Retraining/configs/data/self_improving.yaml
+  current:
+  - stage0
+  - stage1
+  - stage2
+  - stage3
+  candidate:
+  - stage0
+  - stage1
+  - stage2
+  - stage3
+  validation:
+  - val
+  test:
+  - test
+initialization:
+  source: pretrained
+  checkpoint: yolov5s.pt

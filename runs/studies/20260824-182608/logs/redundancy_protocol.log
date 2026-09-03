@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/home/lijinhe/work/YOLO_Retraining/scripts/validate_redundancy_protocol.py", line 82, in <module>
+    raise SystemExit(main())
+  File "/home/lijinhe/work/YOLO_Retraining/scripts/validate_redundancy_protocol.py", line 69, in main
+    result = validate_protocol(
+  File "/home/lijinhe/work/YOLO_Retraining/scripts/validate_redundancy_protocol.py", line 45, in validate_protocol
+    raise ValueError(
+ValueError: aggressive threshold retained 58.154%, expected below 50.0%
+ERROR conda.cli.main_run:execute(148): `conda run python scripts/validate_redundancy_protocol.py --summary /home/lijinhe/work/YOLO_Retraining/data_analyse/dataset_redundancy/results/20260824-182608/summary.json --thresholds 0.970,0.997,0.999 --aggressive-max-retained 0.5 --conservative-min-retained 0.65 --output /home/lijinhe/work/YOLO_Retraining/runs/studies/20260824-182608/report/redundancy_protocol.json` failed. (See above for error)
+[Study] failed at line 80 with exit code 1
+[Study] rerun with the same STUDY_ID=20260824-182608 after resolving the error; completed sequences will be skipped

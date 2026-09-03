@@ -1,0 +1,65 @@
+task:
+  name: dedup_tau_0p900_release_positive_clusters
+  label: full-cold-stage0123
+  seed: 42
+  parent_result: null
+  output_root: /home/lijinhe/work/YOLO_Retraining/runs/studies/balance_tau090_label_contrast/tasks
+select_policy:
+  name: full
+  params: {}
+epoch_policy:
+  name: static
+  params: {}
+budget:
+  type: epochs
+  value: 300
+backend:
+  params:
+    batch: 64
+    imgsz: 640
+    device: 0
+    workers: 16
+    amp: true
+    best_metric: map50
+    patience: 100
+evaluation:
+  primary_metric: map50_95
+  test_scope: seen
+  evaluate_checkpoints:
+  - last
+  - best
+  save_prediction_artifacts: true
+  prediction_artifact_checkpoints:
+  - best
+  prediction_artifact_groups:
+  - test
+  confidence_sweep_thresholds:
+  - 0.2
+  - 0.3
+  - 0.4
+  - 0.5
+  - 0.6
+  - 0.7
+  - 0.8
+model:
+  backend: yolov5
+  definition: yolov5s.yaml
+data:
+  layout: /home/lijinhe/work/YOLO_Retraining/runs/studies/balance_tau090_label_contrast/variants/dedup_tau_0p900_release_positive_clusters/layout.yaml
+  current:
+  - stage0
+  - stage1
+  - stage2
+  - stage3
+  candidate:
+  - stage0
+  - stage1
+  - stage2
+  - stage3
+  validation:
+  - val
+  test:
+  - test
+initialization:
+  source: pretrained
+  checkpoint: yolov5s.pt

@@ -1,0 +1,73 @@
+sequence:
+  name: B640
+  label: error-hard__cum-cold
+  seed: 42
+  output_root: /home/lijinhe/work/YOLO_Retraining/runs/sequences
+  bootstrap_result: /home/lijinhe/work/YOLO_Retraining/runs/sequences/Balance_Test__seq-full-warm__stage0-stage3__yolov5s__s42/tasks/000__stage0__full-warm
+arrivals:
+- id: stage0
+- id: stage1
+- id: stage2
+- id: stage3
+data:
+  layout: /home/lijinhe/work/YOLO_Retraining/configs/data/self_improving_balance_test.yaml
+  validation:
+  - val
+  test:
+  - test
+scope_rule:
+  candidate: all_seen
+initialization:
+  first:
+    source: pretrained
+    checkpoint: yolov5s.pt
+  subsequent:
+    source: pretrained
+    checkpoint: yolov5s.pt
+task_template:
+  model:
+    backend: yolov5
+    definition: yolov5s.yaml
+  select_policy:
+    name: error_hard
+    params:
+      cumulative: true
+  epoch_policy:
+    name: static
+    params: {}
+  budget:
+    type: epochs
+    value: 100
+  backend:
+    params:
+      batch: 64
+      imgsz: 640
+      device: 0
+      workers: 16
+      amp: true
+      best_metric: map50
+  evaluation:
+    primary_metric: map50_95
+    test_scope: seen
+    evaluate_checkpoints:
+    - last
+    - best
+task_overrides:
+  stage1:
+    select_policy:
+      params:
+        teacher_result: /home/lijinhe/work/YOLO_Retraining/runs/sequences/Balance_Test__seq-full-warm__stage0-stage3__yolov5s__s42/tasks/000__stage0__full-warm
+        confidence: 0.25
+        iou: 0.5
+  stage2:
+    select_policy:
+      params:
+        teacher_result: /home/lijinhe/work/YOLO_Retraining/runs/sequences/Balance_Test__seq-full-warm__stage0-stage3__yolov5s__s42/tasks/001__stage1__full-warm
+        confidence: 0.25
+        iou: 0.5
+  stage3:
+    select_policy:
+      params:
+        teacher_result: /home/lijinhe/work/YOLO_Retraining/runs/sequences/Balance_Test__seq-full-warm__stage0-stage3__yolov5s__s42/tasks/002__stage2__full-warm
+        confidence: 0.25
+        iou: 0.5

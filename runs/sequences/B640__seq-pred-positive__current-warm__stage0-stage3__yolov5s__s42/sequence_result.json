@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "status": "completed",
+  "output_dir": "/home/lijinhe/work/YOLO_Retraining/runs/sequences/B640__seq-pred-positive__current-warm__stage0-stage3__yolov5s__s42",
+  "tasks": [
+    "/home/lijinhe/work/YOLO_Retraining/runs/sequences/Balance_Test__seq-full-warm__stage0-stage3__yolov5s__s42/tasks/000__stage0__full-warm",
+    "/home/lijinhe/work/YOLO_Retraining/runs/sequences/B640__seq-pred-positive__current-warm__stage0-stage3__yolov5s__s42/tasks/001__stage1__pred-positive__current-warm",
+    "/home/lijinhe/work/YOLO_Retraining/runs/sequences/B640__seq-pred-positive__current-warm__stage0-stage3__yolov5s__s42/tasks/002__stage2__pred-positive__current-warm",
+    "/home/lijinhe/work/YOLO_Retraining/runs/sequences/B640__seq-pred-positive__current-warm__stage0-stage3__yolov5s__s42/tasks/003__stage3__pred-positive__current-warm"
+  ],
+  "summary": {
+    "checkpoint": "best",
+    "matrix": [
+      {
+        "test": 0.2183487923071451
+      },
+      {
+        "test": 0.2127803119262401
+      },
+      {
+        "test": 0.21510158360415937
+      },
+      {
+        "test": 0.2119925698967665
+      }
+    ],
+    "seen_mean": [
+      0.2183487923071451,
+      0.2127803119262401,
+      0.21510158360415937,
+      0.2119925698967665
+    ],
+    "final_mean_map50_95": 0.2119925698967665,
+    "global_test_regression": {
+      "test": 0.006356222410378615
+    },
+    "final_mean_forgetting": 0.0,
+    "final_forgetting": {},
+    "final_forgetting_ratio": {},
+    "final_retention_ratio": {},
+    "acquisition_abs": {},
+    "acquisition_headroom_ratio": {},
+    "backward_transfer": null,
+    "stage_specific_metrics_available": false
+  }
+}

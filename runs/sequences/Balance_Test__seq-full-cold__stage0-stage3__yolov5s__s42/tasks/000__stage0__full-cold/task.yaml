@@ -1,0 +1,45 @@
+task:
+  name: '000'
+  label: full-cold
+  seed: 42
+  parent_result: null
+  output_root: /home/lijinhe/work/YOLO_Retraining/runs/sequences/Balance_Test__seq-full-cold__stage0-stage3__yolov5s__s42/tasks
+select_policy:
+  name: full
+  params: {}
+epoch_policy:
+  name: static
+  params: {}
+budget:
+  type: epochs
+  value: 100
+backend:
+  params:
+    batch: 64
+    imgsz: 640
+    device: 0
+    workers: 16
+    amp: true
+    best_metric: map50
+evaluation:
+  primary_metric: map50_95
+  test_scope: seen
+  evaluate_checkpoints:
+  - last
+  - best
+model:
+  backend: yolov5
+  definition: yolov5s.yaml
+data:
+  layout: /home/lijinhe/work/YOLO_Retraining/configs/data/self_improving_balance_test.yaml
+  current:
+  - stage0
+  candidate:
+  - stage0
+  validation:
+  - val
+  test:
+  - test
+initialization:
+  source: pretrained
+  checkpoint: yolov5s.pt

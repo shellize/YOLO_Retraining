@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "status": "completed",
+  "output_dir": "/home/lijinhe/work/YOLO_Retraining/runs/sequences/Balance_Test__seq-current-only__stage0-stage3__yolov5s__s42",
+  "tasks": [
+    "/home/lijinhe/work/YOLO_Retraining/runs/sequences/Balance_Test__seq-current-only__stage0-stage3__yolov5s__s42/tasks/000__stage0__current-only",
+    "/home/lijinhe/work/YOLO_Retraining/runs/sequences/Balance_Test__seq-current-only__stage0-stage3__yolov5s__s42/tasks/001__stage1__current-only",
+    "/home/lijinhe/work/YOLO_Retraining/runs/sequences/Balance_Test__seq-current-only__stage0-stage3__yolov5s__s42/tasks/002__stage2__current-only",
+    "/home/lijinhe/work/YOLO_Retraining/runs/sequences/Balance_Test__seq-current-only__stage0-stage3__yolov5s__s42/tasks/003__stage3__current-only"
+  ],
+  "summary": {
+    "matrix": [
+      {
+        "test": 0.21843311007984023
+      },
+      {
+        "test": 0.09859365401627151
+      },
+      {
+        "test": 0.10672749890598245
+      },
+      {
+        "test": 0.12919996520054178
+      }
+    ],
+    "seen_mean": [
+      0.21843311007984023,
+      0.09859365401627151,
+      0.10672749890598245,
+      0.12919996520054178
+    ],
+    "final_mean_forgetting": 0.08923314487929845,
+    "final_forgetting": {
+      "test": 0.08923314487929845
+    }
+  }
+}

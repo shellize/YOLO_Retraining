@@ -1,0 +1,18 @@
+YOLOv5 🚀 v7.0-0-g915bbf29 Python-3.10.20 torch-2.2.2+cu121 CUDA:0 (NVIDIA H100 PCIe, 81090MiB)
+Fusing layers...
+Model summary: 157 layers, 7020913 parameters, 0 gradients, 15.8 GFLOPs
+val: Scanning /home/lijinhe/work/YOLO_Retraining/runs/studies/balance_learning_curve_2batch/sequences/Balance_Learning_Curve_random_s43__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/006__stage6__full-cold/backend/yolov5/evaluations/last/test/images... 1000 images, 555 backgrounds, 0 corrupt: 100%|██████████| 1000/1000 00:05
+val: New cache created: /home/lijinhe/work/YOLO_Retraining/runs/studies/balance_learning_curve_2batch/sequences/Balance_Learning_Curve_random_s43__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/006__stage6__full-cold/backend/yolov5/evaluations/last/test/images.cache
+Class     Images  Instances          P          R      mAP50   mAP50-95: 100%|██████████| 16/16 00:31
+all       1000        614      0.746       0.37      0.405      0.167
+large luggage       1000        435       0.61      0.595      0.585      0.226
+stroller       1000        133      0.709      0.526      0.595       0.26
+wheelchair       1000         42      0.666      0.357      0.428      0.174
+flatbed truck       1000          4          1          0     0.0116    0.00623
+Speed: 0.1ms pre-process, 0.9ms inference, 5.9ms NMS per image at shape (64, 3, 640, 640)
+Results saved to /home/lijinhe/work/YOLO_Retraining/runs/studies/balance_learning_curve_2batch/sequences/Balance_Learning_Curve_random_s43__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/006__stage6__full-cold/backend/yolov5/evaluations/last/test/val
+[YOLOv5] compacted progress updates: 40 -> 2 lines
+[YOLOv5] coalesced warning: incomplete JPEG accepted read-only; count=869; by_source=val=869
+[YOLOv5] warning example: val: WARNING ⚠️ /home/lijinhe/work/YOLO_Retraining/data/self_improving/images/0720_19/09001_1784531666784107_0.jpg: incomplete JPEG accepted read-only
+[YOLOv5] warning example: val: WARNING ⚠️ /home/lijinhe/work/YOLO_Retraining/data/self_improving/images/0720_19/09002_1784531676835895_0.jpg: incomplete JPEG accepted read-only
+[YOLOv5] warning example: val: WARNING ⚠️ /home/lijinhe/work/YOLO_Retraining/data/self_improving/images/0720_19/09003_1784531677126896_0.jpg: incomplete JPEG accepted read-only

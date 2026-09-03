@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "status": "completed",
+  "output_dir": "/home/lijinhe/work/YOLO_Retraining/runs/studies/balance_learning_curve_2batch_dedup_contrast/sequences/Balance_LC2B_ordered_dedup_tau099__seq-full-cold__stage0-stage7__yolov5s__s42",
+  "tasks": [
+    "/home/lijinhe/work/YOLO_Retraining/runs/studies/balance_learning_curve_2batch_dedup_contrast/sequences/Balance_LC2B_ordered_dedup_tau099__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/000__stage0__full-cold",
+    "/home/lijinhe/work/YOLO_Retraining/runs/studies/balance_learning_curve_2batch_dedup_contrast/sequences/Balance_LC2B_ordered_dedup_tau099__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/001__stage1__full-cold",
+    "/home/lijinhe/work/YOLO_Retraining/runs/studies/balance_learning_curve_2batch_dedup_contrast/sequences/Balance_LC2B_ordered_dedup_tau099__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/002__stage2__full-cold",
+    "/home/lijinhe/work/YOLO_Retraining/runs/studies/balance_learning_curve_2batch_dedup_contrast/sequences/Balance_LC2B_ordered_dedup_tau099__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/003__stage3__full-cold",
+    "/home/lijinhe/work/YOLO_Retraining/runs/studies/balance_learning_curve_2batch_dedup_contrast/sequences/Balance_LC2B_ordered_dedup_tau099__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/004__stage4__full-cold",
+    "/home/lijinhe/work/YOLO_Retraining/runs/studies/balance_learning_curve_2batch_dedup_contrast/sequences/Balance_LC2B_ordered_dedup_tau099__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/005__stage5__full-cold",
+    "/home/lijinhe/work/YOLO_Retraining/runs/studies/balance_learning_curve_2batch_dedup_contrast/sequences/Balance_LC2B_ordered_dedup_tau099__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/006__stage6__full-cold",
+    "/home/lijinhe/work/YOLO_Retraining/runs/studies/balance_learning_curve_2batch_dedup_contrast/sequences/Balance_LC2B_ordered_dedup_tau099__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/007__stage7__full-cold"
+  ],
+  "summary": {
+    "checkpoint": "best",
+    "matrix": [
+      {
+        "test": 0.16660228061331112
+      },
+      {
+        "test": 0.21897355347556932
+      },
+      {
+        "test": 0.22066004434888065
+      },
+      {
+        "test": 0.22273055539267045
+      },
+      {
+        "test": 0.22179944715324548
+      },
+      {
+        "test": 0.2158413099741638
+      },
+      {
+        "test": 0.22127398460817305
+      },
+      {
+        "test": 0.22963283703260134
+      }
+    ],
+    "seen_mean": [
+      0.16660228061331112,
+      0.21897355347556932,
+      0.22066004434888065,
+      0.22273055539267045,
+      0.22179944715324548,
+      0.2158413099741638,
+      0.22127398460817305,
+      0.22963283703260134
+    ],
+    "final_mean_map50_95": 0.22963283703260134,
+    "global_test_regression": {
+      "test": 0.0
+    },
+    "final_mean_forgetting": 0.0,
+    "final_forgetting": {},
+    "final_forgetting_ratio": {},
+    "final_retention_ratio": {},
+    "acquisition_abs": {},
+    "acquisition_headroom_ratio": {},
+    "backward_transfer": null,
+    "stage_specific_metrics_available": false
+  }
+}

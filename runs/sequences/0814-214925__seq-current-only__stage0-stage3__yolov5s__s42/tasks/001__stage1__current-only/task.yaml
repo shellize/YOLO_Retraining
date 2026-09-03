@@ -1,0 +1,45 @@
+task:
+  name: '001'
+  label: current-only
+  seed: 43
+  parent_result: /home/lijinhe/work/YOLO_Retraining/runs/sequences/0814-214925__seq-current-only__stage0-stage3__yolov5s__s42/tasks/000__stage0__current-only
+  output_root: /home/lijinhe/work/YOLO_Retraining/runs/sequences/0814-214925__seq-current-only__stage0-stage3__yolov5s__s42/tasks
+select_policy:
+  name: full
+  params: {}
+epoch_policy:
+  name: static
+  params: {}
+budget:
+  type: epochs
+  value: 100
+backend:
+  params:
+    batch: 64
+    imgsz: 640
+    device: 0
+    workers: 16
+    amp: true
+    best_metric: map50
+evaluation:
+  primary_metric: map50_95
+  test_scope: seen
+  evaluate_checkpoints:
+  - last
+  - best
+model:
+  backend: yolov5
+  definition: yolov5s.yaml
+data:
+  layout: /home/lijinhe/work/YOLO_Retraining/configs/data/self_improving.yaml
+  current:
+  - stage1
+  candidate:
+  - stage1
+  validation:
+  - val
+  test:
+  - test
+initialization:
+  source: parent
+  checkpoint: best

@@ -1,0 +1,17 @@
+{
+  "selected_count": 4957,
+  "group_counts": {
+    "history": 4731,
+    "current": 226
+  },
+  "metadata": {
+    "policy": "error_hard",
+    "teacher_result": "/home/lijinhe/work/YOLO_Retraining/runs/sequences/Balance_Test__seq-full-warm__stage0-stage3__yolov5s__s42/tasks/001__stage1__full-warm",
+    "teacher_checkpoint": "/home/lijinhe/work/YOLO_Retraining/runs/sequences/Balance_Test__seq-full-warm__stage0-stage3__yolov5s__s42/tasks/001__stage1__full-warm/checkpoints/best.pt",
+    "teacher_checkpoint_sha256": "d6078f29f8f5b01d40fc514bfb7d2c2fbd10bbd37af3070dbb198bf24fe0d751",
+    "confidence": 0.25,
+    "iou": 0.5,
+    "cumulative": true,
+    "current_selected_count": 226
+  }
+}

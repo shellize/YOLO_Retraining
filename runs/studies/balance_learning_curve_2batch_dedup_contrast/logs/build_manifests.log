@@ -1,0 +1,126 @@
+{
+  "study": "balance_learning_curve_2batch_dedup_contrast",
+  "source_layout": "/home/lijinhe/work/YOLO_Retraining/configs/data/learning_curve/balance_2batch_ordered.yaml",
+  "source_embeddings": "/home/lijinhe/work/YOLO_Retraining/data_analyse/dataset_redundancy/results/20260824-182608/embeddings.npz",
+  "embedding_metadata": {
+    "extractor": "yolov5s_multiscale_spatial_pyramid",
+    "layers": [
+      17,
+      20,
+      23
+    ],
+    "pool_grids": [
+      4,
+      2,
+      1
+    ],
+    "imgsz": 640,
+    "weights": "/home/lijinhe/work/YOLO_Retraining/.third_party/yolov5/yolov5s.pt",
+    "weights_sha256": "8b3b748c1e592ddd8868022e8732fde20025197328490623cc16c6f24d0782ee",
+    "yolov5_commit": "915bbf294bb74c859f0b41f1c23bc395014ea679",
+    "yolov5_tag": "v7.0",
+    "device": "cuda:0",
+    "embedding_shape": [
+      9573,
+      3584
+    ],
+    "inventory_sha256": "a1124ef24d2875da126338046431f5a6878f2513405473a02b402b5f1461858e"
+  },
+  "temporal_window": 1,
+  "label_definition": "a YOLO label file containing at least one non-empty row",
+  "train_images": 7573,
+  "stage_order": {
+    "stage0": [
+      "0720_1",
+      "0720_3"
+    ],
+    "stage1": [
+      "0720_5",
+      "0720_6"
+    ],
+    "stage2": [
+      "0720_7",
+      "0720_8"
+    ],
+    "stage3": [
+      "0720_9",
+      "0720_10"
+    ],
+    "stage4": [
+      "0720_11",
+      "0720_12"
+    ],
+    "stage5": [
+      "0720_13",
+      "0720_14"
+    ],
+    "stage6": [
+      "0720_16",
+      "0720_17"
+    ],
+    "stage7": [
+      "0720_18",
+      "0720_20"
+    ]
+  },
+  "variants": {
+    "dedup_tau_0p990": {
+      "threshold": 0.99,
+      "policy": "keep one representative per cluster",
+      "layout": "/home/lijinhe/work/YOLO_Retraining/runs/studies/balance_learning_curve_2batch_dedup_contrast/variants/dedup_tau_0p990/layout.yaml",
+      "cluster_audit": "/home/lijinhe/work/YOLO_Retraining/runs/studies/balance_learning_curve_2batch_dedup_contrast/variants/dedup_tau_0p990/clusters.csv",
+      "selected_images": 5404,
+      "retained_fraction": 0.713587745939522,
+      "per_stage_images": {
+        "stage0": 972,
+        "stage1": 873,
+        "stage2": 957,
+        "stage3": 624,
+        "stage4": 582,
+        "stage5": 471,
+        "stage6": 615,
+        "stage7": 310
+      },
+      "cluster_stats": {
+        "clusters": 5404,
+        "non_singleton_clusters": 1314,
+        "pure_background_clusters": 2722,
+        "pure_labeled_clusters": 2657,
+        "mixed_clusters": 25,
+        "selected_pure_background_images": 2722,
+        "unselected_pure_background_images": 1374,
+        "selected_pure_labeled_images": 2657,
+        "selected_mixed_images": 25
+      }
+    },
+    "dedup_tau_0p960_mixed_release_drop_pure_background": {
+      "threshold": 0.96,
+      "policy": "drop pure-background clusters; keep one representative for pure-labeled clusters; keep every member of mixed clusters",
+      "layout": "/home/lijinhe/work/YOLO_Retraining/runs/studies/balance_learning_curve_2batch_dedup_contrast/variants/dedup_tau_0p960_mixed_release_drop_pure_background/layout.yaml",
+      "cluster_audit": "/home/lijinhe/work/YOLO_Retraining/runs/studies/balance_learning_curve_2batch_dedup_contrast/variants/dedup_tau_0p960_mixed_release_drop_pure_background/clusters.csv",
+      "selected_images": 2378,
+      "retained_fraction": 0.31401029974910866,
+      "per_stage_images": {
+        "stage0": 401,
+        "stage1": 586,
+        "stage2": 541,
+        "stage3": 181,
+        "stage4": 211,
+        "stage5": 147,
+        "stage6": 206,
+        "stage7": 105
+      },
+      "cluster_stats": {
+        "clusters": 4611,
+        "non_singleton_clusters": 1757,
+        "pure_background_clusters": 2398,
+        "pure_labeled_clusters": 2106,
+        "mixed_clusters": 107,
+        "selected_pure_background_images": 0,
+        "unselected_pure_background_images": 4000,
+        "selected_pure_labeled_images": 2106,
+        "selected_mixed_images": 272
+      }
+    }
+  }
+}

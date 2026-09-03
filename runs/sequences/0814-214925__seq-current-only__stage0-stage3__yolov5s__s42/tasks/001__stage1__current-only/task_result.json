@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "status": "completed",
+  "task_label": "current-only",
+  "output_dir": "/home/lijinhe/work/YOLO_Retraining/runs/sequences/0814-214925__seq-current-only__stage0-stage3__yolov5s__s42/tasks/001__stage1__current-only",
+  "parent_result": "/home/lijinhe/work/YOLO_Retraining/runs/sequences/0814-214925__seq-current-only__stage0-stage3__yolov5s__s42/tasks/000__stage0__current-only",
+  "label_schema": [
+    "large luggage",
+    "stroller",
+    "wheelchair",
+    "flatbed truck"
+  ],
+  "backend": {
+    "name": "yolov5",
+    "family": "original-yolov5",
+    "definition": "yolov5s.yaml",
+    "source_commit": "915bbf294bb74c859f0b41f1c23bc395014ea679",
+    "source_tag": "v7.0",
+    "initial_weight": "best",
+    "best_selection_metric": "map50",
+    "data_loader_adaptation": "read_only_incomplete_jpeg"
+  },
+  "artifacts": {
+    "last_checkpoint": "checkpoints/last.pt",
+    "best_checkpoint": "checkpoints/best.pt",
+    "metrics": "metrics/evaluation.json",
+    "cost": "metrics/cost.json",
+    "selection": "selection/summary.json"
+  },
+  "selection": {
+    "metadata": {
+      "policy": "full"
+    },
+    "group_counts": {
+      "candidate": 1000
+    }
+  },
+  "metrics": {
+    "last": {
+      "test": {
+        "map50_95": 0.08375531182613444,
+        "map50": 0.19011193384778913,
+        "precision": 0.5845814607127053,
+        "recall": 0.15964471726190477,
+        "per_class_ap": {
+          "large luggage": 0.11786060541711134,
+          "stroller": 0.15762044313566287,
+          "wheelchair": 0.05616954984759511,
+          "flatbed truck": 0.003370648904168457
+        },
+        "sample_count": 1000,
+        "evaluation_seconds": 28.575516286771744
+      }
+    },
+    "best": {
+      "test": {
+        "map50_95": 0.18228484072771423,
+        "map50": 0.4029108369632171,
+        "precision": 0.7539991702677236,
+        "recall": 0.34533110119047616,
+        "per_class_ap": {
+          "large luggage": 0.1773787567293029,
+          "stroller": 0.2891505102021069,
+          "wheelchair": 0.25368217557258343,
+          "flatbed truck": 0.008927920406863642
+        },
+        "sample_count": 1000,
+        "evaluation_seconds": 27.12178377993405
+      }
+    }
+  },
+  "cost": {
+    "selection_seconds": 0.00029649771749973297,
+    "training_seconds": 3110.681550157722,
+    "evaluation_seconds": 55.69730006670579,
+    "method_seconds": 3110.6818466554396,
+    "gpu_hours": 0.8640782907376221,
+    "images_read": 100000,
+    "optimizer_steps": 1600,
+    "candidate_count": 1000,
+    "selected_count": 1000,
+    "replay_count": 0
+  }
+}

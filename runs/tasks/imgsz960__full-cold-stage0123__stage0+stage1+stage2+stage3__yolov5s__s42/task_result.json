@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "status": "completed",
+  "task_label": "full-cold-stage0123",
+  "output_dir": "/home/lijinhe/work/YOLO_Retraining/runs/tasks/imgsz960__full-cold-stage0123__stage0+stage1+stage2+stage3__yolov5s__s42",
+  "parent_result": null,
+  "label_schema": [
+    "large luggage",
+    "stroller",
+    "wheelchair",
+    "flatbed truck"
+  ],
+  "backend": {
+    "name": "yolov5",
+    "family": "original-yolov5",
+    "definition": "yolov5s.yaml",
+    "source_commit": "915bbf294bb74c859f0b41f1c23bc395014ea679",
+    "source_tag": "v7.0",
+    "initial_weight": "yolov5s.pt",
+    "best_selection_metric": "map50",
+    "data_loader_adaptation": "read_only_incomplete_jpeg"
+  },
+  "artifacts": {
+    "last_checkpoint": "checkpoints/last.pt",
+    "best_checkpoint": "checkpoints/best.pt",
+    "metrics": "metrics/evaluation.json",
+    "cost": "metrics/cost.json",
+    "selection": "selection/summary.json",
+    "tensorboard": "tensorboard"
+  },
+  "selection": {
+    "metadata": {
+      "policy": "full"
+    },
+    "group_counts": {
+      "candidate": 7573
+    }
+  },
+  "metrics": {
+    "last": {
+      "test": {
+        "map50_95": 0.25123807659021363,
+        "map50": 0.5074750502012064,
+        "precision": 0.8185803010545363,
+        "recall": 0.468139878131812,
+        "per_class_ap": {
+          "large luggage": 0.2380333173190036,
+          "stroller": 0.3477328027060702,
+          "wheelchair": 0.4168779046020347,
+          "flatbed truck": 0.00230828173374613
+        },
+        "sample_count": 1000,
+        "evaluation_seconds": 21.73464663499908
+      }
+    },
+    "best": {
+      "test": {
+        "map50_95": 0.25225586691682406,
+        "map50": 0.5052268103911219,
+        "precision": 0.8270076086010444,
+        "recall": 0.46944378461365543,
+        "per_class_ap": {
+          "large luggage": 0.23724376817376575,
+          "stroller": 0.3386528737148343,
+          "wheelchair": 0.42702718013965,
+          "flatbed truck": 0.006099645639046247
+        },
+        "sample_count": 1000,
+        "evaluation_seconds": 22.280881591999787
+      }
+    }
+  },
+  "cost": {
+    "selection_seconds": 0.002922076999766432,
+    "training_seconds": 8806.540801153,
+    "evaluation_seconds": 44.01552822699887,
+    "method_seconds": 8806.54372323,
+    "gpu_hours": 2.4462621453416666,
+    "images_read": 757300,
+    "optimizer_steps": 11900,
+    "candidate_count": 7573,
+    "selected_count": 7573,
+    "replay_count": 0
+  }
+}

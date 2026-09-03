@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "confidence_floor": 0.001,
+  "iou_threshold": 0.5,
+  "thresholds": [
+    0.25
+  ],
+  "prediction_count_after_conf_floor": 7927,
+  "ground_truth_count": 375,
+  "overall": {
+    "precision": [
+      0.2847222222222222
+    ],
+    "recall": [
+      0.28131057104517665
+    ],
+    "f1": [
+      0.28291194420226673
+    ],
+    "micro_precision": [
+      0.6256544502617801
+    ],
+    "micro_recall": [
+      0.6373333333333333
+    ],
+    "micro_f1": [
+      0.631439894319683
+    ],
+    "tp": [
+      239
+    ],
+    "fp": [
+      143
+    ],
+    "fn": [
+      136
+    ]
+  },
+  "best_f1": {
+    "index": 0,
+    "confidence": 0.25,
+    "precision": 0.2847222222222222,
+    "recall": 0.28131057104517665,
+    "f1": 0.28291194420226673
+  },
+  "per_class": [
+    {
+      "class_id": 0,
+      "class_name": "large luggage",
+      "ground_truth_count": 353,
+      "precision": [
+        0.6388888888888888
+      ],
+      "recall": [
+        0.6515580736543909
+      ],
+      "f1": [
+        0.6451612903225805
+      ],
+      "tp": [
+        230
+      ],
+      "fp": [
+        130
+      ],
+      "fn": [
+        123
+      ]
+    },
+    {
+      "class_id": 1,
+      "class_name": "stroller",
+      "ground_truth_count": 19,
+      "precision": [
+        0.5
+      ],
+      "recall": [
+        0.47368421052631576
+      ],
+      "f1": [
+        0.4864864864864865
+      ],
+      "tp": [
+        9
+      ],
+      "fp": [
+        9
+      ],
+      "fn": [
+        10
+      ]
+    },
+    {
+      "class_id": 2,
+      "class_name": "wheelchair",
+      "ground_truth_count": 1,
+      "precision": [
+        0.0
+      ],
+      "recall": [
+        0.0
+      ],
+      "f1": [
+        0.0
+      ],
+      "tp": [
+        0
+      ],
+      "fp": [
+        4
+      ],
+      "fn": [
+        1
+      ]
+    },
+    {
+      "class_id": 3,
+      "class_name": "flatbed truck",
+      "ground_truth_count": 2,
+      "precision": [
+        0.0
+      ],
+      "recall": [
+        0.0
+      ],
+      "f1": [
+        0.0
+      ],
+      "tp": [
+        0
+      ],
+      "fp": [
+        0
+      ],
+      "fn": [
+        2
+      ]
+    }
+  ]
+}

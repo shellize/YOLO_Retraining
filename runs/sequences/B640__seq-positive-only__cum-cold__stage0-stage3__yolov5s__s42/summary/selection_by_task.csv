@@ -1,0 +1,5 @@
+task,candidate,policy,history,current,cumulative,current_selected_count
+0,4498,full,,,,
+1,,positive_only,4498,347,True,347
+2,,positive_only,4845,308,True,308
+3,,positive_only,5153,372,True,372

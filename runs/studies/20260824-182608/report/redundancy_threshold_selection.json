@@ -1,0 +1,69 @@
+{
+  "target_retained_fraction": 0.42857142857142855,
+  "selection_reason": "lower_bound_0.900_already_above_target",
+  "selected": {
+    "threshold": 0.9,
+    "retained_fraction": 0.5172322725472072,
+    "effective_train_images": 3917,
+    "original_train_images": 7573,
+    "layout": "/home/lijinhe/work/YOLO_Retraining/data_analyse/dataset_redundancy/results/20260824-182608/variants/dedup_tau_0p900/layout.yaml"
+  },
+  "candidates": [
+    {
+      "threshold": 0.9,
+      "retained_fraction": 0.5172322725472072,
+      "effective_train_images": 3917,
+      "original_train_images": 7573,
+      "layout": "/home/lijinhe/work/YOLO_Retraining/data_analyse/dataset_redundancy/results/20260824-182608/variants/dedup_tau_0p900/layout.yaml"
+    },
+    {
+      "threshold": 0.91,
+      "retained_fraction": 0.5279281658523702,
+      "effective_train_images": 3998,
+      "original_train_images": 7573,
+      "layout": "/home/lijinhe/work/YOLO_Retraining/data_analyse/dataset_redundancy/results/20260824-182608/variants/dedup_tau_0p910/layout.yaml"
+    },
+    {
+      "threshold": 0.92,
+      "retained_fraction": 0.5337382807341873,
+      "effective_train_images": 4042,
+      "original_train_images": 7573,
+      "layout": "/home/lijinhe/work/YOLO_Retraining/data_analyse/dataset_redundancy/results/20260824-182608/variants/dedup_tau_0p920/layout.yaml"
+    },
+    {
+      "threshold": 0.93,
+      "retained_fraction": 0.5376997226990624,
+      "effective_train_images": 4072,
+      "original_train_images": 7573,
+      "layout": "/home/lijinhe/work/YOLO_Retraining/data_analyse/dataset_redundancy/results/20260824-182608/variants/dedup_tau_0p930/layout.yaml"
+    },
+    {
+      "threshold": 0.94,
+      "retained_fraction": 0.5425855011224086,
+      "effective_train_images": 4109,
+      "original_train_images": 7573,
+      "layout": "/home/lijinhe/work/YOLO_Retraining/data_analyse/dataset_redundancy/results/20260824-182608/variants/dedup_tau_0p940/layout.yaml"
+    },
+    {
+      "threshold": 0.95,
+      "retained_fraction": 0.5516968176416216,
+      "effective_train_images": 4178,
+      "original_train_images": 7573,
+      "layout": "/home/lijinhe/work/YOLO_Retraining/data_analyse/dataset_redundancy/results/20260824-182608/variants/dedup_tau_0p950/layout.yaml"
+    },
+    {
+      "threshold": 0.96,
+      "retained_fraction": 0.5635811435362472,
+      "effective_train_images": 4268,
+      "original_train_images": 7573,
+      "layout": "/home/lijinhe/work/YOLO_Retraining/data_analyse/dataset_redundancy/results/20260824-182608/variants/dedup_tau_0p960/layout.yaml"
+    },
+    {
+      "threshold": 0.97,
+      "retained_fraction": 0.5815396804436815,
+      "effective_train_images": 4404,
+      "original_train_images": 7573,
+      "layout": "/home/lijinhe/work/YOLO_Retraining/data_analyse/dataset_redundancy/results/20260824-182608/variants/dedup_tau_0p970/layout.yaml"
+    }
+  ]
+}

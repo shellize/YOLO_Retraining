@@ -1,0 +1,18 @@
+YOLOv5 🚀 v7.0-0-g915bbf29 Python-3.10.20 torch-2.2.2+cu121 CUDA:0 (NVIDIA H100 PCIe, 81090MiB)
+Fusing layers...
+Model summary: 157 layers, 7020913 parameters, 0 gradients, 15.8 GFLOPs
+val: Scanning /home/lijinhe/work/YOLO_Retraining/runs/sequences/0814-032653__seq-full-cold__stage0-stage3__yolov5s__s42/tasks/003__stage3__full-cold/backend/yolov5/evaluations/best/test/images... 1000 images, 686 backgrounds, 0 corrupt: 100%|██████████| 1000/1000 00:02
+val: New cache created: /home/lijinhe/work/YOLO_Retraining/runs/sequences/0814-032653__seq-full-cold__stage0-stage3__yolov5s__s42/tasks/003__stage3__full-cold/backend/yolov5/evaluations/best/test/images.cache
+Class     Images  Instances          P          R      mAP50   mAP50-95: 100%|██████████| 16/16 00:04
+all       1000        430      0.749      0.389      0.416      0.181
+large luggage       1000        256      0.503      0.461      0.458      0.202
+stroller       1000        128      0.854      0.547      0.645      0.281
+wheelchair       1000         42      0.639      0.547      0.531      0.226
+flatbed truck       1000          4          1          0     0.0298     0.0154
+Speed: 0.1ms pre-process, 0.7ms inference, 0.8ms NMS per image at shape (64, 3, 640, 640)
+Results saved to /home/lijinhe/work/YOLO_Retraining/runs/sequences/0814-032653__seq-full-cold__stage0-stage3__yolov5s__s42/tasks/003__stage3__full-cold/backend/yolov5/evaluations/best/test/val
+[YOLOv5] compacted progress updates: 35 -> 2 lines
+[YOLOv5] coalesced warning: incomplete JPEG accepted read-only; count=793; by_source=val=793
+[YOLOv5] warning example: val: WARNING ⚠️ /home/lijinhe/work/YOLO_Retraining/data/self_improving/images/0720_1/00001_1780987846311329_0.jpg: incomplete JPEG accepted read-only
+[YOLOv5] warning example: val: WARNING ⚠️ /home/lijinhe/work/YOLO_Retraining/data/self_improving/images/0720_1/00002_1780987856406331_0.jpg: incomplete JPEG accepted read-only
+[YOLOv5] warning example: val: WARNING ⚠️ /home/lijinhe/work/YOLO_Retraining/data/self_improving/images/0720_1/00003_1780987872391333_0.jpg: incomplete JPEG accepted read-only

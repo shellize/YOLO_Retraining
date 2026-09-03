@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "status": "completed",
+  "task_label": "full-warm",
+  "output_dir": "/home/lijinhe/work/YOLO_Retraining/runs/sequences/0813-165402__seq-full-warm__stage0-stage3__yolov5s__s42/tasks/001__stage1__full-warm",
+  "parent_result": "/home/lijinhe/work/YOLO_Retraining/runs/sequences/0813-165402__seq-full-warm__stage0-stage3__yolov5s__s42/tasks/000__stage0__full-warm",
+  "label_schema": [
+    "large luggage",
+    "stroller",
+    "wheelchair",
+    "flatbed truck"
+  ],
+  "backend": {
+    "name": "yolov5",
+    "family": "original-yolov5",
+    "definition": "yolov5s.yaml",
+    "source_commit": "915bbf294bb74c859f0b41f1c23bc395014ea679",
+    "source_tag": "v7.0",
+    "initial_weight": "last",
+    "best_selection_metric": "0.1*map50+0.9*map50_95",
+    "data_loader_adaptation": "read_only_incomplete_jpeg"
+  },
+  "artifacts": {
+    "last_checkpoint": "checkpoints/last.pt",
+    "best_checkpoint": "checkpoints/best.pt",
+    "metrics": "metrics/evaluation.json",
+    "cost": "metrics/cost.json",
+    "selection": "selection/summary.json"
+  },
+  "selection": {
+    "metadata": {
+      "policy": "full"
+    },
+    "group_counts": {
+      "candidate": 5498
+    }
+  },
+  "metrics": {
+    "last": {
+      "test": {
+        "map50_95": 0.16731999467904723,
+        "map50": 0.3801635050646498,
+        "precision": 0.7356847749823459,
+        "recall": 0.31502016919217224,
+        "per_class_ap": {
+          "large luggage": 0.17758890406657393,
+          "stroller": 0.2609220733466297,
+          "wheelchair": 0.23076900130298528,
+          "flatbed truck": 0.0
+        },
+        "sample_count": 1000,
+        "evaluation_seconds": 15.125906550791115
+      }
+    },
+    "best": {
+      "test": {
+        "map50_95": 0.17139014602170255,
+        "map50": 0.39597021215581846,
+        "precision": 0.7495475092403876,
+        "recall": 0.3552691572711104,
+        "per_class_ap": {
+          "large luggage": 0.17457554957370217,
+          "stroller": 0.2696028361636511,
+          "wheelchair": 0.23641660695160752,
+          "flatbed truck": 0.004965591397849463
+        },
+        "sample_count": 1000,
+        "evaluation_seconds": 16.317518786061555
+      }
+    }
+  },
+  "cost": {
+    "selection_seconds": 0.002082287799566984,
+    "training_seconds": 8818.587464435026,
+    "evaluation_seconds": 31.44342533685267,
+    "method_seconds": 8818.589546722826,
+    "gpu_hours": 2.4496082074230072,
+    "images_read": 549800,
+    "optimizer_steps": 8600,
+    "candidate_count": 5498,
+    "selected_count": 5498,
+    "replay_count": 0
+  }
+}

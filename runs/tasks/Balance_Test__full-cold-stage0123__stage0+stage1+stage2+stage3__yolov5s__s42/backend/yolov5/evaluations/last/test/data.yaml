@@ -1,0 +1,8 @@
+train: /home/lijinhe/work/YOLO_Retraining/runs/tasks/Balance_Test__full-cold-stage0123__stage0+stage1+stage2+stage3__yolov5s__s42/backend/yolov5/evaluations/last/test/images.txt
+val: /home/lijinhe/work/YOLO_Retraining/runs/tasks/Balance_Test__full-cold-stage0123__stage0+stage1+stage2+stage3__yolov5s__s42/backend/yolov5/evaluations/last/test/images.txt
+nc: 4
+names:
+  0: large luggage
+  1: stroller
+  2: wheelchair
+  3: flatbed truck

@@ -1,0 +1,13 @@
+{
+  "selected_count": 1500,
+  "group_counts": {
+    "current": 1000,
+    "replay": 500
+  },
+  "metadata": {
+    "policy": "random_replay",
+    "seed": 44,
+    "requested_replay_size": 500,
+    "actual_replay_size": 500
+  }
+}

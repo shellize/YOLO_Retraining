@@ -1,0 +1,8 @@
+include: ../../../../configs/sequence/learning_curve/_base_full_cold.yaml
+sequence:
+  name: Balance_LC2B_ordered_tau096_mixed_release_drop_bg
+  output_root: ../sequences
+data:
+  layout: ../variants/dedup_tau_0p960_mixed_release_drop_pure_background/layout.yaml
+task_template:
+  budget: {type: epochs, value: 100}

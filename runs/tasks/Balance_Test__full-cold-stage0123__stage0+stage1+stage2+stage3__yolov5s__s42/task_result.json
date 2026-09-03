@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "status": "completed",
+  "task_label": "full-cold-stage0123",
+  "output_dir": "/home/lijinhe/work/YOLO_Retraining/runs/tasks/Balance_Test__full-cold-stage0123__stage0+stage1+stage2+stage3__yolov5s__s42",
+  "parent_result": null,
+  "label_schema": [
+    "large luggage",
+    "stroller",
+    "wheelchair",
+    "flatbed truck"
+  ],
+  "backend": {
+    "name": "yolov5",
+    "family": "original-yolov5",
+    "definition": "yolov5s.yaml",
+    "source_commit": "915bbf294bb74c859f0b41f1c23bc395014ea679",
+    "source_tag": "v7.0",
+    "initial_weight": "yolov5s.pt",
+    "best_selection_metric": "map50",
+    "data_loader_adaptation": "read_only_incomplete_jpeg"
+  },
+  "artifacts": {
+    "last_checkpoint": "checkpoints/last.pt",
+    "best_checkpoint": "checkpoints/best.pt",
+    "metrics": "metrics/evaluation.json",
+    "cost": "metrics/cost.json",
+    "selection": "selection/summary.json"
+  },
+  "selection": {
+    "metadata": {
+      "policy": "full"
+    },
+    "group_counts": {
+      "candidate": 7573
+    }
+  },
+  "metrics": {
+    "last": {
+      "test": {
+        "map50_95": 0.23488159924330393,
+        "map50": 0.48967125112811427,
+        "precision": 0.7610840334546537,
+        "recall": 0.45654869933454323,
+        "per_class_ap": {
+          "large luggage": 0.2263813073528848,
+          "stroller": 0.3374457043496381,
+          "wheelchair": 0.3672721986385027,
+          "flatbed truck": 0.008427186632190147
+        },
+        "sample_count": 1000,
+        "evaluation_seconds": 16.787185945082456
+      }
+    },
+    "best": {
+      "test": {
+        "map50_95": 0.2384667890945072,
+        "map50": 0.5032091542338534,
+        "precision": 0.7910918716413887,
+        "recall": 0.43491768267537667,
+        "per_class_ap": {
+          "large luggage": 0.20229857137156598,
+          "stroller": 0.3638528993164848,
+          "wheelchair": 0.3661528949923035,
+          "flatbed truck": 0.021562790697674417
+        },
+        "sample_count": 1000,
+        "evaluation_seconds": 18.76548647508025
+      }
+    }
+  },
+  "cost": {
+    "selection_seconds": 0.0028476128354668617,
+    "training_seconds": 7542.422309639864,
+    "evaluation_seconds": 35.55267242016271,
+    "method_seconds": 7542.425157252699,
+    "gpu_hours": 2.0951180992368608,
+    "images_read": 2271900,
+    "optimizer_steps": 35700,
+    "candidate_count": 7573,
+    "selected_count": 7573,
+    "replay_count": 0
+  }
+}

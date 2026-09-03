@@ -1,0 +1,46 @@
+{
+  "last": {
+    "test": {
+      "map50_95": 0.2248361427875891,
+      "map50": 0.47822808666628625,
+      "precision": 0.7863404791643736,
+      "recall": 0.4190146940865331,
+      "per_class_ap": {
+        "large luggage": 0.18362413663598678,
+        "stroller": 0.34689236716986893,
+        "wheelchair": 0.366984373650807,
+        "flatbed truck": 0.0018436936936936938
+      },
+      "sample_count": 1000,
+      "evaluation_seconds": 74.49606317200232,
+      "per_class_ap50": {
+        "large luggage": 0.5728994313198453,
+        "stroller": 0.7086132063714388,
+        "wheelchair": 0.6283268861510384,
+        "flatbed truck": 0.003072822822822823
+      }
+    }
+  },
+  "best": {
+    "test": {
+      "map50_95": 0.22446103492797936,
+      "map50": 0.482905465180709,
+      "precision": 0.8119093194026981,
+      "recall": 0.40327542995419585,
+      "per_class_ap": {
+        "large luggage": 0.17817038757538187,
+        "stroller": 0.349363071667844,
+        "wheelchair": 0.36868160729795985,
+        "flatbed truck": 0.0016290731707317076
+      },
+      "sample_count": 1000,
+      "evaluation_seconds": 78.043132132967,
+      "per_class_ap50": {
+        "large luggage": 0.5606554951393006,
+        "stroller": 0.7276398330848878,
+        "wheelchair": 0.640611410547428,
+        "flatbed truck": 0.0027151219512195125
+      }
+    }
+  }
+}

@@ -8,13 +8,10 @@ htmlcov/
 .idea/
 .vscode/
 .third_party/
-
+/reports
 # Only the repository-root dataset is excluded. Files such as configs/data/
 # and data_analyse/ remain version controlled.
 /data/
-/runs/
-# Reproducible/generated experiment artifacts
-runs/
 charts/
 !charts/
 charts/*
@@ -36,3 +33,4 @@ weights/
 !/result_analysis/**/*.md
 /data_analyse/custom_dataset/results/
 /data_analyse/dataset_redundancy/results/
+
