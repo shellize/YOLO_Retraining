@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "status": "completed",
+  "task_label": "full-cold",
+  "output_dir": "/home/lijinhe/work/YOLO_Retraining/runs/studies/global_dedup_tau099_learning_curve/sequences/GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/001__stage1__full-cold",
+  "parent_result": "/home/lijinhe/work/YOLO_Retraining/runs/studies/global_dedup_tau099_learning_curve/sequences/GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/000__stage0__full-cold",
+  "label_schema": [
+    "large luggage",
+    "stroller",
+    "wheelchair",
+    "flatbed truck"
+  ],
+  "backend": {
+    "name": "yolov5",
+    "family": "original-yolov5",
+    "definition": "yolov5s.yaml",
+    "source_commit": "915bbf294bb74c859f0b41f1c23bc395014ea679",
+    "source_tag": "v7.0",
+    "initial_weight": "yolov5s.pt",
+    "best_selection_metric": "map50",
+    "hyperparameter_file": "yolov5-default:hyp.scratch-low.yaml",
+    "data_loader_adaptation": "read_only_incomplete_jpeg",
+    "multiprocessing_start_method": "spawn"
+  },
+  "artifacts": {
+    "last_checkpoint": "checkpoints/last.pt",
+    "best_checkpoint": "checkpoints/best.pt",
+    "metrics": "metrics/evaluation.json",
+    "cost": "metrics/cost.json",
+    "selection": "selection/summary.json",
+    "tensorboard": "tensorboard"
+  },
+  "selection": {
+    "metadata": {
+      "policy": "full"
+    },
+    "group_counts": {
+      "candidate": 1230
+    }
+  },
+  "metrics": {
+    "last": {
+      "test": {
+        "map50_95": 0.2789348440987315,
+        "map50": 0.5390753024018932,
+        "precision": 0.5991773205609289,
+        "recall": 0.510917198626183,
+        "per_class_ap": {
+          "large luggage": 0.3346626677796171,
+          "stroller": 0.2997363995204302,
+          "wheelchair": 0.40850633425650723,
+          "flatbed truck": 0.07283397483837148
+        },
+        "sample_count": 1000,
+        "evaluation_seconds": 79.8253135138657,
+        "per_class_ap50": {
+          "large luggage": 0.6535118174383053,
+          "stroller": 0.6343872739118761,
+          "wheelchair": 0.6853080242507514,
+          "flatbed truck": 0.18309409400663984
+        }
+      }
+    },
+    "best": {
+      "test": {
+        "map50_95": 0.2709009898170951,
+        "map50": 0.5377866040909152,
+        "precision": 0.763333801262325,
+        "recall": 0.44610416666666663,
+        "per_class_ap": {
+          "large luggage": 0.3309173305259387,
+          "stroller": 0.2956650467401267,
+          "wheelchair": 0.38342299078652425,
+          "flatbed truck": 0.07359859121579071
+        },
+        "sample_count": 1000,
+        "evaluation_seconds": 84.45482128788717,
+        "per_class_ap50": {
+          "large luggage": 0.6589909739281935,
+          "stroller": 0.6414482716410532,
+          "wheelchair": 0.6656432400870517,
+          "flatbed truck": 0.18506393070736235
+        }
+      }
+    }
+  },
+  "cost": {
+    "selection_seconds": 0.0004739779978990555,
+    "training_seconds": 1416.4778493549675,
+    "evaluation_seconds": 164.28013480175287,
+    "method_seconds": 1416.4783233329654,
+    "gpu_hours": 0.39346620092582374,
+    "images_read": 123000,
+    "optimizer_steps": 2000,
+    "candidate_count": 1230,
+    "selected_count": 1230,
+    "replay_count": 0
+  }
+}

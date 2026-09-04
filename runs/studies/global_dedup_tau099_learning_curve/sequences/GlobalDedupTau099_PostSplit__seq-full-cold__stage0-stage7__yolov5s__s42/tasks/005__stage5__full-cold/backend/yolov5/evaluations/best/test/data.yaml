@@ -1,0 +1,8 @@
+train: /home/lijinhe/work/YOLO_Retraining/runs/studies/global_dedup_tau099_learning_curve/sequences/GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/005__stage5__full-cold/backend/yolov5/evaluations/best/test/images.txt
+val: /home/lijinhe/work/YOLO_Retraining/runs/studies/global_dedup_tau099_learning_curve/sequences/GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/005__stage5__full-cold/backend/yolov5/evaluations/best/test/images.txt
+nc: 4
+names:
+  0: large luggage
+  1: stroller
+  2: wheelchair
+  3: flatbed truck

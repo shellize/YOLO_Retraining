@@ -1,0 +1,20 @@
+{
+  "layout": "/home/lijinhe/work/YOLO_Retraining/configs/data/self_improving.yaml",
+  "images": 9573,
+  "groups": {
+    "test": 1000,
+    "val": 1000,
+    "stage0": 4498,
+    "stage1": 1000,
+    "stage2": 1000,
+    "stage3": 1075
+  },
+  "background_images": 5179,
+  "missing_label_files": 0,
+  "class_instances": {
+    "large luggage": 4531,
+    "stroller": 1256,
+    "wheelchair": 248,
+    "flatbed truck": 31
+  }
+}

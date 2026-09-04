@@ -1,0 +1,12 @@
+{
+  "selection_seconds": 0.000890159048140049,
+  "training_seconds": 1715.8321690429002,
+  "evaluation_seconds": 154.5818398972042,
+  "method_seconds": 1715.8330592019483,
+  "gpu_hours": 0.4766202942227634,
+  "images_read": 245800,
+  "optimizer_steps": 3900,
+  "candidate_count": 2458,
+  "selected_count": 2458,
+  "replay_count": 0
+}
