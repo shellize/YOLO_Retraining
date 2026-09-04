@@ -1,0 +1,4 @@
+include: ../../../../../configs/sequence/_base_learning_curve_full_cold.yaml
+sequence: {name: Balance_Learning_Curve_ordered, output_root: ../../experiment/sequence}
+data:
+  layout: ../data/balance_2batch_ordered.yaml

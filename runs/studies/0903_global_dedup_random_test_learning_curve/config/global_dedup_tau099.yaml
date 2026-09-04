@@ -1,0 +1,6 @@
+include: ../../../../configs/sequence/_base_learning_curve_full_cold.yaml
+sequence:
+  name: GlobalDedupTau099_PostSplit
+  output_root: ../experiment/sequence
+data:
+  layout: ../experiment/variants/dedup_tau_0p990/layout.yaml

@@ -35,7 +35,15 @@ def test_balance_learning_curve_configs_are_comparable_and_reproducible() -> Non
         "random_s43": random_s43,
     }
     for name, expected_order in cases.items():
-        config = load_config(root / "configs" / "sequence" / "learning_curve" / f"{name}.yaml")
+        config = load_config(
+            root
+            / "runs"
+            / "studies"
+            / "0826_balance_learning_curve_2batch"
+            / "config"
+            / "sequence"
+            / f"{name}.yaml"
+        )
         assert [arrival["id"] for arrival in config["arrivals"]] == [f"stage{index}" for index in range(8)]
         assert config["sequence"]["seed"] == 42
         assert config["initialization"]["first"]["source"] == "pretrained"

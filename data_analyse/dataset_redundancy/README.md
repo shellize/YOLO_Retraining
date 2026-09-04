@@ -78,7 +78,7 @@ seven frames in the current data.
 Run every requested full-cold experiment from the repository root:
 
 ```bash
-sh scripts/run_fullcold_redundancy_shift_study.sh
+sh runs/studies/0824_fullcold_redundancy_and_random_test/scripts/run_fullcold_redundancy_shift_study.sh
 ```
 
 The script runs, in order:
@@ -98,7 +98,7 @@ Useful server overrides:
 ```bash
 GPU_ID=1 REDUNDANCY_DEVICE=cpu REDUNDANCY_THRESHOLD_WORKERS=8 \
   TRAIN_BATCH=64 EMBED_BATCH=64 WORKERS=16 STUDY_ID=data-study-v1 \
-  sh scripts/run_fullcold_redundancy_shift_study.sh
+  sh runs/studies/0824_fullcold_redundancy_and_random_test/scripts/run_fullcold_redundancy_shift_study.sh
 ```
 
 Equal-size random subset layouts are always generated. Train them too by adding

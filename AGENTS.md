@@ -1,241 +1,224 @@
 # YOLO Retraining 项目指南
 
-## 项目定位
+本文件只约束这个 Git 仓库。开始工作前先用 `git rev-parse --show-toplevel` 确认当前 checkout 根，再用 `git status --short` 查看用户已有修改；不要把父工作区或另一台机器的状态当成本仓库现状。本机目录目前叫 `project_v2`，服务器 checkout 根目录可以是任意名称，活动代码不得依赖这个 basename。
 
-本项目是研究型 YOLO 顺序重训练框架。实验由 YAML 描述，核心执行单元分为：
+## 基本原则
 
-- `Task`：一次独立训练，显式指定当前数据、候选数据、初始化方式和父任务。
-- `SequenceExperiment`：按 `stage0 -> stageN` 展开多个完整 Task，并显式传递上一阶段结果。
+1. 先明确研究问题、比较变量和证据口径，再改配置或启动训练。
+2. 优先复用已有框架、公共配置和公共工具；实验专用文件留在对应 Study 内。
+3. 区分源码、实验输入、原始运行产物和派生分析，不用图表反推或覆盖原始结果。
+4. 普通 Task/Sequence 不支持覆盖或断点续跑。已有 `task_result.json`、`sequence_result.json`、checkpoint 和日志默认只读。
+5. 普通划分、`Balance_Test` 和各 Study 自建 manifest 属于不同数据协议；比较时必须明确边界。
+6. YOLOv5 vendor 保持固定且干净，通过 backend bridge/runtime hook 扩展，不直接修改第三方源码。
+7. 路径必须可随 Git checkout 迁移：shell 从脚本位置推导仓库根，Python 从 `__file__` 推导；活动 YAML 优先使用相对路径。不要硬编码本机 `E:/.../project_v2`、服务器 `/home/...` 或根目录名 `project_v2`。
 
-默认检测器是固定提交 `915bbf294bb74c859f0b41f1c23bc395014ea679` 的原始 YOLOv5 v7.0；`ultralytics` 是可选后端，不是默认依赖。
-
-## 开始工作前
-
-1. 先阅读本文件和与任务最接近的目录 README。
-2. 优先复用已有配置、方法或脚本，不要在确认没有现成入口前新建重复工具。
-3. 区分代码/协议与生成资产：`src/`、`configs/`、`scripts/` 是实现；`data/`、`runs/` 和各类结果子目录是本机数据或产物。
-4. 工作树可能已有用户修改。先运行 `git status --short`，保留无关改动。
-5. 普通 Task/Sequence 不支持覆盖或断点续跑；不要删除、覆盖或擅自移动已有运行目录。
-6. 面向某次具体分析的生成脚本必须与它生成的图像、CSV、JSON、Markdown 等结果放在同一个结果目录中，不得放入 `scripts/`。该规则同样适用于 `charts/`、`data_analyse/`、`result_analysis/`、`reports/` 等目录；`scripts/` 只保留实验启动器、预检、GPU 等待器和不绑定具体结果目录的通用工具。
-
-## 项目地图
+## 长期项目地图
 
 ```text
-configs/           实验协议、模型、数据布局、Task 和 Sequence 配置
-src/               核心训练框架
-scripts/           实验启动器、预检、GPU 等待器和通用工具
-data_analyse/      训练前的数据诊断与自定义数据布局工具
-result_analysis/   训练后的模型诊断与人工复核工具
-charts/            针对既有实验的图表/报告生成器（多为硬编码、本地生成）
-requirements/      训练、开发、Ultralytics、结果分析环境
-tests/             单元测试和可选 GPU smoke test
-data/              本地数据集，不是源码
-runs/              Task、Sequence、Study 运行产物
-.third_party/      固定 YOLOv5 源码、权重和下载缓存
-logs/              外围日志
+<repo-root>/
+├── src/yolo_retraining/   可复用训练框架
+├── configs/               跨实验共享的默认项、模型、超参、数据和基线配置
+├── scripts/               跨实验复用的启动、预检、汇总和数据维护工具
+├── data/                  本地原始数据和 self_improving 数据集
+├── data_analyse/          训练前的数据统计、manifest 和冗余分析方法
+├── result_analysis/       可复用的训练后分析方法
+├── charts/                可复用的比较/绘图脚本
+├── runs/
+│   ├── tasks/             非 Study 的单 Task 历史运行
+│   ├── sequences/         非 Study 的 Sequence 历史运行
+│   └── studies/           自包含的对照实验
+├── tests/                 单元测试和可选真实后端 smoke test
+├── requirements/          训练、开发、分析和 Ultralytics 环境定义
+├── reports/               既有报告资产（新 Study 结果不放这里）
+└── .third_party/yolov5/   固定 YOLOv5 v7.0 运行时依赖
 ```
 
-## 核心执行链
+Python 版本、依赖、包入口和可选后端以 `pyproject.toml` 与 `requirements/` 为准，不在本文件复制容易过期的版本号。默认研究边界是原始 YOLOv5；Ultralytics 是可选后端。
+
+## Study 是对照实验的完整边界
+
+`runs/studies/` 下的每个一级目录代表一个完整 Study，而不是一个 Sequence 或 Task。Study 名称必须以四位月日开头：
 
 ```text
-配置 YAML / --set 覆盖
-  -> src/yolo_retraining/config.py
+MMDD_<descriptive_study_name>/
+```
+
+例如 9 月 4 日创建的实验使用 `0904_...`。日期表示该 Study 建立/启动的日期；不要用整理文件的日期冒充实验日期。
+
+每个 Study 使用以下结构，暂时没有内容的目录也可以为空：
+
+```text
+runs/studies/MMDD_<study>/
+├── EXPERIMENT.md
+├── config/
+├── logs/
+├── result/
+│   └── <analysis_name>/
+├── experiment/
+│   ├── sequence/
+│   ├── task/
+│   └── variants/
+└── scripts/
+```
+
+各目录职责：
+
+- `EXPERIMENT.md`：先写研究目的，再写共同协议、各实验臂/Sequence/Task 的主要差别，以及结论不能越过的边界。不要逐项抄录所有参数。
+- `config/`：只放该 Study 专用的数据布局和 Task/Sequence 配置；真正跨 Study 复用的基线仍放公共 `configs/`。
+- `logs/`：GPU 等待、构造、训练和汇总日志。
+- `result/<analysis_name>/`：派生图、CSV、JSON、Markdown 等分析结果。同一 Study 做另一种分析时新建另一个子目录，不把不同分析混在一起。
+- `experiment/sequence/`：该 Study 启动的 Sequence 原始输出。
+- `experiment/task/`：该 Study 直接启动的 Task 原始输出；Sequence 内部 Task 仍留在对应 Sequence 的 `tasks/` 中。
+- `experiment/variants/`：Study 专用的预处理数据、manifest、layout、cluster audit 和 protocol 快照。
+- `scripts/`：该 Study 专用的启动器、等待器、数据构造器、汇总器和一次性分析脚本。
+
+Study 专用配置、脚本和结果不得再分散回公共 `configs/`、`scripts/`、`charts/` 或 `result_analysis/`。移动历史运行目录后，原始 YAML、JSON 和日志中可能保留服务器上的旧绝对路径；这些是运行时证据，不手改。新运行使用的活动配置和脚本则必须指向新目录。
+
+Study 会持续增删，根规则文件不登记具体 Study 清单。判断某个 Study 做了什么，始终先读它自己的 `EXPERIMENT.md`。
+
+多个 Study 共用的大型、确定性方法缓存可以保留在对应方法的缓存目录，由 Study 配置或脚本引用，不要求重复复制；必须在 `EXPERIMENT.md` 说明来源和复用条件。共享缓存不是一个 Study，Study 专用 manifest、layout 和 protocol 仍放 `experiment/variants/`。
+
+## 公共目录边界
+
+### `src/yolo_retraining/`
+
+核心执行链：
+
+```text
+YAML / --set
+  -> config.py
   -> TaskRunner 或 SequenceRunner
-  -> 数据 registry/scope
+  -> data registry/scope
   -> selection policy
   -> YOLOv5 或 Ultralytics backend
-  -> checkpoints、metrics、cost、TensorBoard、TaskResult
-  -> result_analysis/ 或 charts/
+  -> Task/Sequence 原始产物
+  -> Study result 或可复用分析方法
 ```
 
-关键实现：
+主要模块：
 
-- CLI：`src/yolo_retraining/run.py`
-- 配置合并、相对路径解析和校验：`src/yolo_retraining/config.py`
-- 单任务执行：`src/yolo_retraining/engine/task_runner.py`
-- 多阶段执行：`src/yolo_retraining/engine/sequence_runner.py`
-- 输出命名与禁止覆盖：`src/yolo_retraining/engine/output.py`
-- 数据加载和稳定 ID：`src/yolo_retraining/data/`
-- 样本选择：`src/yolo_retraining/policies/selection/`
-- 后端：`src/yolo_retraining/backends/`
-- 持续学习汇总指标：`src/yolo_retraining/evaluation/metrics.py`
+- `run.py`：CLI 入口。
+- `config.py`：include 合并、覆盖、相对路径解析和校验。
+- `engine/task_runner.py`、`engine/sequence_runner.py`：单次与多阶段执行。
+- `engine/output.py`：输出命名与禁止覆盖。
+- `data/`：registry、manifest、scope 和 loader；不是物理数据目录。
+- `policies/selection/`：full、random replay 和 selection study 策略。
+- `backends/yolov5/`、`backends/ultralytics/`：检测器适配。
+- `evaluation/`：指标和训练代价。
+- `visualization/`：本地 TensorBoard 写入。
 
-## 按任务选择入口
+### 公共 `configs/`
 
-### 环境检查
+- `defaults.yaml`：默认训练、评估 artifact、best metric 和固定置信度诊断设置。
+- `data/`：跨 Study 复用的数据协议和示例布局。
+- `model/`：检测器模型配置。
+- `hyp/`：公共超参数组合。
+- `task/`：Full Cold、Full Warm、Current Only、Random Replay 和合并 stage 的公共 Task。
+- `sequence/`：标准基线、selection study 和跨 Study 共享的 Sequence 基础配置。
+
+配置 include 和相对路径按配置文件位置解析。移动 YAML 后必须重新加载验证，不能只看文本路径似乎正确。
+
+四条标准 Sequence 基线：
+
+| 基线 | 训练数据 | 后续初始化 |
+|---|---|---|
+| `full_cold` | 截至当前阶段的全部已见数据 | 每阶段从预训练权重冷启动 |
+| `full_warm` | 全部已见数据 | 上一 Task 的 `best.pt` |
+| `current_only` | 当前阶段数据 | 上一 Task 的 `best.pt` |
+| `random_replay` | 当前数据加固定随机历史子集 | 上一 Task 的 `best.pt` |
+
+Task 级 warm 配置可能使用父任务 `last.pt`，标准 Sequence 使用 `best.pt`；结果说明中必须写清 checkpoint 语义。
+
+### 公共 `scripts/`
+
+只保留跨实验复用入口：标准基线/Balance Test 启动器、selection study 启动器和 preflight、`select_best_task.py`、`normalize_batch_names.py`、通用冗余汇总与协议校验等。
+
+具体 Study 的运行命令从其 `scripts/` 启动。新增 Study 时，不要再把它的 `run_*.sh` 放回公共 `scripts/`。
+
+### `data/` 与 `data_analyse/`
+
+物理数据只放在根 `data/`：
+
+- `data/raw/iamge/`、`data/raw/label/` 是现有真实拼写，不擅自更名。
+- `data/self_improving/images/`、`labels/` 按物理 batch 保存。
+- `data/self_improving/annotation_archive/` 保存原始 XML/JSON 归档。
+- `data/classes.txt` 保存类别顺序。
+
+不要展平 batch，不覆盖原始标注，不把大数据提交 Git。数据组合通过公共 layout 或 Study 的 `experiment/variants/` manifest 完成。
+
+`data_analyse/` 只保存可复用的数据研究方法：
+
+- 批次统计方法：统计图像、标注和类别。
+- 自定义数据方法：构建/校验 manifest 和数据布局，不复制原图。
+- 冗余分析方法：固定特征、时序相似度、聚类和代表样本选择。
+
+冗余分析是训练前审计，不允许用 test mAP 反向选择 τ。相邻帧主协议使用 `temporal-window=1`；更宽窗口或全局近邻应作为不同诊断标明。
+
+### `charts/`、`result_analysis/` 与 `reports/`
+
+- `charts/` 只放可跨 Study 复用的图表/比较脚本。
+- `result_analysis/` 只放可复用的模型结果分析方法。
+- Study 专用输出必须写入 `runs/studies/<study>/result/<analysis_name>/`；Study 专用分析入口放该 Study 的 `scripts/`。
+- 这两个公共目录里已经存在的旧图、CSV 和时间戳结果本轮不整理；它们不是新的目录范式。
+- `reports/` 中的既有报告资产不作为新 Study 的结果目录。
+
+## 原始运行产物与取数规则
+
+单 Task 的 canonical 证据包括：
+
+```text
+task.yaml
+task_status.json
+task_result.json
+data/*_ids.txt
+selection/
+checkpoints/{last.pt,best.pt}
+metrics/{train_history.csv,evaluation.json,cost.json}
+backend/<backend>/
+tensorboard/
+logs/
+```
+
+Sequence 还包括 `sequence.yaml`、`sequence_status.json`、`sequence_result.json`、内部 `tasks/` 和 `summary/*.csv`。
+
+取数顺序：
+
+1. 先检查 status 是否完成以及完成 Task 数。
+2. 最终指标和权重路径读 `task_result.json`。
+3. 阶段趋势读 Sequence 的 `summary/metrics_by_task.csv`，必要时回到各 Task 核对。
+4. 实际训练样本读 `data/selected_ids.txt`，筛选规则读 `selection/summary.json`。
+5. 训练曲线读 `metrics/train_history.csv` 或 TensorBoard event。
+6. 固定置信度诊断读 backend evaluation 下的 `confidence_sweep.json`；它不等于各自最优 F1。
+7. 图表和 Markdown 是派生交付物，不能作为唯一事实来源。
+
+不得手改原始结果，也不得复制已有 runs 冒充新实验。目录搬迁不会自动重写历史文件中的绝对路径，分析程序应优先根据当前 Study 根定位文件，并把历史路径只当 provenance 文本。
+
+## 环境、运行与验证
+
+训练环境默认 `yolo-retraining-v5`，结果分析环境默认 `yolo-result-analysis`。不要为了画图或 ONNX 检查修改服务器训练环境。
+
+常用入口：
 
 ```bash
 conda run --no-capture-output -n yolo-retraining-v5 \
   python -m yolo_retraining.doctor --project-root "$PWD"
-```
 
-- 首次构建：`requirements/bootstrap.sh` 或 `requirements/bootstrap.ps1`
-- 复用已有环境并重装 editable package：`requirements/use_existing_env.sh` 或 `.ps1`
-- 独立结果分析环境：`requirements/bootstrap_analysis.ps1`
-- 服务器 CPU/内存/GPU 快照：根目录本地工具 `check_server_resources.sh`
-
-### 启动训练
-
-```bash
 yolo-retraining task --config configs/task/full_cold.yaml
 yolo-retraining sequence --config configs/sequence/full_warm.yaml
-```
 
-使用 `--set KEY=VALUE` 做单次覆盖，避免为少量参数复制 YAML，例如：
-
-```bash
---set backend.params.device=0
---set backend.params.imgsz=960
---set data.layout=/absolute/path/layout.yaml
-```
-
-优先选择 `configs/sequence/` 运行完整阶段实验。`configs/task/` 适合单次训练；warm/replay Task 需要显式设置 `task.parent_result`。注意：当前 warm 类 Task YAML 使用父任务 `last.pt`，标准 Sequence 使用父任务 `best.pt`，汇报时不要混淆口径。
-
-### 四条标准基线
-
-| 基线 | 训练数据 | 后续初始化 |
-|---|---|---|
-| `full_cold` | 全部已见组 | 每阶段预训练权重冷启动 |
-| `full_warm` | 全部已见组 | 上一 Task `best.pt` |
-| `current_only` | 当前组 | 上一 Task `best.pt` |
-| `random_replay` | 当前组 + 固定随机历史子集 | 上一 Task `best.pt` |
-
-标准配置在 `configs/sequence/{full_cold,full_warm,current_only,random_replay}.yaml`。双 GPU 固定基线启动器在 `scripts/run_*baseline*.sh` 和 `scripts/run_full_*_*.sh`。
-
-### 样本选择研究
-
-配置在 `configs/sequence/selection_study/`，实现位于 `src/yolo_retraining/policies/selection/study.py`：
-
-- `positive_only`：真实标签框数大于零。
-- `pred_positive`：教师模型产生检测结果。
-- `error_hard`：教师模型存在 FP 或 FN。
-- `gradnorm_topk`：按检测头梯度范数取 Top-K，预算来自 `error_hard` 数量。
-- `random_topk`：与 `error_hard` 等预算的随机对照。
-
-每种策略分为累计冷启动 `cum_cold` 和当前数据热启动 `current_warm`。批量启动使用：
-
-- `scripts/preflight_selection_study.py`：检查 bootstrap、teacher checkpoint 和输出冲突。
-- `scripts/run_selection_study.sh`：串行运行全部配置，完成项自动跳过。
-- `scripts/run_selection_study_when_gpu0_idle.sh`：GPU0 连续空闲后启动，并用 `flock` 防重复。
-
-### 创建或检查数据布局
-
-首选 `data_analyse/custom_dataset/custom_dataset.py`，它不复制或移动原图：
-
-```bash
-python data_analyse/custom_dataset/custom_dataset.py validate --layout <layout.yaml>
-python data_analyse/custom_dataset/custom_dataset.py write-manifest ...
-python data_analyse/custom_dataset/custom_dataset.py build-layout ...
-python data_analyse/custom_dataset/custom_dataset.py random-reassign ...
-python data_analyse/custom_dataset/custom_dataset.py random-split ...
-```
-
-标准数据布局：
-
-- `configs/data/self_improving.yaml`：原始批次协议。
-- `configs/data/self_improving_balance_test.yaml`：平衡 holdout 协议。
-
-布局只映射物理目录，不移动图像。稳定样本 ID 是 `group_id::relative/image/path.jpg`。新布局训练前必须校验路径、标签、类别和跨组重叠。
-
-### 连续帧冗余分析
-
-- 方法：`data_analyse/dataset_redundancy/redundancy_analysis.py`
-- 完整编排：`scripts/run_fullcold_redundancy_shift_study.bash`
-- shell 兼容入口：`scripts/run_fullcold_redundancy_shift_study.sh`
-- 最终汇总：`scripts/summarize_fullcold_data_study.py`
-- 旧三阈值协议校验器：`scripts/validate_redundancy_protocol.py`
-
-当前完整编排器扫描 `0.900-0.970` 候选阈值，选择保留率最接近 `3/7` 的一个阈值再训练；`data_analyse/dataset_redundancy/README.md` 中固定三个阈值的描述已经落后，执行时以脚本为准。
-
-### 训练结果分析
-
-- 训练/测试过拟合：`result_analysis/train_test_overfitting/analyze_train_test_overfitting.py`
-  - 比较固定置信度和各 split 最佳 F1。
-  - 输出逐图 TP/FP/FN、逐预测、逐 GT、逐类 AP 和缺失 ID。
-- FP/FN 人工复核：`result_analysis/fp_fn_review/build_fp_fn_review.py`
-  - 从完成 Task 构造 AnyLabeling 目录。
-  - 生成 GT/TP/FP 对比 JSON、manifest、ONNX 配置和错误样本链接。
-  - ONNX/ONNX Runtime 放在独立 `yolo-result-analysis` 环境，避免污染训练环境。
-
-### 图表与报告
-
-- `charts/4balance_baseline/generate_report.py`：四基线指标、折线图和 Markdown 报告。
-- `charts/selection_study_comparison/compare_methods.py`：Selection Study 对比。
-- `charts/selection_study_comparison/generate_fixed_confidence_cache.py`：缺失固定置信度产物时重新评估。
-- `charts/总结格式prompt/sequence对比实验格式.md`：现有总结格式参考。
-
-`charts/` 被 Git 忽略，且当前脚本中的 run 名称和方法列表多为硬编码。只有目标实验与既有目录一致时才能直接运行；泛化到新实验前先参数化输入，避免复制粘贴整份脚本。
-
-### 其他小工具
-
-- `scripts/select_best_task.py`：按 `metrics/train_history.csv` 中指定验证指标选择完成 Task。
-- `scripts/normalize_batch_names.py`：将 `0720_01..09` 改为 `0720_1..9` 并重写数据 YAML。它会修改数据，只能在明确授权并核对目标根目录后运行。
-
-## 运行产物地图
-
-单个 Task：
-
-```text
-<task>/
-├── task.yaml
-├── task_status.json
-├── task_result.json
-├── data/*_ids.txt
-├── selection/
-├── checkpoints/{last.pt,best.pt}
-├── metrics/{train_history.csv,evaluation.json,cost.json}
-├── backend/<backend>/
-├── tensorboard/
-└── logs/error.txt
-```
-
-Sequence：
-
-```text
-<sequence>/
-├── sequence.yaml
-├── sequence_status.json
-├── sequence_result.json
-├── tasks/000__stage0__...
-└── summary/{metrics_by_task.csv,cost_by_task.csv,selection_by_task.csv}
-```
-
-查找顺序：
-
-- 最终指标或权重路径：`task_result.json`
-- 每阶段整体趋势：Sequence 的 `summary/`
-- 实际训练样本：`data/selected_ids.txt`
-- 样本筛选细节：`selection/summary.json`、`sample_scores.jsonl`
-- 训练曲线：`metrics/train_history.csv` 或 `tensorboard/`
-- 固定置信度曲线：后端 evaluation 目录的 `confidence_sweep.json`
-- 失败原因：`task_status.json` / `sequence_status.json` 和 `logs/error.txt`
-
-## 验证要求
-
-无 GPU 默认测试：
-
-```bash
 conda run --no-capture-output -n yolo-retraining-v5 python -m pytest -q
 ```
 
-当前基线为 `63 passed, 5 skipped`。被跳过的通常是 ONNX、真实 YOLOv5、Ultralytics 和双 GPU smoke test。只有相关改动才启用对应环境变量运行昂贵测试。
+使用 `--set KEY=VALUE` 做少量单次覆盖，不为一两个参数复制整份 YAML。长任务启动前检查输出冲突、数据协议、seed、checkpoint、GPU 和磁盘；需要等待 GPU 的 Study 应使用自己的 waiter，并检查 tmux、进程、GPU、日志和结果文件，不能仅凭显存瞬时值判断状态。
 
-修改范围对应测试：
+测试按改动范围选择：配置、数据/manifest、Task/Sequence、selection、backend、分析方法和 Study 路径各自运行对应测试；跨目录迁移还要运行完整无 GPU 测试集。
 
-- 配置：`tests/test_config.py`
-- 数据布局/manifest：`tests/test_data_*.py`、`tests/test_custom_dataset.py`
-- 选择策略：`tests/test_selection_policies.py`
-- Task/Sequence：`tests/test_task_runner.py`、`tests/test_sequence_runner.py`
-- 冗余方法：`tests/test_dataset_redundancy.py`
-- 结果分析：`tests/test_fp_fn_review.py`
-- YOLOv5 后端：`tests/test_yolov5_backend.py`、`tests/test_yolov5_artifacts.py`
+真实 YOLOv5、Ultralytics、ONNX 或多 GPU smoke test 与默认无 GPU 单测分开。只有实际运行过的测试才能写成已验证，不在本文件固定保存容易过期的 pass 数量。
 
-## 已知问题与操作边界
+## 长期操作边界
 
-1. `scripts/run_full_cold_stage0.sh` 当前在定义 `PROJECT_ROOT` 前引用它，在 `set -u` 下会立即失败；修复前不要直接使用。
-2. `data_analyse/class_distribution/` 当前不可用：缺少包级 `__main__.py`，默认数据根路径错误，且预期 XML 目录与当前 `data/self_improving/archive/0720_N/xml` 不一致。
-3. `result_analysis` 下带时间戳目录、`runs/`、`data/`、冗余结果和图表大多是生成资产；不要把它们当作实现入口，也不要为“清理”擅自删除。
-4. `normalize_batch_names.py`、新训练、重新推理和 ONNX 导出都会写入磁盘；纯分析请求不要自动执行这些动作。
-5. 普通 Task/Sequence 的输出目录若已存在会拒绝运行。Study 脚本可能实现自己的完成检测和缓存复用，应先阅读相应脚本的语义。
-6. YOLOv5 源码必须保持固定提交且干净；框架不会自动 reset 或覆盖不匹配的 `.third_party/yolov5`。
-7. 默认优先使用 YOLOv5 后端。只有用户明确要求 YOLOv8/YOLO11 或现代 Ultralytics 行为时，才安装 `requirements/ultralytics.lock` 并选择对应模型配置。
+1. `.third_party/`、`data/`、Study 原始结果、checkpoint、方法缓存和派生图表属于依赖、数据或生成资产；不要为了清理目录擅自删除。
+2. `.gitignore` 会忽略数据、第三方依赖、权重和一部分生成资产；Git 状态不能证明这些文件不存在。
+3. 数据重命名、训练、重新评估、导出和 manifest 重建都会写磁盘；纯审阅或解释请求不自动执行。
+4. 新增或移动 Study 后，至少验证：七个标准目录存在、活动 YAML 可加载、脚本语法通过、相关测试通过、原始 Task/Sequence 数量未减少。
+5. 临时故障、当前实验列表、一次测试的 pass 数和机器专用路径不写入本文件；它们应记录在对应 README、`EXPERIMENT.md`、issue 或运行日志中。

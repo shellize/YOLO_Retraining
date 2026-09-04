@@ -1,8 +1,0 @@
-include: ../../../../configs/sequence/learning_curve/_base_full_cold.yaml
-sequence:
-  name: Balance_LC2B_ordered_dedup_tau099
-  output_root: ../sequences
-data:
-  layout: ../variants/dedup_tau_0p990/layout.yaml
-task_template:
-  budget: {type: epochs, value: 100}
