@@ -1,0 +1,7 @@
+include: ../../../../configs/sequence/_base_learning_curve_full_cold.yaml
+sequence:
+  name: GlobalDedupTau099_PostSplit_RandomS43_Rerun
+  output_root: ../experiment/sequence
+  seed: 42
+data:
+  layout: ../experiment/variants/dedup_tau_0p990_split_s43/layout.yaml

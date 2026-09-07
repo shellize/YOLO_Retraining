@@ -1,0 +1,14 @@
+{
+  "study": "0824_fullcold_redundancy_and_random_test",
+  "sequence": "random_frame_s42__seq-full-cold__stage0-stage3__yolov5s__s42",
+  "metric_source": "task_result.json -> metrics.best.test.per_class_ap",
+  "metric_definition": "per-class AP@0.5:0.95; per-class AP@0.5 is not available in this historical result",
+  "x_axis": "task_result.json -> cost.selected_count",
+  "test_images_per_stage": [
+    1000
+  ],
+  "outputs": {
+    "csv": "per_class_ap_metrics.csv",
+    "plot": "per_class_ap50_95_learning_curve.png"
+  }
+}

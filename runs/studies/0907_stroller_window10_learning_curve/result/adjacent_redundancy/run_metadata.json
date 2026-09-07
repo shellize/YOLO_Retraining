@@ -1,0 +1,42 @@
+{
+  "extractor": "yolov5s_multiscale_spatial_pyramid",
+  "layers": [
+    17,
+    20,
+    23
+  ],
+  "pool_grids": [
+    4,
+    2,
+    1
+  ],
+  "imgsz": 640,
+  "weights": "E:\\desktop\\project\\YOLO Retraining\\project_v2\\.third_party\\yolov5\\yolov5s.pt",
+  "weights_sha256": "8b3b748c1e592ddd8868022e8732fde20025197328490623cc16c6f24d0782ee",
+  "yolov5_commit": "915bbf294bb74c859f0b41f1c23bc395014ea679",
+  "yolov5_tag": "v7.0",
+  "device": "cuda:0",
+  "embedding_shape": [
+    898,
+    3584
+  ],
+  "inventory_sha256": "79328ce9b4ef3f3d7af8f8d088c0882f38c9861f4a67502f48450f74be57a3b7",
+  "source_layout": "E:\\desktop\\project\\YOLO Retraining\\project_v2\\runs\\studies\\0907_stroller_window10_learning_curve\\config\\data.yaml",
+  "groups": [
+    "stroller_reviewed"
+  ],
+  "dataset_root": "E:\\desktop\\project\\YOLO Retraining\\project_v2\\data\\stroller",
+  "embeddings": "E:\\desktop\\project\\YOLO Retraining\\project_v2\\runs\\studies\\0907_stroller_window10_learning_curve\\result\\adjacent_redundancy\\embeddings.npz",
+  "thresholds": [
+    0.98,
+    0.99
+  ],
+  "temporal_window": 1,
+  "top_k": 20,
+  "random_seeds": [
+    41,
+    42,
+    43
+  ],
+  "threshold_workers": 1
+}

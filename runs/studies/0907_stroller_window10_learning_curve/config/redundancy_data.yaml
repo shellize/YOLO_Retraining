@@ -1,0 +1,12 @@
+# One-group layout for the manually checked stroller dataset.
+# Images are flat and are ordered by filename by the redundancy analyzer.
+path: ../../../../data/stroller
+names:
+  0: large luggage
+  1: stroller
+  2: wheelchair
+  3: flatbed truck
+groups:
+  stroller:
+    split: train
+    images: images

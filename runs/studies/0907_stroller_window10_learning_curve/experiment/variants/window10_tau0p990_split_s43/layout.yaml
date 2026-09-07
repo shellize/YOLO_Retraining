@@ -1,0 +1,37 @@
+path: ../../../../../../data/stroller
+names:
+  0: large luggage
+  1: stroller
+  2: wheelchair
+  3: flatbed truck
+groups:
+  test:
+    split: test
+    manifest: ../../runs/studies/0907_stroller_window10_learning_curve/experiment/variants/window10_tau0p990_split_s43/manifests/test.txt
+  val:
+    split: val
+    manifest: ../../runs/studies/0907_stroller_window10_learning_curve/experiment/variants/window10_tau0p990_split_s43/manifests/val.txt
+  stage0:
+    split: train
+    manifest: ../../runs/studies/0907_stroller_window10_learning_curve/experiment/variants/window10_tau0p990_split_s43/manifests/stage0.txt
+  stage1:
+    split: train
+    manifest: ../../runs/studies/0907_stroller_window10_learning_curve/experiment/variants/window10_tau0p990_split_s43/manifests/stage1.txt
+  stage2:
+    split: train
+    manifest: ../../runs/studies/0907_stroller_window10_learning_curve/experiment/variants/window10_tau0p990_split_s43/manifests/stage2.txt
+  stage3:
+    split: train
+    manifest: ../../runs/studies/0907_stroller_window10_learning_curve/experiment/variants/window10_tau0p990_split_s43/manifests/stage3.txt
+  stage4:
+    split: train
+    manifest: ../../runs/studies/0907_stroller_window10_learning_curve/experiment/variants/window10_tau0p990_split_s43/manifests/stage4.txt
+  stage5:
+    split: train
+    manifest: ../../runs/studies/0907_stroller_window10_learning_curve/experiment/variants/window10_tau0p990_split_s43/manifests/stage5.txt
+  stage6:
+    split: train
+    manifest: ../../runs/studies/0907_stroller_window10_learning_curve/experiment/variants/window10_tau0p990_split_s43/manifests/stage6.txt
+  stage7:
+    split: train
+    manifest: ../../runs/studies/0907_stroller_window10_learning_curve/experiment/variants/window10_tau0p990_split_s43/manifests/stage7.txt

@@ -1,0 +1,8 @@
+{
+  "window": 10,
+  "threshold": 0.99,
+  "original_images": 898,
+  "non_singleton_clusters": 69,
+  "member_images": 166,
+  "max_cluster_size": 18
+}

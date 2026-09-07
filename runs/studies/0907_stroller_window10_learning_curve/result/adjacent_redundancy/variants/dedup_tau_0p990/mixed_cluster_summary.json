@@ -1,0 +1,12 @@
+{
+  "total_clusters": 816,
+  "mixed_cluster_count": 0,
+  "mixed_member_count": 0,
+  "annotated_count": 0,
+  "unannotated_count": 0,
+  "by_group": {},
+  "files": {
+    "clusters": "mixed_clusters.csv",
+    "members": "mixed_cluster_members.csv"
+  }
+}

@@ -17,10 +17,18 @@ STUDY_DIR = Path(__file__).resolve().parents[1]
 SEQUENCES_DIR = STUDY_DIR / "experiment" / "sequence"
 RESULTS_DIR = STUDY_DIR / "result" / "randomization_comparison"
 
-CURVES = {
-    42: "GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42",
-    41: "GlobalDedupTau099_PostSplit_RandomS41__seq-full-cold__stage0-stage7__yolov5s__s42",
-    43: "GlobalDedupTau099_PostSplit_RandomS43__seq-full-cold__stage0-stage7__yolov5s__s42",
+CURVE_CANDIDATES = {
+    42: (
+        "GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42",
+    ),
+    41: (
+        "GlobalDedupTau099_PostSplit_RandomS41__seq-full-cold__stage0-stage7__yolov5s__s42",
+        "GlobalDedupTau099_PostSplit_RandomS41_Rerun__seq-full-cold__stage0-stage7__yolov5s__s42",
+    ),
+    43: (
+        "GlobalDedupTau099_PostSplit_RandomS43__seq-full-cold__stage0-stage7__yolov5s__s42",
+        "GlobalDedupTau099_PostSplit_RandomS43_Rerun__seq-full-cold__stage0-stage7__yolov5s__s42",
+    ),
 }
 
 
@@ -69,6 +77,24 @@ def collect_curve(split_seed: int, sequence_name: str) -> list[dict[str, Any]]:
             }
         )
     return rows
+
+
+def resolve_curve_names() -> dict[int, str]:
+    resolved: dict[int, str] = {}
+    for split_seed, candidates in CURVE_CANDIDATES.items():
+        for sequence_name in candidates:
+            sequence_dir = SEQUENCES_DIR / sequence_name
+            status_path = sequence_dir / "sequence_status.json"
+            if not status_path.is_file():
+                continue
+            status = read_json(status_path)
+            if status.get("status") == "completed" and status.get("completed_tasks") == 8:
+                resolved[split_seed] = sequence_name
+                break
+        if split_seed not in resolved:
+            choices = ", ".join(candidates)
+            raise FileNotFoundError(f"No completed sequence for split seed {split_seed}; checked: {choices}")
+    return resolved
 
 
 def validate_protocol(rows: list[dict[str, Any]]) -> dict[str, Any]:
@@ -172,7 +198,12 @@ def plot(rows: list[dict[str, Any]]) -> Path:
 
 
 def main() -> int:
-    rows = [row for split_seed, sequence_name in CURVES.items() for row in collect_curve(split_seed, sequence_name)]
+    resolved = resolve_curve_names()
+    rows = [
+        row
+        for split_seed, sequence_name in resolved.items()
+        for row in collect_curve(split_seed, sequence_name)
+    ]
     protocol = validate_protocol(rows)
     csv_path = write_csv(rows)
     png_path = plot(rows)
@@ -180,6 +211,7 @@ def main() -> int:
         "study": STUDY_DIR.name,
         "comparison": "post-deduplication random split seed",
         "split_seeds": [42, 41, 43],
+        "resolved_sequences": {str(seed): name for seed, name in resolved.items()},
         "training_seed_schedule": "42-49 for every sequence",
         "metric_source": "task_result.json -> metrics.best.test",
         "x_axis": "task_result.json -> cost.selected_count",

@@ -21,3 +21,4 @@
 - 各 Sequence 的阶段指标：`experiment/sequence/<实验名>/summary/metrics_by_task.csv`
 - 各阶段原始指标：`experiment/sequence/<实验名>/tasks/<stage>/task_result.json`
 - study 汇总图表与阈值记录：`result/fullcold_comparison/`
+- `random_frame_s42` 各类别 AP@0.5:0.95 learning curve：`result/random_frame_per_class_learning_curve/`

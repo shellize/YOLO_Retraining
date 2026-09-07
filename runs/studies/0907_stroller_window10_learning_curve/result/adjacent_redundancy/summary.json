@@ -1,0 +1,62 @@
+{
+  "images": 898,
+  "train_images": 898,
+  "validation_images": 0,
+  "test_images": 0,
+  "temporal_window": 1,
+  "temporal_pairs_at_min_threshold": 176,
+  "global_top_k": 20,
+  "global_edges": 13102,
+  "cross_split_nearest_mean": null,
+  "cross_split_nearest_median": null,
+  "thresholds": {
+    "0.98": {
+      "layout": "E:\\desktop\\project\\YOLO Retraining\\project_v2\\runs\\studies\\0907_stroller_window10_learning_curve\\result\\adjacent_redundancy\\variants\\dedup_tau_0p980\\layout.yaml",
+      "original_train_images": 898,
+      "effective_train_images": 746,
+      "retained_fraction": 0.8307349665924276,
+      "redundant_images": 152,
+      "non_singleton_clusters": 111,
+      "max_cluster_size": 3,
+      "per_group_effective": {
+        "stroller_reviewed": 746
+      },
+      "mixed_clusters": {
+        "total_clusters": 746,
+        "mixed_cluster_count": 0,
+        "mixed_member_count": 0,
+        "annotated_count": 0,
+        "unannotated_count": 0,
+        "by_group": {},
+        "files": {
+          "clusters": "mixed_clusters.csv",
+          "members": "mixed_cluster_members.csv"
+        }
+      }
+    },
+    "0.99": {
+      "layout": "E:\\desktop\\project\\YOLO Retraining\\project_v2\\runs\\studies\\0907_stroller_window10_learning_curve\\result\\adjacent_redundancy\\variants\\dedup_tau_0p990\\layout.yaml",
+      "original_train_images": 898,
+      "effective_train_images": 816,
+      "retained_fraction": 0.9086859688195991,
+      "redundant_images": 82,
+      "non_singleton_clusters": 71,
+      "max_cluster_size": 3,
+      "per_group_effective": {
+        "stroller_reviewed": 816
+      },
+      "mixed_clusters": {
+        "total_clusters": 816,
+        "mixed_cluster_count": 0,
+        "mixed_member_count": 0,
+        "annotated_count": 0,
+        "unannotated_count": 0,
+        "by_group": {},
+        "files": {
+          "clusters": "mixed_clusters.csv",
+          "members": "mixed_cluster_members.csv"
+        }
+      }
+    }
+  }
+}
