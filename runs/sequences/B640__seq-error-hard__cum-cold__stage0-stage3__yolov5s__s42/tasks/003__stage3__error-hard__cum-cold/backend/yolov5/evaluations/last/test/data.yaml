@@ -1,8 +1,0 @@
-train: /home/lijinhe/work/YOLO_Retraining/runs/sequences/B640__seq-error-hard__cum-cold__stage0-stage3__yolov5s__s42/tasks/003__stage3__error-hard__cum-cold/backend/yolov5/evaluations/last/test/images.txt
-val: /home/lijinhe/work/YOLO_Retraining/runs/sequences/B640__seq-error-hard__cum-cold__stage0-stage3__yolov5s__s42/tasks/003__stage3__error-hard__cum-cold/backend/yolov5/evaluations/last/test/images.txt
-nc: 4
-names:
-  0: large luggage
-  1: stroller
-  2: wheelchair
-  3: flatbed truck

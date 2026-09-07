@@ -12,6 +12,11 @@ htmlcov/
 # Only the repository-root dataset is excluded. Files such as configs/data/
 # and data_analyse/ remain version controlled.
 /data/
+# Local archives downloaded from the server; never commit archived run artifacts.
+/archives/
+# Historical non-Study run artifacts are local-only after archive/untracking.
+/runs/sequences/
+/runs/tasks/
 charts/
 !charts/
 charts/*
