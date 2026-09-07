@@ -1,0 +1,14 @@
+{
+  "method": "legacy_adjacent_temporal_dedup",
+  "threshold": 0.99,
+  "temporal_window": 1,
+  "embedding_cache": "/home/lijinhe/work/YOLO_Retraining/data_analyse/dataset_redundancy/results/20260824-182608/embeddings.npz",
+  "embedding_inventory_sha256": "a1124ef24d2875da126338046431f5a6878f2513405473a02b402b5f1461858e",
+  "current_inventory_sha256": "a1124ef24d2875da126338046431f5a6878f2513405473a02b402b5f1461858e",
+  "source_layout": "/home/lijinhe/work/YOLO_Retraining/configs/data/self_improving.yaml",
+  "output_layout": "/home/lijinhe/work/YOLO_Retraining/runs/studies/0903_global_dedup_random_test_learning_curve/experiment/variants/dedup_tau_0p990_split_s41/layout.yaml",
+  "seed": 41,
+  "val_count": 1000,
+  "test_count": 1000,
+  "stages": 8
+}

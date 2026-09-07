@@ -1,0 +1,436 @@
++ /home/lijinhe/miniforge3/bin/conda run --no-capture-output -n yolo-retraining-v5 python -m yolo_retraining.run sequence --config /home/lijinhe/work/YOLO_Retraining/runs/studies/0903_global_dedup_random_test_learning_curve/config/global_dedup_tau099_split_s41.yaml --set sequence.output_root=/home/lijinhe/work/YOLO_Retraining/runs/studies/0903_global_dedup_random_test_learning_curve/experiment/sequence
+[Task] output: /home/lijinhe/work/YOLO_Retraining/runs/studies/0903_global_dedup_random_test_learning_curve/experiment/sequence/GlobalDedupTau099_PostSplit_RandomS41__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/000__stage0__full-cold
+[Task] data: current=615, candidate=615, validation=1000, test=1000
+[Task] selection: policy=full, selected=615, groups={'candidate': 615}, time=0.000s
+[Task] training: backend=yolov5, epochs=100, batch=64, device=0
+[YOLOv5] epoch 1/100 running
+[YOLOv5] validation: all       1000        686   0.000292      0.103   0.000238   5.72e-05
+[YOLOv5] epoch 2/100 running
+[YOLOv5] validation: all       1000        686   0.000677       0.35     0.0029   0.000611
+[YOLOv5] epoch 3/100 running
+[YOLOv5] validation: all       1000        686    0.00108      0.544     0.0287    0.00579
+[YOLOv5] epoch 4/100 running
+[YOLOv5] validation: all       1000        686    0.00153      0.608     0.0689     0.0195
+[YOLOv5] epoch 5/100 running
+[YOLOv5] validation: all       1000        686      0.795     0.0858     0.0416     0.0133
+[YOLOv5] epoch 6/100 running
+[YOLOv5] validation: all       1000        686      0.813     0.0547     0.0546      0.014
+[YOLOv5] epoch 7/100 running
+[YOLOv5] validation: all       1000        686      0.883     0.0557      0.152     0.0555
+[YOLOv5] epoch 8/100 running
+[YOLOv5] validation: all       1000        686      0.877     0.0688      0.136     0.0417
+[YOLOv5] epoch 9/100 running
+[YOLOv5] validation: all       1000        686       0.85      0.067      0.164     0.0504
+[YOLOv5] epoch 10/100 running
+[YOLOv5] validation: all       1000        686      0.624       0.21      0.174     0.0581
+[YOLOv5] epoch 11/100 running
+[YOLOv5] validation: all       1000        686      0.434      0.244      0.154     0.0567
+[YOLOv5] epoch 12/100 running
+[YOLOv5] validation: all       1000        686      0.394      0.279      0.149     0.0621
+[YOLOv5] epoch 13/100 running
+[YOLOv5] validation: all       1000        686      0.365      0.328       0.17     0.0762
+[YOLOv5] epoch 14/100 running
+[YOLOv5] validation: all       1000        686      0.394      0.305       0.17     0.0576
+[YOLOv5] epoch 15/100 running
+[YOLOv5] validation: all       1000        686      0.462      0.245      0.167     0.0555
+[YOLOv5] epoch 16/100 running
+[YOLOv5] validation: all       1000        686      0.508      0.291      0.216     0.0832
+[YOLOv5] epoch 17/100 running
+[YOLOv5] validation: all       1000        686      0.615      0.246      0.232      0.105
+[YOLOv5] epoch 18/100 running
+[YOLOv5] validation: all       1000        686      0.559      0.185      0.191     0.0794
+[YOLOv5] epoch 19/100 running
+[YOLOv5] validation: all       1000        686       0.51      0.271       0.22     0.0942
+[YOLOv5] epoch 20/100 running
+[YOLOv5] validation: all       1000        686      0.602      0.256      0.244     0.0978
+[YOLOv5] epoch 21/100 running
+[YOLOv5] validation: all       1000        686      0.536      0.297      0.245     0.0999
+[YOLOv5] epoch 22/100 running
+[YOLOv5] validation: all       1000        686      0.602      0.249      0.243      0.107
+[YOLOv5] epoch 23/100 running
+[YOLOv5] validation: all       1000        686      0.649       0.21      0.222     0.0887
+[YOLOv5] epoch 24/100 running
+[YOLOv5] validation: all       1000        686      0.633      0.281      0.297      0.125
+[YOLOv5] epoch 25/100 running
+[YOLOv5] validation: all       1000        686      0.523      0.299      0.257      0.123
+[YOLOv5] epoch 26/100 running
+[YOLOv5] validation: all       1000        686      0.572       0.31      0.239     0.0965
+[YOLOv5] epoch 27/100 running
+[YOLOv5] validation: all       1000        686      0.549      0.305      0.266      0.118
+[YOLOv5] epoch 28/100 running
+[YOLOv5] validation: all       1000        686      0.549      0.282      0.256      0.118
+[YOLOv5] epoch 29/100 running
+[YOLOv5] validation: all       1000        686      0.687      0.261      0.271      0.105
+[YOLOv5] epoch 30/100 running
+[YOLOv5] validation: all       1000        686      0.596      0.311        0.3      0.133
+[YOLOv5] epoch 31/100 running
+[YOLOv5] validation: all       1000        686      0.535      0.135       0.16     0.0635
+[YOLOv5] epoch 32/100 running
+[YOLOv5] validation: all       1000        686      0.659      0.291      0.312      0.145
+[YOLOv5] epoch 33/100 running
+[YOLOv5] validation: all       1000        686      0.632      0.218      0.237      0.125
+[YOLOv5] epoch 34/100 running
+[YOLOv5] validation: all       1000        686      0.672      0.262      0.287      0.135
+[YOLOv5] epoch 35/100 running
+[YOLOv5] validation: all       1000        686      0.655      0.301      0.296      0.131
+[YOLOv5] epoch 36/100 running
+[YOLOv5] validation: all       1000        686      0.636      0.308      0.319       0.14
+[YOLOv5] epoch 37/100 running
+[YOLOv5] validation: all       1000        686      0.558      0.232      0.275      0.125
+[YOLOv5] epoch 38/100 running
+[YOLOv5] validation: all       1000        686      0.644      0.359      0.339      0.156
+[YOLOv5] epoch 39/100 running
+[YOLOv5] validation: all       1000        686      0.676      0.326      0.331      0.166
+[YOLOv5] epoch 40/100 running
+[YOLOv5] validation: all       1000        686       0.68      0.286      0.315      0.153
+[YOLOv5] epoch 41/100 running
+[YOLOv5] validation: all       1000        686      0.769      0.263      0.332      0.154
+[YOLOv5] epoch 42/100 running
+[YOLOv5] validation: all       1000        686      0.653      0.314      0.318      0.127
+[YOLOv5] epoch 43/100 running
+[YOLOv5] validation: all       1000        686      0.623      0.332      0.312      0.131
+[YOLOv5] epoch 44/100 running
+[YOLOv5] validation: all       1000        686      0.667      0.334      0.358      0.153
+[YOLOv5] epoch 45/100 running
+[YOLOv5] validation: all       1000        686      0.763      0.262      0.319       0.14
+[YOLOv5] epoch 46/100 running
+[YOLOv5] validation: all       1000        686      0.677      0.321      0.327      0.148
+[YOLOv5] epoch 47/100 running
+[YOLOv5] validation: all       1000        686      0.664      0.306      0.327      0.149
+[YOLOv5] epoch 48/100 running
+[YOLOv5] validation: all       1000        686      0.715      0.275      0.333      0.158
+[YOLOv5] epoch 49/100 running
+[YOLOv5] validation: all       1000        686      0.688       0.29      0.316      0.144
+[YOLOv5] epoch 50/100 running
+[YOLOv5] validation: all       1000        686      0.721       0.28      0.335      0.156
+[YOLOv5] epoch 51/100 running
+[YOLOv5] validation: all       1000        686      0.726      0.349      0.384      0.166
+[YOLOv5] epoch 52/100 running
+[YOLOv5] validation: all       1000        686       0.66      0.333       0.35      0.168
+[YOLOv5] epoch 53/100 running
+[YOLOv5] validation: all       1000        686      0.761      0.293      0.355       0.16
+[YOLOv5] epoch 54/100 running
+[YOLOv5] validation: all       1000        686      0.699      0.366      0.401      0.183
+[YOLOv5] epoch 55/100 running
+[YOLOv5] validation: all       1000        686      0.681       0.37      0.384      0.169
+[YOLOv5] epoch 56/100 running
+[YOLOv5] validation: all       1000        686       0.71      0.373        0.4      0.201
+[YOLOv5] epoch 57/100 running
+[YOLOv5] validation: all       1000        686      0.726      0.332      0.389      0.199
+[YOLOv5] epoch 58/100 running
+[YOLOv5] validation: all       1000        686      0.749      0.329      0.378       0.19
+[YOLOv5] epoch 59/100 running
+[YOLOv5] validation: all       1000        686      0.772       0.31      0.364      0.169
+[YOLOv5] epoch 60/100 running
+[YOLOv5] validation: all       1000        686      0.706      0.333      0.355      0.163
+[YOLOv5] epoch 61/100 running
+[YOLOv5] validation: all       1000        686      0.696       0.32      0.328      0.143
+[YOLOv5] epoch 62/100 running
+[YOLOv5] validation: all       1000        686      0.701      0.336      0.344      0.164
+[YOLOv5] epoch 63/100 running
+[YOLOv5] validation: all       1000        686      0.715      0.313      0.354      0.175
+[YOLOv5] epoch 64/100 running
+[YOLOv5] validation: all       1000        686      0.693      0.363      0.371       0.19
+[YOLOv5] epoch 65/100 running
+[YOLOv5] validation: all       1000        686      0.742      0.337       0.38      0.202
+[YOLOv5] epoch 66/100 running
+[YOLOv5] validation: all       1000        686       0.73      0.346       0.37      0.186
+[YOLOv5] epoch 67/100 running
+[YOLOv5] validation: all       1000        686      0.719      0.379      0.388      0.193
+[YOLOv5] epoch 68/100 running
+[YOLOv5] validation: all       1000        686      0.775      0.291      0.387      0.201
+[YOLOv5] epoch 69/100 running
+[YOLOv5] validation: all       1000        686      0.734      0.345      0.393      0.211
+[YOLOv5] epoch 70/100 running
+[YOLOv5] validation: all       1000        686      0.667      0.358      0.432      0.235
+[YOLOv5] epoch 71/100 running
+[YOLOv5] validation: all       1000        686      0.675      0.393      0.404      0.216
+[YOLOv5] epoch 72/100 running
+[YOLOv5] validation: all       1000        686      0.715       0.32      0.379      0.194
+[YOLOv5] epoch 73/100 running
+[YOLOv5] validation: all       1000        686      0.736      0.321      0.374      0.196
+[YOLOv5] epoch 74/100 running
+[YOLOv5] validation: all       1000        686      0.767      0.309      0.387        0.2
+[YOLOv5] epoch 75/100 running
+[YOLOv5] validation: all       1000        686      0.721      0.313      0.378        0.2
+[YOLOv5] epoch 76/100 running
+[YOLOv5] validation: all       1000        686      0.783      0.325      0.405      0.213
+[YOLOv5] epoch 77/100 running
+[YOLOv5] validation: all       1000        686      0.781        0.3      0.384      0.201
+[YOLOv5] epoch 78/100 running
+[YOLOv5] validation: all       1000        686      0.778      0.308      0.396      0.214
+[YOLOv5] epoch 79/100 running
+[YOLOv5] validation: all       1000        686      0.727      0.324      0.394      0.216
+[YOLOv5] epoch 80/100 running
+[YOLOv5] validation: all       1000        686      0.696      0.327      0.365      0.193
+[YOLOv5] epoch 81/100 running
+[YOLOv5] validation: all       1000        686       0.71      0.336      0.362      0.183
+[YOLOv5] epoch 82/100 running
+[YOLOv5] validation: all       1000        686      0.683      0.362       0.36      0.181
+[YOLOv5] epoch 83/100 running
+[YOLOv5] validation: all       1000        686      0.722      0.361      0.364      0.194
+[YOLOv5] epoch 84/100 running
+[YOLOv5] validation: all       1000        686      0.695      0.361      0.373      0.207
+[YOLOv5] epoch 85/100 running
+[YOLOv5] validation: all       1000        686      0.789      0.305      0.377      0.201
+[YOLOv5] epoch 86/100 running
+[YOLOv5] validation: all       1000        686      0.735       0.35      0.381      0.208
+[YOLOv5] epoch 87/100 running
+[YOLOv5] validation: all       1000        686       0.76       0.34      0.384       0.21
+[YOLOv5] epoch 88/100 running
+[YOLOv5] validation: all       1000        686      0.768      0.341      0.393      0.216
+[YOLOv5] epoch 89/100 running
+[YOLOv5] validation: all       1000        686       0.74      0.348      0.394      0.215
+[YOLOv5] epoch 90/100 running
+[YOLOv5] validation: all       1000        686      0.746      0.365      0.391      0.199
+[YOLOv5] epoch 91/100 running
+[YOLOv5] validation: all       1000        686      0.793      0.347      0.403      0.221
+[YOLOv5] epoch 92/100 running
+[YOLOv5] validation: all       1000        686      0.769      0.356      0.415      0.231
+[YOLOv5] epoch 93/100 running
+[YOLOv5] validation: all       1000        686       0.79      0.344      0.419      0.231
+[YOLOv5] epoch 94/100 running
+[YOLOv5] validation: all       1000        686      0.748      0.356      0.406      0.219
+[YOLOv5] epoch 95/100 running
+[YOLOv5] validation: all       1000        686      0.788       0.32      0.388      0.207
+[YOLOv5] epoch 96/100 running
+[YOLOv5] validation: all       1000        686      0.756      0.334      0.388      0.198
+[YOLOv5] epoch 97/100 running
+[YOLOv5] validation: all       1000        686      0.788      0.328      0.396       0.21
+[YOLOv5] epoch 98/100 running
+[YOLOv5] validation: all       1000        686      0.792      0.337      0.398      0.213
+[YOLOv5] epoch 99/100 running
+[YOLOv5] validation: all       1000        686      0.789      0.337      0.393      0.205
+[YOLOv5] epoch 100/100 running
+[YOLOv5] validation: all       1000        686      0.796      0.329      0.391      0.206
+[YOLOv5] 100 epochs completed in 0.351 hours.
+[YOLOv5] validation: all       1000        686      0.667      0.358      0.431      0.234
+[Task] training completed: 1514.5s
+[Task] evaluating: checkpoint=last, group=test, samples=1000
+[YOLOv5] validation: all       1000        702       0.73       0.37      0.412      0.215
+[Task] evaluation: checkpoint=last, group=test, mAP50-95=0.2151, mAP50=0.4122, time=79.8s
+[Task] evaluating: checkpoint=best, group=test, samples=1000
+[YOLOv5] validation: all       1000        702      0.788      0.351        0.4      0.197
+[Task] evaluation: checkpoint=best, group=test, mAP50-95=0.1973, mAP50=0.4004, time=78.1s
+[Task] completed: evaluation=157.9s, output=/home/lijinhe/work/YOLO_Retraining/runs/studies/0903_global_dedup_random_test_learning_curve/experiment/sequence/GlobalDedupTau099_PostSplit_RandomS41__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/000__stage0__full-cold
+[Task] output: /home/lijinhe/work/YOLO_Retraining/runs/studies/0903_global_dedup_random_test_learning_curve/experiment/sequence/GlobalDedupTau099_PostSplit_RandomS41__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/001__stage1__full-cold
+[Task] data: current=615, candidate=1230, validation=1000, test=1000
+[Task] selection: policy=full, selected=1230, groups={'candidate': 1230}, time=0.000s
+[Task] training: backend=yolov5, epochs=100, batch=64, device=0
+[YOLOv5] epoch 1/100 running
+[YOLOv5] validation: all       1000        686   0.000743      0.374    0.00903    0.00236
+[YOLOv5] epoch 2/100 running
+[YOLOv5] validation: all       1000        686    0.00129      0.113    0.00815    0.00153
+[YOLOv5] epoch 3/100 running
+[YOLOv5] validation: all       1000        686      0.809     0.0668     0.0565     0.0162
+[YOLOv5] epoch 4/100 running
+[YOLOv5] validation: all       1000        686      0.859     0.0733      0.155     0.0496
+[YOLOv5] epoch 5/100 running
+[YOLOv5] validation: all       1000        686      0.652      0.188      0.224     0.0816
+[YOLOv5] epoch 6/100 running
+[YOLOv5] validation: all       1000        686      0.482       0.21      0.156     0.0505
+[YOLOv5] epoch 7/100 running
+[YOLOv5] validation: all       1000        686      0.545      0.259      0.213      0.073
+[YOLOv5] epoch 8/100 running
+[YOLOv5] validation: all       1000        686      0.531      0.222      0.202     0.0746
+[YOLOv5] epoch 9/100 running
+[YOLOv5] validation: all       1000        686      0.595      0.234      0.242      0.101
+[YOLOv5] epoch 10/100 running
+[YOLOv5] validation: all       1000        686      0.532      0.349      0.281      0.122
+[YOLOv5] epoch 11/100 running
+[YOLOv5] validation: all       1000        686      0.539      0.208      0.207     0.0812
+[YOLOv5] epoch 12/100 running
+[YOLOv5] validation: all       1000        686       0.71      0.275      0.291      0.116
+[YOLOv5] epoch 13/100 running
+[YOLOv5] validation: all       1000        686      0.656      0.228      0.214     0.0859
+[YOLOv5] epoch 14/100 running
+[YOLOv5] validation: all       1000        686      0.658      0.327      0.316      0.142
+[YOLOv5] epoch 15/100 running
+[YOLOv5] validation: all       1000        686      0.625       0.29       0.27        0.1
+[YOLOv5] epoch 16/100 running
+[YOLOv5] validation: all       1000        686      0.627      0.317      0.326      0.137
+[YOLOv5] epoch 17/100 running
+[YOLOv5] validation: all       1000        686      0.717      0.271       0.31       0.12
+[YOLOv5] epoch 18/100 running
+[YOLOv5] validation: all       1000        686      0.727      0.296       0.34      0.134
+[YOLOv5] epoch 19/100 running
+[YOLOv5] validation: all       1000        686      0.735      0.324      0.383       0.17
+[YOLOv5] epoch 20/100 running
+[YOLOv5] validation: all       1000        686      0.672      0.312      0.335      0.166
+[YOLOv5] epoch 21/100 running
+[YOLOv5] validation: all       1000        686       0.56      0.279      0.255       0.11
+[YOLOv5] epoch 22/100 running
+[YOLOv5] validation: all       1000        686      0.582      0.241      0.227      0.107
+[YOLOv5] epoch 23/100 running
+[YOLOv5] validation: all       1000        686      0.695      0.359       0.34      0.162
+[YOLOv5] epoch 24/100 running
+[YOLOv5] validation: all       1000        686      0.759      0.311      0.362      0.184
+[YOLOv5] epoch 25/100 running
+[YOLOv5] validation: all       1000        686      0.701      0.284      0.281      0.132
+[YOLOv5] epoch 26/100 running
+[YOLOv5] validation: all       1000        686      0.698      0.398      0.413      0.196
+[YOLOv5] epoch 27/100 running
+[YOLOv5] validation: all       1000        686      0.774      0.343      0.383      0.178
+[YOLOv5] epoch 28/100 running
+[YOLOv5] validation: all       1000        686      0.797      0.404      0.431      0.226
+[YOLOv5] epoch 29/100 running
+[YOLOv5] validation: all       1000        686      0.766      0.317      0.383      0.201
+[YOLOv5] epoch 30/100 running
+[YOLOv5] validation: all       1000        686        0.8      0.327      0.369      0.183
+[YOLOv5] epoch 31/100 running
+[YOLOv5] validation: all       1000        686      0.659      0.366      0.339      0.147
+[YOLOv5] epoch 32/100 running
+[YOLOv5] validation: all       1000        686      0.766      0.347      0.362      0.169
+[YOLOv5] epoch 33/100 running
+[YOLOv5] validation: all       1000        686      0.732      0.369      0.394      0.198
+[YOLOv5] epoch 34/100 running
+[YOLOv5] validation: all       1000        686       0.79      0.358      0.407      0.196
+[YOLOv5] epoch 35/100 running
+[YOLOv5] validation: all       1000        686      0.774      0.327      0.377      0.184
+[YOLOv5] epoch 36/100 running
+[YOLOv5] validation: all       1000        686      0.796      0.328      0.378      0.181
+[YOLOv5] epoch 37/100 running
+[YOLOv5] validation: all       1000        686       0.68      0.339      0.362      0.174
+[YOLOv5] epoch 38/100 running
+[YOLOv5] validation: all       1000        686      0.747      0.393      0.422      0.225
+[YOLOv5] epoch 39/100 running
+[YOLOv5] validation: all       1000        686      0.701      0.422       0.42      0.217
+[YOLOv5] epoch 40/100 running
+[YOLOv5] validation: all       1000        686      0.783      0.418      0.471      0.233
+[YOLOv5] epoch 41/100 running
+[YOLOv5] validation: all       1000        686       0.75      0.413      0.432      0.223
+[YOLOv5] epoch 42/100 running
+[YOLOv5] validation: all       1000        686      0.867      0.361      0.459      0.223
+[YOLOv5] epoch 43/100 running
+[YOLOv5] validation: all       1000        686      0.761       0.35      0.405      0.193
+[YOLOv5] epoch 44/100 running
+[YOLOv5] validation: all       1000        686       0.81       0.31      0.405      0.209
+[YOLOv5] epoch 45/100 running
+[YOLOv5] validation: all       1000        686      0.868      0.343      0.407      0.198
+[YOLOv5] epoch 46/100 running
+[YOLOv5] validation: all       1000        686      0.822      0.344      0.401      0.202
+[YOLOv5] epoch 47/100 running
+[YOLOv5] validation: all       1000        686      0.751      0.405      0.416      0.207
+[YOLOv5] epoch 48/100 running
+[YOLOv5] validation: all       1000        686      0.757       0.39      0.425      0.208
+[YOLOv5] epoch 49/100 running
+[YOLOv5] validation: all       1000        686      0.825      0.365      0.446      0.229
+[YOLOv5] epoch 50/100 running
+[YOLOv5] validation: all       1000        686      0.839      0.359      0.461      0.236
+[YOLOv5] epoch 51/100 running
+[YOLOv5] validation: all       1000        686      0.764      0.417      0.455      0.231
+[YOLOv5] epoch 52/100 running
+[YOLOv5] validation: all       1000        686        0.8      0.407      0.464      0.248
+[YOLOv5] epoch 53/100 running
+[YOLOv5] validation: all       1000        686      0.786      0.396      0.455      0.236
+[YOLOv5] epoch 54/100 running
+[YOLOv5] validation: all       1000        686      0.774      0.386      0.421      0.212
+[YOLOv5] epoch 55/100 running
+[YOLOv5] validation: all       1000        686      0.877       0.39      0.483      0.253
+[YOLOv5] epoch 56/100 running
+[YOLOv5] validation: all       1000        686      0.826      0.411      0.461      0.234
+[YOLOv5] epoch 57/100 running
+[YOLOv5] validation: all       1000        686      0.789      0.375      0.425       0.22
+[YOLOv5] epoch 58/100 running
+[YOLOv5] validation: all       1000        686      0.862      0.412      0.491      0.263
+[YOLOv5] epoch 59/100 running
+[YOLOv5] validation: all       1000        686      0.811      0.349      0.467      0.247
+[YOLOv5] epoch 60/100 running
+[YOLOv5] validation: all       1000        686      0.832      0.381      0.454      0.229
+[YOLOv5] epoch 61/100 running
+[YOLOv5] validation: all       1000        686      0.737      0.407      0.444      0.235
+[YOLOv5] epoch 62/100 running
+[YOLOv5] validation: all       1000        686      0.486      0.542      0.483      0.254
+[YOLOv5] epoch 63/100 running
+[YOLOv5] validation: all       1000        686      0.462       0.59      0.516      0.291
+[YOLOv5] epoch 64/100 running
+[YOLOv5] validation: all       1000        686      0.793       0.44       0.51      0.278
+[YOLOv5] epoch 65/100 running
+[YOLOv5] validation: all       1000        686      0.518      0.498      0.446      0.248
+[YOLOv5] epoch 66/100 running
+[YOLOv5] validation: all       1000        686      0.564      0.536      0.487      0.271
+[YOLOv5] epoch 67/100 running
+[YOLOv5] validation: all       1000        686      0.533      0.541      0.483      0.268
+[YOLOv5] epoch 68/100 running
+[YOLOv5] validation: all       1000        686      0.564      0.558      0.529      0.302
+[YOLOv5] epoch 69/100 running
+[YOLOv5] validation: all       1000        686       0.65      0.531      0.572      0.337
+[YOLOv5] epoch 70/100 running
+[YOLOv5] validation: all       1000        686      0.608      0.565      0.529      0.293
+[YOLOv5] epoch 71/100 running
+[YOLOv5] validation: all       1000        686      0.637      0.539      0.522      0.289
+[YOLOv5] epoch 72/100 running
+[YOLOv5] validation: all       1000        686      0.615      0.471      0.433      0.237
+[YOLOv5] epoch 73/100 running
+[YOLOv5] validation: all       1000        686      0.644      0.542      0.517      0.292
+[YOLOv5] epoch 74/100 running
+[YOLOv5] validation: all       1000        686      0.644      0.532      0.517      0.289
+[YOLOv5] epoch 75/100 running
+[YOLOv5] validation: all       1000        686      0.632      0.537      0.519      0.297
+[YOLOv5] epoch 76/100 running
+[YOLOv5] validation: all       1000        686      0.683      0.532      0.524      0.285
+[YOLOv5] epoch 77/100 running
+[YOLOv5] validation: all       1000        686       0.61      0.545      0.511      0.291
+[YOLOv5] epoch 78/100 running
+[YOLOv5] validation: all       1000        686      0.595      0.572      0.528      0.279
+[YOLOv5] epoch 79/100 running
+[YOLOv5] validation: all       1000        686      0.641      0.535      0.524      0.294
+[YOLOv5] epoch 80/100 running
+[YOLOv5] validation: all       1000        686      0.706       0.53      0.527      0.301
+[YOLOv5] epoch 81/100 running
+[YOLOv5] validation: all       1000        686      0.649      0.541      0.509      0.278
+[YOLOv5] epoch 82/100 running
+[YOLOv5] validation: all       1000        686      0.692      0.524      0.536      0.287
+[YOLOv5] epoch 83/100 running
+[YOLOv5] validation: all       1000        686      0.816      0.515      0.586      0.328
+[YOLOv5] epoch 84/100 running
+[YOLOv5] validation: all       1000        686      0.714      0.509       0.53      0.298
+[YOLOv5] epoch 85/100 running
+[YOLOv5] validation: all       1000        686      0.646      0.541      0.526      0.293
+[YOLOv5] epoch 86/100 running
+[YOLOv5] validation: all       1000        686      0.649      0.543      0.534      0.303
+[YOLOv5] epoch 87/100 running
+[YOLOv5] validation: all       1000        686      0.631      0.532      0.516      0.292
+[YOLOv5] epoch 88/100 running
+[YOLOv5] validation: all       1000        686      0.654      0.532      0.531      0.306
+[YOLOv5] epoch 89/100 running
+[YOLOv5] validation: all       1000        686       0.67      0.538      0.582      0.349
+[YOLOv5] epoch 90/100 running
+[YOLOv5] validation: all       1000        686      0.682      0.545      0.542      0.319
+[YOLOv5] epoch 91/100 running
+[YOLOv5] validation: all       1000        686      0.704      0.528      0.538      0.306
+[YOLOv5] epoch 92/100 running
+[YOLOv5] validation: all       1000        686      0.749      0.511      0.534       0.31
+[YOLOv5] epoch 93/100 running
+[YOLOv5] validation: all       1000        686      0.674      0.539       0.52      0.298
+[YOLOv5] epoch 94/100 running
+[YOLOv5] validation: all       1000        686      0.728      0.529      0.537      0.305
+[YOLOv5] epoch 95/100 running
+[YOLOv5] validation: all       1000        686      0.752       0.51      0.535      0.295
+[YOLOv5] epoch 96/100 running
+[YOLOv5] validation: all       1000        686      0.748      0.514      0.541      0.309
+[YOLOv5] epoch 97/100 running
+[YOLOv5] validation: all       1000        686      0.752      0.518      0.538      0.308
+[YOLOv5] epoch 98/100 running
+[YOLOv5] validation: all       1000        686      0.744      0.525      0.537       0.31
+[YOLOv5] epoch 99/100 running
+[YOLOv5] validation: all       1000        686      0.754      0.518      0.536       0.31
+[YOLOv5] epoch 100/100 running
+[YOLOv5] validation: all       1000        686      0.754      0.517       0.54      0.314
+[YOLOv5] 100 epochs completed in 0.530 hours.
+[YOLOv5] validation: all       1000        686      0.817      0.515      0.586      0.328
+[Task] training completed: 2124.3s
+[Task] evaluating: checkpoint=last, group=test, samples=1000
+[YOLOv5] validation: all       1000        702      0.599      0.582      0.524      0.294
+[Task] evaluation: checkpoint=last, group=test, mAP50-95=0.2940, mAP50=0.5244, time=79.8s
+[Task] evaluating: checkpoint=best, group=test, samples=1000
+[YOLOv5] validation: all       1000        702      0.817      0.433      0.471      0.259
+[Task] evaluation: checkpoint=best, group=test, mAP50-95=0.2590, mAP50=0.4711, time=80.1s
+[Task] completed: evaluation=159.9s, output=/home/lijinhe/work/YOLO_Retraining/runs/studies/0903_global_dedup_random_test_learning_curve/experiment/sequence/GlobalDedupTau099_PostSplit_RandomS41__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/001__stage1__full-cold
+[Task] output: /home/lijinhe/work/YOLO_Retraining/runs/studies/0903_global_dedup_random_test_learning_curve/experiment/sequence/GlobalDedupTau099_PostSplit_RandomS41__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/002__stage2__full-cold
+[Task] data: current=614, candidate=1844, validation=1000, test=1000
+[Task] selection: policy=full, selected=1844, groups={'candidate': 1844}, time=0.001s
+[Task] training: backend=yolov5, epochs=100, batch=64, device=0
+[Task] failed: YOLOv5 subprocess failed with exit code 1; see /home/lijinhe/work/YOLO_Retraining/runs/studies/0903_global_dedup_random_test_learning_curve/experiment/sequence/GlobalDedupTau099_PostSplit_RandomS41__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/002__stage2__full-cold/logs/yolov5_train.log; details=/home/lijinhe/work/YOLO_Retraining/runs/studies/0903_global_dedup_random_test_learning_curve/experiment/sequence/GlobalDedupTau099_PostSplit_RandomS41__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/002__stage2__full-cold/logs/error.txt
+yolo-retraining error: YOLOv5 subprocess failed with exit code 1; see /home/lijinhe/work/YOLO_Retraining/runs/studies/0903_global_dedup_random_test_learning_curve/experiment/sequence/GlobalDedupTau099_PostSplit_RandomS41__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/002__stage2__full-cold/logs/yolov5_train.log
+ERROR conda.cli.main_run:execute(148): `conda run python -m yolo_retraining.run sequence --config /home/lijinhe/work/YOLO_Retraining/runs/studies/0903_global_dedup_random_test_learning_curve/config/global_dedup_tau099_split_s41.yaml --set sequence.output_root=/home/lijinhe/work/YOLO_Retraining/runs/studies/0903_global_dedup_random_test_learning_curve/experiment/sequence` failed. (See above for error)
