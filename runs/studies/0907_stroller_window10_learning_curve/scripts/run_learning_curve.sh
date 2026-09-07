@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STUDY_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 PROJECT_ROOT="$(cd "$STUDY_ROOT/../../.." && pwd)"
 CONDA_ENV="${YOLO_RETRAINING_CONDA_ENV:-yolo-retraining-v5}"
-RESULT_CONDA_ENV="${YOLO_RESULT_CONDA_ENV:-yolo-result-analysis}"
+RESULT_CONDA_ENV="${YOLO_RESULT_CONDA_ENV:-$CONDA_ENV}"
 GPU_ID="${GPU_ID:-0}"
 CONDA_BIN="${YOLO_RETRAINING_CONDA_BIN:-}"
 
