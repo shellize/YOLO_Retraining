@@ -1,0 +1,33 @@
+﻿experiment,label,stage,cumulative_train_images,class_name,map50,map50_95,test_images,task_dir
+split_s42,split seed 42,0,615,flatbed truck,0.04102093491839613,0.024098442608637253,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\000__stage0__full-cold
+split_s42,split seed 42,0,615,large luggage,0.6125281960632382,0.28783529062497604,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\000__stage0__full-cold
+split_s42,split seed 42,0,615,stroller,0.5968267288383264,0.2866164986365081,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\000__stage0__full-cold
+split_s42,split seed 42,0,615,wheelchair,0.5798600414392959,0.3384979717267793,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\000__stage0__full-cold
+split_s42,split seed 42,1,1230,flatbed truck,0.18506393070736235,0.07359859121579071,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\001__stage1__full-cold
+split_s42,split seed 42,1,1230,large luggage,0.6589909739281935,0.3309173305259387,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\001__stage1__full-cold
+split_s42,split seed 42,1,1230,stroller,0.6414482716410532,0.2956650467401267,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\001__stage1__full-cold
+split_s42,split seed 42,1,1230,wheelchair,0.6656432400870517,0.38342299078652425,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\001__stage1__full-cold
+split_s42,split seed 42,2,1844,flatbed truck,0.09650778535736276,0.039778727148957124,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\002__stage2__full-cold
+split_s42,split seed 42,2,1844,large luggage,0.6964972880389311,0.35770754803945254,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\002__stage2__full-cold
+split_s42,split seed 42,2,1844,stroller,0.645069703035706,0.3229000004076518,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\002__stage2__full-cold
+split_s42,split seed 42,2,1844,wheelchair,0.6940691771714096,0.43994703277278424,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\002__stage2__full-cold
+split_s42,split seed 42,3,2458,flatbed truck,0.08926710526315793,0.06190200000000001,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\003__stage3__full-cold
+split_s42,split seed 42,3,2458,large luggage,0.7334713555599843,0.37563069930321996,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\003__stage3__full-cold
+split_s42,split seed 42,3,2458,stroller,0.6847783261549294,0.3352933699792984,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\003__stage3__full-cold
+split_s42,split seed 42,3,2458,wheelchair,0.628462834281743,0.41202966813054437,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\003__stage3__full-cold
+split_s42,split seed 42,4,3072,flatbed truck,0.04505278964510809,0.02330248559705597,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\004__stage4__full-cold
+split_s42,split seed 42,4,3072,large luggage,0.7348459165648676,0.38590205345812545,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\004__stage4__full-cold
+split_s42,split seed 42,4,3072,stroller,0.6593205744623403,0.3214717859756214,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\004__stage4__full-cold
+split_s42,split seed 42,4,3072,wheelchair,0.6844399225156901,0.42181907869793844,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\004__stage4__full-cold
+split_s42,split seed 42,5,3686,flatbed truck,0.09006474036850923,0.049323546063651594,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\005__stage5__full-cold
+split_s42,split seed 42,5,3686,large luggage,0.7626000928938493,0.39502033081123733,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\005__stage5__full-cold
+split_s42,split seed 42,5,3686,stroller,0.7249129530624248,0.35537120512478626,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\005__stage5__full-cold
+split_s42,split seed 42,5,3686,wheelchair,0.7483857672596735,0.4866376087026807,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\005__stage5__full-cold
+split_s42,split seed 42,6,4300,flatbed truck,0.34036411657559207,0.1863020473588343,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\006__stage6__full-cold
+split_s42,split seed 42,6,4300,large luggage,0.7664147626835401,0.4113932528314378,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\006__stage6__full-cold
+split_s42,split seed 42,6,4300,stroller,0.7242034310473873,0.3565812600048861,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\006__stage6__full-cold
+split_s42,split seed 42,6,4300,wheelchair,0.6839830573106345,0.42557524532592267,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\006__stage6__full-cold
+split_s42,split seed 42,7,4914,flatbed truck,0.14292644326072843,0.05982561764448885,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\007__stage7__full-cold
+split_s42,split seed 42,7,4914,large luggage,0.7756006218998641,0.42413140921641296,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\007__stage7__full-cold
+split_s42,split seed 42,7,4914,stroller,0.7379853840941337,0.36725558608181147,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\007__stage7__full-cold
+split_s42,split seed 42,7,4914,wheelchair,0.7509809693906081,0.4587014635292664,1000,experiment\sequence\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\007__stage7__full-cold

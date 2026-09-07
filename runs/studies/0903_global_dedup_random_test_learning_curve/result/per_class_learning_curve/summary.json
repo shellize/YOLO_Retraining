@@ -1,0 +1,17 @@
+{
+  "study": "0903_global_dedup_random_test_learning_curve",
+  "included_experiments": [
+    "split_s42"
+  ],
+  "omitted_incomplete_experiments": [
+    "split_s41",
+    "split_s43"
+  ],
+  "metric_source": "task_result.json -> metrics.best.test.per_class_ap50/per_class_ap",
+  "x_axis": "task_result.json -> cost.selected_count",
+  "outputs": {
+    "csv": "per_class_metrics.csv",
+    "map50_plot": "per_class_map50_learning_curve.png",
+    "map50_95_plot": "per_class_map50_95_learning_curve.png"
+  }
+}

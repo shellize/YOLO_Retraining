@@ -1,6 +1,6 @@
 # YOLO Retraining 项目指南
 
-本文件只约束这个 Git 仓库。开始工作前先用 `git rev-parse --show-toplevel` 确认当前 checkout 根，再用 `git status --short` 查看用户已有修改；不要把父工作区或另一台机器的状态当成本仓库现状。本机目录目前叫 `project_v2`，服务器 checkout 根目录可以是任意名称，活动代码不得依赖这个 basename。
+本文件只约束这个 Git 仓库。无论 checkout 根目录叫什么，开始工作前都先用 `git rev-parse --show-toplevel` 定位仓库根，再用 `git status --short` 查看用户已有修改；不要把父工作区或另一台机器的状态当成本仓库现状，活动代码不得依赖仓库根的 basename。
 
 ## 基本原则
 

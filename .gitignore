@@ -25,6 +25,7 @@ weights/
 *.cache
 *.sh
 !/scripts/*.sh
+!/runs/studies/0903_global_dedup_random_test_learning_curve/scripts/run_randomization_controls.sh
 # Keep analysis method scripts and Markdown reports; ignore generated analysis data.
 /result_analysis/**
 !/result_analysis/
