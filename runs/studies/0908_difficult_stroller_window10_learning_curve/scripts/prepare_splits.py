@@ -21,7 +21,7 @@ if str(PROJECT_ROOT / "src") not in sys.path:
 from yolo_retraining.data import read_image_manifest, write_image_manifest  # noqa: E402
 
 
-DEFAULT_DATA_ROOT = PROJECT_ROOT / "data/stroller_protocol_0908/stroller_raw_source"
+DEFAULT_DATA_ROOT = PROJECT_ROOT / "data/stroller_raw"
 DEFAULT_SOURCE_MANIFEST = (
     PROJECT_ROOT
     / "data_analyse/stroller_protocol_0908/results/difficult/variants/dedup_tau_0p990/manifests/stroller_raw.txt"

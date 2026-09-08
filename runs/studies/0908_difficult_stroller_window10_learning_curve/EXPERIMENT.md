@@ -6,7 +6,7 @@
 
 ## 数据协议
 
-- `strollerraw`：服务器 `data/stroller_protocol_0908/stroller_raw_source` 中的全部 stroller 图片。
+- `strollerraw`：服务器 `data/stroller_raw` 中的全部 stroller 图片。
 - `strollerdifficult`：对 `strollerraw` 独立执行 `tau=0.99、temporal-window=10` 后保留的代表样本。
 - 去冗余输出来自 `data_analyse/stroller_protocol_0908/results/difficult/`；本 Study 不复用旧 Study 的 manifest、划分或权重。
 - 每个划分按 `train:test:val=8:1:1`，训练集再按 source manifest 顺序分成 8 个 stage。

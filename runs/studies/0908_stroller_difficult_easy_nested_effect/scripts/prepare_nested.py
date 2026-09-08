@@ -22,15 +22,15 @@ if str(PROJECT_ROOT / "src") not in sys.path:
 from yolo_retraining.data import read_image_manifest, write_image_manifest  # noqa: E402
 
 
-DEFAULT_DIFFICULT_ROOT = PROJECT_ROOT / "data/stroller_protocol_0908/stroller_raw_source"
-DEFAULT_EASY_ROOT = PROJECT_ROOT / "data/stroller_protocol_0908/stroller_easy_source"
+DEFAULT_DIFFICULT_ROOT = PROJECT_ROOT / "data/stroller_raw"
+DEFAULT_EASY_ROOT = PROJECT_ROOT / "data/stroller"
 DEFAULT_DIFFICULT_MANIFEST = (
     PROJECT_ROOT
     / "data_analyse/stroller_protocol_0908/results/difficult/variants/dedup_tau_0p990/manifests/stroller_raw.txt"
 )
 DEFAULT_EASY_MANIFEST = (
     PROJECT_ROOT
-    / "data_analyse/stroller_protocol_0908/results/easy/variants/dedup_tau_0p990/manifests/stroller_easy_source.txt"
+    / "data_analyse/stroller_protocol_0908/results/easy/variants/dedup_tau_0p990/manifests/stroller.txt"
 )
 VARIANT_ROOT = STUDY_ROOT / "experiment/variants"
 SPLIT_SEEDS = (41, 42)

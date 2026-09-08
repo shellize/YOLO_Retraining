@@ -4,7 +4,7 @@ set -Eeuo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CONDA_ENV="${YOLO_RETRAINING_CONDA_ENV:-yolo-retraining-v5}"
-CONDA_BIN="${YOLO_RETRAINING_CONDA_BIN:-/home/lijinhe/miniforge3/bin/conda}"
+CONDA_BIN="${YOLO_RETRAINING_CONDA_BIN:-}"
 GPU_ID="${GPU_ID:-0}"
 
 RAW_LAYOUT="$SCRIPT_DIR/layout_raw.yaml"
@@ -14,8 +14,11 @@ EASY_OUTPUT="$SCRIPT_DIR/results/easy"
 REDUNDANCY_SCRIPT="$PROJECT_ROOT/data_analyse/dataset_redundancy/redundancy_analysis.py"
 WEIGHTS="$PROJECT_ROOT/.third_party/yolov5/yolov5s.pt"
 
-if [[ ! -x "$CONDA_BIN" ]]; then
-  echo "conda executable not found: $CONDA_BIN" >&2
+if [[ -z "$CONDA_BIN" ]]; then
+  CONDA_BIN="$(command -v conda || true)"
+fi
+if [[ -z "$CONDA_BIN" || ! -x "$CONDA_BIN" ]]; then
+  echo "conda was not found; set YOLO_RETRAINING_CONDA_BIN" >&2
   exit 10
 fi
 if [[ ! -f "$WEIGHTS" ]]; then
@@ -57,5 +60,5 @@ export YOLOV5_ROOT="${YOLOV5_ROOT:-$PROJECT_ROOT/.third_party/yolov5}"
 export PYTHONPATH="$PROJECT_ROOT/src${PYTHONPATH:+:$PYTHONPATH}"
 
 run_one difficult "$RAW_LAYOUT" "$RAW_OUTPUT" stroller_raw
-run_one easy "$EASY_LAYOUT" "$EASY_OUTPUT" stroller_easy_source
+run_one easy "$EASY_LAYOUT" "$EASY_OUTPUT" stroller
 echo "[stroller dedup] both source analyses are ready"

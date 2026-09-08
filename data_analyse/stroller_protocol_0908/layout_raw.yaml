@@ -1,5 +1,5 @@
-# Server-side source layout for strollerraw.
-path: ../../data/stroller_protocol_0908/stroller_raw_source
+# Source layout for strollerraw.
+path: ../../data/stroller_raw
 names:
   0: large luggage
   1: stroller
