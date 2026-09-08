@@ -37,11 +37,35 @@ def read_image_manifest(path: Path | str, *, dataset_root: Path | str | None = N
     return images
 
 
-def write_image_manifest(images: Iterable[Path | str], path: Path | str, *, relative: bool = True) -> Path:
-    """Write a deterministic UTF-8 manifest without copying any source image."""
+def write_image_manifest(
+    images: Iterable[Path | str],
+    path: Path | str,
+    *,
+    relative: bool = True,
+    preserve_order: bool = False,
+) -> Path:
+    """Write a UTF-8 manifest without copying source images.
+
+    The default keeps the historical deterministic path sort.  Callers that
+    intentionally build an ordered split can set ``preserve_order=True``;
+    duplicate paths are still removed, but the first occurrence is retained.
+    """
 
     manifest = Path(path).expanduser().resolve()
-    resolved = sorted({Path(image).expanduser().resolve() for image in images}, key=lambda item: item.as_posix().casefold())
+    if preserve_order:
+        resolved = []
+        seen: set[str] = set()
+        for raw_image in images:
+            image = Path(raw_image).expanduser().resolve()
+            key = str(image).casefold()
+            if key not in seen:
+                seen.add(key)
+                resolved.append(image)
+    else:
+        resolved = sorted(
+            {Path(image).expanduser().resolve() for image in images},
+            key=lambda item: item.as_posix().casefold(),
+        )
     if not resolved:
         raise ValueError(f"cannot write an empty image manifest: {manifest}")
     missing = [image for image in resolved if not image.is_file()]

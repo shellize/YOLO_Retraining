@@ -1,4 +1,4 @@
-"""Build three reproducible 8:1:1 layouts from the window=10 retained manifest."""
+"""Build random or source-ordered 8:1:1 layouts from the retained manifest."""
 
 from __future__ import annotations
 
@@ -45,9 +45,18 @@ def stage_sizes(total: int) -> list[int]:
     return [base + int(index < remainder) for index in range(STAGE_COUNT)]
 
 
-def write_layout(variant_dir: Path, groups: dict[str, tuple[str, Path]]) -> Path:
+def write_layout(
+    variant_dir: Path,
+    groups: dict[str, tuple[str, Path]],
+    *,
+    preserve_order: bool,
+) -> Path:
     manifests = {
-        group_id: write_image_manifest(images, variant_dir / "manifests" / f"{group_id}.txt")
+        group_id: write_image_manifest(
+            images,
+            variant_dir / "manifests" / f"{group_id}.txt",
+            preserve_order=preserve_order,
+        )
         for group_id, (_, images) in groups.items()
     }
     names = [line.strip() for line in (DATASET_ROOT / "classes.txt").read_text(encoding="utf-8").splitlines() if line.strip()]
@@ -68,8 +77,13 @@ def write_layout(variant_dir: Path, groups: dict[str, tuple[str, Path]]) -> Path
     return layout
 
 
-def build(seed: int) -> dict:
-    variant_dir = VARIANT_ROOT / f"window10_tau0p990_split_s{seed}"
+def build(seed: int | None, split_mode: str) -> dict:
+    if split_mode == "ordered":
+        variant_dir = VARIANT_ROOT / "window10_tau0p990_ordered"
+    else:
+        if seed is None:
+            raise ValueError("random split mode requires a split seed")
+        variant_dir = VARIANT_ROOT / f"window10_tau0p990_split_s{seed}"
     summary_path = variant_dir / "manifest_summary.json"
     if variant_dir.exists() and any(variant_dir.iterdir()):
         if summary_path.is_file() and (variant_dir / "layout.yaml").is_file():
@@ -79,13 +93,16 @@ def build(seed: int) -> dict:
 
     images = read_image_manifest(SOURCE_MANIFEST, dataset_root=DATASET_ROOT)
     counts = allocate_counts(len(images))
-    shuffled = sorted(images, key=lambda image: image.as_posix().casefold())
-    random.Random(seed).shuffle(shuffled)
+    if split_mode == "random":
+        split_order = sorted(images, key=lambda image: image.as_posix().casefold())
+        random.Random(seed).shuffle(split_order)
+    else:
+        split_order = images
     train_end = counts["train"]
     test_end = train_end + counts["test"]
-    train_images = shuffled[:train_end]
-    test_images = shuffled[train_end:test_end]
-    val_images = shuffled[test_end:]
+    train_images = split_order[:train_end]
+    test_images = split_order[train_end:test_end]
+    val_images = split_order[test_end:]
     sizes = stage_sizes(len(train_images))
 
     groups: dict[str, tuple[str, list[Path]]] = {
@@ -99,19 +116,26 @@ def build(seed: int) -> dict:
     if cursor != len(train_images):
         raise AssertionError("stage sizes do not cover the training split")
 
-    layout = write_layout(variant_dir, groups)
+    layout = write_layout(variant_dir, groups, preserve_order=split_mode == "ordered")
     summary = {
         "study": STUDY_ROOT.name,
         "variant": variant_dir.name,
         "source_manifest": str(SOURCE_MANIFEST),
         "dataset_root": str(DATASET_ROOT),
+        "split_mode": split_mode,
         "seed": seed,
         "fractions": {"train": TRAIN_FRACTION, "test": TEST_FRACTION, "val": VAL_FRACTION},
         "split_counts": counts,
         "stage_sizes": {f"stage{index}": size for index, size in enumerate(sizes)},
         "image_count": len(images),
         "layout": str(layout),
-        "protocol": "window=10, tau=0.99 retained set -> random train/test/val split -> random train stage order",
+        "ordering_source": "retained manifest order (canonical path order from the deduplication output)",
+        "protocol": (
+            "window=10, tau=0.99 retained set -> source-order train/test/val contiguous slices "
+            "-> source-order train stages"
+            if split_mode == "ordered"
+            else "window=10, tau=0.99 retained set -> random train/test/val split -> random train stage order"
+        ),
     }
     summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (variant_dir / "protocol.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -121,8 +145,12 @@ def build(seed: int) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--seeds", type=int, nargs="+", default=list(SEEDS))
+    parser.add_argument("--split-mode", choices=("random", "ordered"), default="random")
     args = parser.parse_args()
-    summaries = [build(seed) for seed in args.seeds]
+    if args.split_mode == "ordered":
+        summaries = [build(None, args.split_mode)]
+    else:
+        summaries = [build(seed, args.split_mode) for seed in args.seeds]
     print(json.dumps(summaries, ensure_ascii=False, indent=2))
     return 0
 

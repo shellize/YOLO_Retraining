@@ -42,6 +42,19 @@ def test_layout_accepts_explicit_manifest_without_copying_images(tmp_path: Path)
     assert first.is_file() and second.is_file()
 
 
+def test_manifest_can_preserve_input_order(tmp_path: Path) -> None:
+    root = tmp_path / "dataset"
+    first = _make_image(root, "batch/first.jpg")
+    second = _make_image(root, "batch/second.jpg")
+    manifest = write_image_manifest(
+        [second, first, second],
+        tmp_path / "manifests" / "ordered.txt",
+        preserve_order=True,
+    )
+
+    assert read_image_manifest(manifest, dataset_root=root) == [second, first]
+
+
 def test_manifest_rejects_duplicate_and_missing_images(tmp_path: Path) -> None:
     root = tmp_path / "dataset"
     image = _make_image(root, "batch/image.jpg")
@@ -79,4 +92,3 @@ def test_layout_rejects_images_and_manifest_together(tmp_path: Path) -> None:
     )
     with pytest.raises(ValueError, match="exactly one"):
         build_registry({"stage0": str(layout)})
-

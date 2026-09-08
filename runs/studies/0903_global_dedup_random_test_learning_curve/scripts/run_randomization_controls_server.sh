@@ -16,6 +16,9 @@ CONFIG_ROOT="$STUDY_ROOT/config"
 
 MAIN_CONFIG="$CONFIG_ROOT/global_dedup_tau099.yaml"
 MAIN_OUTPUT="$SEQUENCE_ROOT/GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42"
+ORDERED_CONFIG="$CONFIG_ROOT/global_dedup_tau099_ordered.yaml"
+ORDERED_VARIANT="dedup_tau_0p990_ordered"
+ORDERED_OUTPUT="$SEQUENCE_ROOT/GlobalDedupTau099_Ordered__seq-full-cold__stage0-stage7__yolov5s__s42"
 
 SPLIT_SEEDS=(41 43)
 NORMAL_CONFIGS=(
@@ -126,7 +129,13 @@ run_sequence() {
 echo "[Global dedup controls] project_root=$PROJECT_ROOT"
 echo "[Global dedup controls] study_root=$STUDY_ROOT"
 echo "[Global dedup controls] physical_GPU=$GPU_ID"
-echo "[Global dedup controls] protocol=global tau0.99 temporal-window=1; split controls=41,43"
+echo "[Global dedup controls] protocol=global tau0.99 temporal-window=1; random split controls=41,43; ordered control=source order"
+
+echo "[Global dedup controls] build ordered layout: $VARIANT_ROOT/$ORDERED_VARIANT"
+run_python "$STUDY_ROOT/scripts/build_global_layout.py" \
+  --split-mode ordered \
+  --output-dir "$VARIANT_ROOT/$ORDERED_VARIANT" \
+  >"$LOG_ROOT/build_$ORDERED_VARIANT.log"
 
 for index in "${!SPLIT_SEEDS[@]}"; do
   seed="${SPLIT_SEEDS[$index]}"
@@ -140,7 +149,8 @@ done
 for variant in \
   "$VARIANT_ROOT/dedup_tau_0p990" \
   "$VARIANT_ROOT/dedup_tau_0p990_split_s41" \
-  "$VARIANT_ROOT/dedup_tau_0p990_split_s43"; do
+  "$VARIANT_ROOT/dedup_tau_0p990_split_s43" \
+  "$VARIANT_ROOT/$ORDERED_VARIANT"; do
   run_python data_analyse/custom_dataset/custom_dataset.py validate \
     --layout "$variant/layout.yaml" \
     >"$LOG_ROOT/$(basename "$variant")_layout_validation.log"
@@ -148,6 +158,7 @@ done
 
 for config in \
   "$MAIN_CONFIG" \
+  "$ORDERED_CONFIG" \
   "${NORMAL_CONFIGS[@]}" \
   "${RETRY_CONFIGS[@]}"; do
   run_python -c \
@@ -190,6 +201,12 @@ for index in "${!SPLIT_SEEDS[@]}"; do
   fi
 done
 
+run_sequence \
+  "$ORDERED_CONFIG" \
+  "$ORDERED_OUTPUT" \
+  "$LOG_ROOT/global_dedup_ordered.log" \
+  "ordered source-order split"
+
 set +e
 run_result_python "$STUDY_ROOT/scripts/compare_randomized_learning_curves.py" \
   2>&1 | tee "$LOG_ROOT/randomization_comparison_server.log"
@@ -200,4 +217,14 @@ if [[ "$status" -ne 0 ]]; then
   exit "$status"
 fi
 
-echo "[Global dedup controls] completed main sequence, split controls, and comparison."
+set +e
+run_result_python "$STUDY_ROOT/scripts/compare_ordered_control.py" \
+  2>&1 | tee "$LOG_ROOT/ordered_control_comparison_server.log"
+status="${PIPESTATUS[0]}"
+set -e
+if [[ "$status" -ne 0 ]]; then
+  echo "[Global dedup controls] ordered-control comparison failed with exit code $status" >&2
+  exit "$status"
+fi
+
+echo "[Global dedup controls] completed main sequence, random split controls, ordered control, and comparisons."

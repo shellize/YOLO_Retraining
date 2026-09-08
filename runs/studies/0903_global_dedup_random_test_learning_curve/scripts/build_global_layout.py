@@ -75,12 +75,23 @@ def split_stage_sizes(total: int, val_count: int, test_count: int, stage_count: 
     return [base + int(index < remainder) for index in range(stage_count)]
 
 
-def write_layout(output_dir: Path, dataset_root: Path, names: Sequence[str], groups: dict[str, tuple[str, list[Path]]]) -> Path:
+def write_layout(
+    output_dir: Path,
+    dataset_root: Path,
+    names: Sequence[str],
+    groups: dict[str, tuple[str, list[Path]]],
+    *,
+    preserve_order: bool,
+) -> Path:
     manifests = {}
     for group_id, (_, images) in groups.items():
         if not images:
             raise ValueError(f"empty generated group: {group_id}")
-        manifests[group_id] = write_image_manifest(images, output_dir / "manifests" / f"{group_id}.txt")
+        manifests[group_id] = write_image_manifest(
+            images,
+            output_dir / "manifests" / f"{group_id}.txt",
+            preserve_order=preserve_order,
+        )
     payload = {
         "path": Path(os.path.relpath(dataset_root, output_dir)).as_posix(),
         "names": {index: name for index, name in enumerate(names)},
@@ -121,6 +132,7 @@ def main() -> int:
     parser.add_argument("--embeddings", type=Path, default=DEFAULT_EMBEDDINGS)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--split-mode", choices=("random", "ordered"), default="random")
     parser.add_argument("--val-count", type=int, default=1000)
     parser.add_argument("--test-count", type=int, default=1000)
     parser.add_argument("--stages", type=int, default=8)
@@ -148,17 +160,21 @@ def main() -> int:
 
     edges = temporal_similarity_edges(records, embeddings, window=TEMPORAL_WINDOW, min_similarity=THRESHOLD)
     clusters = representative_groups(range(len(records)), edges, THRESHOLD)
-    representatives = [records[representative].path for representative, _ in clusters]
+    representative_indices = sorted(representative for representative, _ in clusters)
+    representatives = [records[index].path for index in representative_indices]
     if len(representatives) != len({path_key(path) for path in representatives}):
         raise ValueError("duplicate representative image")
 
-    shuffled = sorted(representatives, key=lambda path: path.as_posix().casefold())
-    random.Random(args.seed).shuffle(shuffled)
-    stage_sizes = split_stage_sizes(len(shuffled), args.val_count, args.test_count, args.stages)
+    if args.split_mode == "random":
+        split_order = sorted(representatives, key=lambda path: path.as_posix().casefold())
+        random.Random(args.seed).shuffle(split_order)
+    else:
+        split_order = representatives
+    stage_sizes = split_stage_sizes(len(split_order), args.val_count, args.test_count, args.stages)
     train_total = sum(stage_sizes)
-    train_images = shuffled[:train_total]
-    val_images = shuffled[train_total:train_total + args.val_count]
-    test_images = shuffled[train_total + args.val_count:]
+    train_images = split_order[:train_total]
+    val_images = split_order[train_total:train_total + args.val_count]
+    test_images = split_order[train_total + args.val_count:]
     if len(test_images) != args.test_count:
         raise ValueError("test count mismatch")
 
@@ -171,7 +187,13 @@ def main() -> int:
         groups[f"stage{stage_index}"] = ("train", train_images[cursor:cursor + stage_size])
         cursor += stage_size
 
-    layout_out = write_layout(output_dir, dataset_root, names, groups)
+    layout_out = write_layout(
+        output_dir,
+        dataset_root,
+        names,
+        groups,
+        preserve_order=args.split_mode == "ordered",
+    )
     audit_path = output_dir / "clusters.csv"
     fields = [
         "cluster_id", "cluster_size", "source_group", "source_split", "image",
@@ -218,8 +240,14 @@ def main() -> int:
             "threshold": THRESHOLD,
             "temporal_window": TEMPORAL_WINDOW,
             "policy": "keep one representative per cluster",
-            "split_order": "global dedup -> fixed random test/val -> 8 random train stages",
-            "seed": args.seed,
+            "split_mode": args.split_mode,
+            "split_order": (
+                "global dedup -> source-order train/val/test contiguous slices -> source-order train stages"
+                if args.split_mode == "ordered"
+                else "global dedup -> random train/val/test allocation -> random train stage order"
+            ),
+            "ordering_source": "canonical path order of the deduplication input records",
+            "seed": args.seed if args.split_mode == "random" else None,
             "val_count": args.val_count,
             "test_count": args.test_count,
             "stage_count": args.stages,
@@ -253,7 +281,9 @@ def main() -> int:
         "current_inventory_sha256": fingerprint,
         "source_layout": str(layout_path),
         "output_layout": str(layout_out),
-        "seed": args.seed,
+        "split_mode": args.split_mode,
+        "ordering_source": "canonical path order of the deduplication input records",
+        "seed": args.seed if args.split_mode == "random" else None,
         "val_count": args.val_count,
         "test_count": args.test_count,
         "stages": args.stages,

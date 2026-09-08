@@ -12,6 +12,9 @@ CONDA_BIN="${YOLO_RETRAINING_CONDA_BIN:-}"
 SEQUENCE_ROOT="$STUDY_ROOT/experiment/sequence"
 VARIANT_ROOT="$STUDY_ROOT/experiment/variants"
 LOG_ROOT="$STUDY_ROOT/logs"
+ORDERED_CONFIG="$STUDY_ROOT/config/global_dedup_tau099_ordered.yaml"
+ORDERED_VARIANT="dedup_tau_0p990_ordered"
+ORDERED_OUTPUT="$SEQUENCE_ROOT/GlobalDedupTau099_Ordered__seq-full-cold__stage0-stage7__yolov5s__s42"
 
 SPLIT_SEEDS=(41 43)
 CONFIGS=(
@@ -67,7 +70,12 @@ sequence_completed() {
 
 echo "[Randomization controls] project_root=$PROJECT_ROOT"
 echo "[Randomization controls] physical_GPU=$GPU_ID"
-echo "[Randomization controls] split_seeds=${SPLIT_SEEDS[*]} sequence_training_seed=42"
+echo "[Randomization controls] split_seeds=${SPLIT_SEEDS[*]} ordered_control=source_order sequence_training_seed=42"
+
+run_python "$STUDY_ROOT/scripts/build_global_layout.py" \
+  --split-mode ordered \
+  --output-dir "$VARIANT_ROOT/$ORDERED_VARIANT" \
+  >"$LOG_ROOT/build_$ORDERED_VARIANT.log"
 
 for index in "${!SPLIT_SEEDS[@]}"; do
   seed="${SPLIT_SEEDS[$index]}"
@@ -85,12 +93,18 @@ for variant in "${VARIANTS[@]}"; do
     --layout "$VARIANT_ROOT/$variant/layout.yaml" \
     >"$LOG_ROOT/${variant}_layout_validation.log"
 done
+run_python data_analyse/custom_dataset/custom_dataset.py validate \
+  --layout "$VARIANT_ROOT/$ORDERED_VARIANT/layout.yaml" \
+  >"$LOG_ROOT/${ORDERED_VARIANT}_layout_validation.log"
 
 for config in "${CONFIGS[@]}"; do
   run_python -c \
     'import sys; from yolo_retraining.config import load_config; load_config(sys.argv[1], [f"sequence.output_root={sys.argv[2]}"])' \
     "$config" "$SEQUENCE_ROOT"
 done
+run_python -c \
+  'import sys; from yolo_retraining.config import load_config; load_config(sys.argv[1], [f"sequence.output_root={sys.argv[2]}"])' \
+  "$ORDERED_CONFIG" "$SEQUENCE_ROOT"
 
 run_python -m yolo_retraining.doctor --project-root "$PROJECT_ROOT" \
   >"$LOG_ROOT/randomization_controls_doctor.log"
@@ -122,7 +136,29 @@ for index in "${!CONFIGS[@]}"; do
   echo "[Randomization controls] completed variant=$variant"
 done
 
+if sequence_completed "$ORDERED_OUTPUT"; then
+  echo "[Randomization controls] skip completed sequence: $ORDERED_VARIANT"
+elif [[ -e "$ORDERED_OUTPUT" ]]; then
+  echo "[Randomization controls] incomplete output exists; refusing to overwrite: $ORDERED_OUTPUT" >&2
+  exit 12
+else
+  echo "[Randomization controls] start ordered source-order control on physical GPU=$GPU_ID"
+  run_python -m yolo_retraining.run sequence \
+    --config "$ORDERED_CONFIG" \
+    --set "sequence.output_root=$SEQUENCE_ROOT" \
+    2>&1 | tee "$LOG_ROOT/$ORDERED_VARIANT.log"
+
+  if ! sequence_completed "$ORDERED_OUTPUT"; then
+    echo "[Randomization controls] ordered sequence returned without a completed result: $ORDERED_OUTPUT" >&2
+    exit 13
+  fi
+  echo "[Randomization controls] completed $ORDERED_VARIANT"
+fi
+
 run_python "$STUDY_ROOT/scripts/compare_randomized_learning_curves.py" \
   2>&1 | tee "$LOG_ROOT/randomization_comparison.log"
 
-echo "[Randomization controls] both control sequences and comparison completed"
+run_python "$STUDY_ROOT/scripts/compare_ordered_control.py" \
+  2>&1 | tee "$LOG_ROOT/ordered_control_comparison.log"
+
+echo "[Randomization controls] random controls, ordered control, and comparisons completed"

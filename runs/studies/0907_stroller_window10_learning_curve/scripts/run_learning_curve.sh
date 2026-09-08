@@ -14,6 +14,7 @@ SEQUENCE_ROOT="$STUDY_ROOT/experiment/sequence"
 LOG_ROOT="$STUDY_ROOT/logs"
 PREPARE_SCRIPT="$SCRIPT_DIR/prepare_splits.py"
 CURVE_SCRIPT="$SCRIPT_DIR/generate_learning_curve.py"
+ORDERED_COMPARE_SCRIPT="$SCRIPT_DIR/compare_ordered_control.py"
 CONFIG_ROOT="$STUDY_ROOT/config"
 
 SEEDS=(41 42 43)
@@ -21,11 +22,14 @@ CONFIGS=(
   "$CONFIG_ROOT/stroller_window10_tau099_split_s41.yaml"
   "$CONFIG_ROOT/stroller_window10_tau099_split_s42.yaml"
   "$CONFIG_ROOT/stroller_window10_tau099_split_s43.yaml"
+  "$CONFIG_ROOT/stroller_window10_tau099_ordered.yaml"
 )
+RUN_LABELS=(split_s41 split_s42 split_s43 ordered)
 SEQUENCE_NAMES=(
   "StrollerWindow10Tau099_SplitS41__seq-full-cold__stage0-stage7__yolov5s__s42"
   "StrollerWindow10Tau099_SplitS42__seq-full-cold__stage0-stage7__yolov5s__s42"
   "StrollerWindow10Tau099_SplitS43__seq-full-cold__stage0-stage7__yolov5s__s42"
+  "StrollerWindow10Tau099_Ordered__seq-full-cold__stage0-stage7__yolov5s__s42"
 )
 
 START_TRAINING=0
@@ -72,11 +76,13 @@ run_python() {
 }
 
 echo "[Study] project_root=$PROJECT_ROOT"
-echo "[Study] protocol=window10 tau0.99 split=8:1:1 seeds=${SEEDS[*]}"
+echo "[Study] protocol=window10 tau0.99 split=8:1:1; random seeds=${SEEDS[*]}; ordered control=source order"
 echo "[Study] conda_env=$CONDA_ENV gpu=$GPU_ID start_training=$START_TRAINING"
 
 run_python "$PREPARE_SCRIPT" \
   >"$LOG_ROOT/prepare_splits.log"
+run_python "$PREPARE_SCRIPT" --split-mode ordered \
+  >"$LOG_ROOT/prepare_ordered_split.log"
 
 for seed in "${SEEDS[@]}"; do
   variant="$VARIANT_ROOT/window10_tau0p990_split_s$seed"
@@ -84,6 +90,9 @@ for seed in "${SEEDS[@]}"; do
     --layout "$variant/layout.yaml" \
     >"$LOG_ROOT/validate_split_s$seed.log"
 done
+run_python data_analyse/custom_dataset/custom_dataset.py validate \
+  --layout "$VARIANT_ROOT/window10_tau0p990_ordered/layout.yaml" \
+  >"$LOG_ROOT/window10_tau0p990_ordered_layout_validation.log"
 
 for config in "${CONFIGS[@]}"; do
   run_python -c \
@@ -114,19 +123,24 @@ raise SystemExit(0 if payload.get("status") == "completed" and payload.get("comp
 }
 
 run_curve() {
-  "$CONDA_BIN" run --no-capture-output -n "$RESULT_CONDA_ENV" python "$CURVE_SCRIPT"
+  local script="${1:-$CURVE_SCRIPT}"
+  "$CONDA_BIN" run --no-capture-output -n "$RESULT_CONDA_ENV" python "$script"
 }
 
 for index in "${!CONFIGS[@]}"; do
   config="${CONFIGS[$index]}"
   output="$SEQUENCE_ROOT/${SEQUENCE_NAMES[$index]}"
-  log_path="$LOG_ROOT/sequence_split_s${SEEDS[$index]}.log"
+  log_path="$LOG_ROOT/sequence_${RUN_LABELS[$index]}.log"
+  if sequence_completed "$output"; then
+    echo "[Study] skipping completed ${RUN_LABELS[$index]}"
+    continue
+  fi
   if [[ -e "$output" ]]; then
     echo "sequence output already exists; refusing to overwrite: $output" >&2
     exit 12
   fi
 
-  echo "[Study] starting split seed=${SEEDS[$index]} on GPU=$GPU_ID"
+  echo "[Study] starting ${RUN_LABELS[$index]} on GPU=$GPU_ID"
   set +e
   run_python -m yolo_retraining.run sequence \
     --config "$config" \
@@ -153,4 +167,13 @@ if [[ "$status" -ne 0 ]]; then
   exit "$status"
 fi
 
-echo "[Study] all three sequences and the learning-curve summary completed."
+set +e
+run_curve "$ORDERED_COMPARE_SCRIPT" 2>&1 | tee "$LOG_ROOT/ordered_control_comparison.log"
+status="${PIPESTATUS[0]}"
+set -e
+if [[ "$status" -ne 0 ]]; then
+  echo "ordered-control comparison failed with exit code $status" >&2
+  exit "$status"
+fi
+
+echo "[Study] all random sequences, the ordered control, and learning-curve summaries completed."
