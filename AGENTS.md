@@ -206,7 +206,7 @@ Sequence 还包括 `sequence.yaml`、`sequence_status.json`、`sequence_result.j
 | 服务器 → 本地 | Windows 手动运行根目录 `sync_artifacts_from_beidou.cmd` | 原始训练输出、日志、权重、派生分析、图表和报告 |
 
 - 产物同步只允许按需手动执行；默认不创建或启用计划任务、编辑器自动同步、文件监视器或其他后台触发器。
-- Windows PowerShell 或 CMD 使用 `sync_artifacts_from_beidou.cmd --dry-run` 只读预览，确认范围后再运行 `sync_artifacts_from_beidou.cmd`。`.sh` 文件是 WSL 内部实现，不是 Windows 用户的主要入口。同步只从服务器拉取，不反向上传，也不使用 `--delete`，所以本地可以保留服务器已删除的历史副本。
+- Windows PowerShell 使用 `.\sync_artifacts_from_beidou.cmd --dry-run` 只读预览，确认范围后再运行 `.\sync_artifacts_from_beidou.cmd`；CMD 可省略开头的 `.\`。`.sh` 文件是 WSL 内部实现，不是 Windows 用户的主要入口。同步只从服务器拉取，不反向上传，也不使用 `--delete`，所以本地可以保留服务器已删除的历史副本。
 - 镜像范围仅包括 `runs/tasks/`、`runs/sequences/`、Study 的 `experiment/{sequence,task}/`、`logs/`、`result/`、分析方法的 `results/`、生成的 chart payload 和 `reports/`。源码、配置、Study 脚本和 variants 只通过 Git 更新。
 - `data/` 和 `.third_party/` 既不进入 Git，也不属于产物镜像范围；需要新增或更新服务器数据时单独执行显式的数据传输并校验数量与身份。
 - 本地 `.artifact_sync/config.env` 保存机器专用的服务器地址、SSH 命令和凭据路径，不提交 Git。
