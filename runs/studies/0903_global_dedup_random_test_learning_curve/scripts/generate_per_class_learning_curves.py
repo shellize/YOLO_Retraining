@@ -17,17 +17,25 @@ STUDY_DIR = Path(__file__).resolve().parents[1]
 SEQUENCES_DIR = STUDY_DIR / "experiment" / "sequence"
 RESULTS_DIR = STUDY_DIR / "result" / "per_class_learning_curve"
 
-SEQUENCES = {
+SEQUENCE_CANDIDATES = {
     "split_s42": (
-        "GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42",
+        (
+            "GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42",
+        ),
         "split seed 42",
     ),
     "split_s41": (
-        "GlobalDedupTau099_PostSplit_RandomS41__seq-full-cold__stage0-stage7__yolov5s__s42",
+        (
+            "GlobalDedupTau099_PostSplit_RandomS41_Rerun__seq-full-cold__stage0-stage7__yolov5s__s42",
+            "GlobalDedupTau099_PostSplit_RandomS41__seq-full-cold__stage0-stage7__yolov5s__s42",
+        ),
         "split seed 41",
     ),
     "split_s43": (
-        "GlobalDedupTau099_PostSplit_RandomS43__seq-full-cold__stage0-stage7__yolov5s__s42",
+        (
+            "GlobalDedupTau099_PostSplit_RandomS43_Rerun__seq-full-cold__stage0-stage7__yolov5s__s42",
+            "GlobalDedupTau099_PostSplit_RandomS43__seq-full-cold__stage0-stage7__yolov5s__s42",
+        ),
         "split seed 43",
     ),
 }
@@ -152,13 +160,18 @@ def main() -> int:
     rows: list[dict[str, Any]] = []
     included: list[str] = []
     omitted: list[str] = []
-    for experiment, (sequence_name, label) in SEQUENCES.items():
-        sequence_dir = SEQUENCES_DIR / sequence_name
-        if not completed_sequence(sequence_dir):
+    resolved_sequences: dict[str, str] = {}
+    for experiment, (candidates, label) in SEQUENCE_CANDIDATES.items():
+        sequence_name = next(
+            (candidate for candidate in candidates if completed_sequence(SEQUENCES_DIR / candidate)),
+            None,
+        )
+        if sequence_name is None:
             omitted.append(experiment)
             continue
         included.append(experiment)
-        rows.extend(collect_sequence(experiment, label, sequence_dir))
+        resolved_sequences[experiment] = sequence_name
+        rows.extend(collect_sequence(experiment, label, SEQUENCES_DIR / sequence_name))
     if not rows:
         raise ValueError("No completed sequence is available")
 
@@ -174,6 +187,7 @@ def main() -> int:
         "study": STUDY_DIR.name,
         "included_experiments": included,
         "omitted_incomplete_experiments": omitted,
+        "resolved_sequences": resolved_sequences,
         "metric_source": "task_result.json -> metrics.best.test.per_class_ap50/per_class_ap",
         "x_axis": "task_result.json -> cost.selected_count",
         "outputs": {
