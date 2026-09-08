@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+PROJECT_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 STATE_DIR="$PROJECT_ROOT/.artifact_sync"
 CONFIG_FILE="${YOLO_ARTIFACT_SYNC_CONFIG:-$STATE_DIR/config.env}"
 LOG_FILE="$STATE_DIR/sync.log"

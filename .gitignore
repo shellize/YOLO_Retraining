@@ -48,7 +48,7 @@ events.out.tfevents.*
 # Analysis method source remains tracked; generated analysis data stays local.
 /data_analyse/**/results/
 /result_analysis/**/results/
-/result_analysis/train_test_overfitting/20*/
+/result_analysis/**/20*/
 /result_analysis/*.exe
 
 # Reusable chart code stays tracked; generated chart payloads do not.

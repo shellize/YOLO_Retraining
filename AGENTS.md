@@ -16,6 +16,7 @@
 
 ```text
 <repo-root>/
+├── sync_artifacts_from_beidou.sh  从服务器手动拉取生成产物
 ├── src/yolo_retraining/   可复用训练框架
 ├── configs/               跨实验共享的默认项、模型、超参、数据和基线配置
 ├── scripts/               跨实验复用的启动、预检、汇总和数据维护工具
@@ -129,9 +130,10 @@ YAML / --set
 
 Task 级 warm 配置可能使用父任务 `last.pt`，标准 Sequence 使用 `best.pt`；结果说明中必须写清 checkpoint 语义。
 
-### 公共 `scripts/`
+### 根目录同步入口与公共 `scripts/`
 
-只保留跨实验复用入口：标准基线/Balance Test 启动器、selection study 启动器和 preflight、`select_best_task.py`、`normalize_batch_names.py`、通用冗余汇总与协议校验等。
+- 根目录 `sync_artifacts_from_beidou.sh` 是服务器到本地的手动产物镜像入口，不属于训练启动器，也不得由计划任务或编辑器后台自动触发。
+- 公共 `scripts/` 只保留跨实验复用入口：标准基线/Balance Test 启动器、selection study 启动器和 preflight、`select_best_task.py`、`normalize_batch_names.py`、通用冗余汇总与协议校验等。
 
 具体 Study 的运行命令从其 `scripts/` 启动。新增 Study 时，不要再把它的 `run_*.sh` 放回公共 `scripts/`。
 
@@ -142,7 +144,9 @@ Task 级 warm 配置可能使用父任务 `last.pt`，标准 Sequence 使用 `be
 - `data/raw/iamge/`、`data/raw/label/` 是现有真实拼写，不擅自更名。
 - `data/self_improving/images/`、`labels/` 按物理 batch 保存。
 - `data/self_improving/annotation_archive/` 保存原始 XML/JSON 归档。
-- `data/classes.txt` 保存类别顺序。
+- `data/stroller/images/`、`labels/` 是人工复核后的婴儿车正式实验数据。
+- `data/stroller_raw/images/`、`labels/` 是未经人工复核的原始筛选版本，不得替代 `data/stroller/` 参与正式实验。
+- `data/classes.txt` 保存主数据集类别顺序；独立数据集使用各自目录中的 `classes.txt`。
 
 不要展平 batch，不覆盖原始标注，不把大数据提交 Git。数据组合通过公共 layout 或 Study 的 `experiment/variants/` manifest 完成。
 
@@ -159,8 +163,8 @@ Task 级 warm 配置可能使用父任务 `last.pt`，标准 Sequence 使用 `be
 - `charts/` 只放可跨 Study 复用的图表/比较脚本。
 - `result_analysis/` 只放可复用的模型结果分析方法。
 - Study 专用输出必须写入 `runs/studies/<study>/result/<analysis_name>/`；Study 专用分析入口放该 Study 的 `scripts/`。
-- 这两个公共目录里已经存在的旧图、CSV 和时间戳结果本轮不整理；它们不是新的目录范式。
-- `reports/` 中的既有报告资产不作为新 Study 的结果目录。
+- `data_analyse/`、`result_analysis/` 和 `charts/` 中的源码、脚本及必要说明由 Git 同步；`results/`、时间戳目录、图、表和缓存属于生成产物，不进入 Git。
+- `reports/` 是既有独立报告与渲染资产的存放区，整体按生成产物处理；新 Study 的结果仍写入自身的 `result/`。
 
 ## 原始运行产物与取数规则
 
@@ -193,13 +197,19 @@ Sequence 还包括 `sequence.yaml`、`sequence_status.json`、`sequence_result.j
 
 不得手改原始结果，也不得复制已有 runs 冒充新实验。目录搬迁不会自动重写历史文件中的绝对路径，分析程序应优先根据当前 Study 根定位文件，并把历史路径只当 provenance 文本。
 
-## Git 与产物同步
+## Git 与手动产物同步
 
-- Git 只同步源码、配置、启动/分析脚本、Study 协议和 `experiment/variants/`；物理数据、原始训练输出、日志、权重、派生分析和报告不进入 Git。
-- 服务器是训练、推理和重计算型分析产物的写入端；本地保留完整副本供浏览和轻量分析。需要更新本地副本时，手动运行 `scripts/sync_artifacts_from_beidou.sh`，从服务器单向镜像到本地，不反向上传；默认不启用后台定时同步。
-- 本地 `.artifact_sync/config.env` 保存机器专用的服务器地址和 SSH 命令，不提交 Git。同步脚本不使用 `--delete`，因此服务器删除或整理文件不会自动删除本地副本。
-- 手动镜像只覆盖 `runs/tasks/`、`runs/sequences/`、Study 的 `experiment/{sequence,task}/`、`logs/`、`result/`、分析方法的 `results/`、生成的 chart payload 和 `reports/`。Study 的配置、脚本和 variants 始终只由 Git 更新。
-- Git 拉取不等于产物已同步；报告当前状态时分别核对 Git HEAD 和最近一次产物镜像日志。
+| 方向 | 机制 | 内容边界 |
+|---|---|---|
+| 本地 → 服务器 | Git push/pull | 源码、配置、启动/分析脚本、说明文档、Study 协议和 `experiment/variants/` |
+| 服务器 → 本地 | 手动运行根目录 `sync_artifacts_from_beidou.sh` | 原始训练输出、日志、权重、派生分析、图表和报告 |
+
+- 产物同步只允许按需手动执行；默认不创建或启用计划任务、编辑器自动同步、文件监视器或其他后台触发器。
+- 使用 `bash sync_artifacts_from_beidou.sh --dry-run` 只读预览，确认范围后再运行 `bash sync_artifacts_from_beidou.sh`。脚本只从服务器拉取，不反向上传，也不使用 `--delete`，所以本地可以保留服务器已删除的历史副本。
+- 镜像范围仅包括 `runs/tasks/`、`runs/sequences/`、Study 的 `experiment/{sequence,task}/`、`logs/`、`result/`、分析方法的 `results/`、生成的 chart payload 和 `reports/`。源码、配置、Study 脚本和 variants 只通过 Git 更新。
+- `data/` 和 `.third_party/` 既不进入 Git，也不属于产物镜像范围；需要新增或更新服务器数据时单独执行显式的数据传输并校验数量与身份。
+- 本地 `.artifact_sync/config.env` 保存机器专用的服务器地址、SSH 命令和凭据路径，不提交 Git。
+- Git HEAD 一致不代表产物已镜像；报告同步状态时分别核对 Git HEAD 与最近一次手动镜像日志。
 
 ## 环境、运行与验证
 
