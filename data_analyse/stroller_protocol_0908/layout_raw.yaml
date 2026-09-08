@@ -1,0 +1,11 @@
+# Server-side source layout for strollerraw.
+path: ../../data/stroller_protocol_0908/stroller_raw_source
+names:
+  0: large luggage
+  1: stroller
+  2: wheelchair
+  3: flatbed truck
+groups:
+  stroller_raw:
+    split: train
+    images: images

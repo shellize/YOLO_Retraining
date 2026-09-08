@@ -1,0 +1,7 @@
+include: ../../../../configs/sequence/_base_learning_curve_full_cold.yaml
+sequence:
+  name: DifficultStrollerWindow10Tau099_Ordered
+  output_root: ../experiment/sequence
+  seed: 42
+data:
+  layout: ../experiment/variants/window10_tau0p990_ordered/layout.yaml

@@ -1,0 +1,19 @@
+include: ../../../../configs/task/full_cold.yaml
+task:
+  name: m2_s41
+  label: m2-easy
+  seed: 42
+  output_root: ../experiment/task
+data:
+  layout: ../experiment/variants/split_s41/m2_layout.yaml
+  current: [train2]
+  candidate: [train2]
+  validation: [val2]
+  test: [test1]
+evaluation:
+  primary_metric: map50_95
+  test_scope: explicit
+  evaluate_checkpoints: [last, best]
+  save_prediction_artifacts: true
+  prediction_artifact_checkpoints: [best]
+  prediction_artifact_groups: [test1, test2, testhard]

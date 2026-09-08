@@ -1,0 +1,11 @@
+# Server-side source layout for the hard-sample-filtered stroller source.
+path: ../../data/stroller_protocol_0908/stroller_easy_source
+names:
+  0: large luggage
+  1: stroller
+  2: wheelchair
+  3: flatbed truck
+groups:
+  stroller_easy_source:
+    split: train
+    images: images
