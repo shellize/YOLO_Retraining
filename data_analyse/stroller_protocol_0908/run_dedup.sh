@@ -17,6 +17,18 @@ WEIGHTS="$PROJECT_ROOT/.third_party/yolov5/yolov5s.pt"
 if [[ -z "$CONDA_BIN" ]]; then
   CONDA_BIN="$(command -v conda || true)"
 fi
+if [[ -z "$CONDA_BIN" ]]; then
+  USER_HOME="$(getent passwd "$(id -u)" | cut -d: -f6)"
+  for candidate in \
+    "$USER_HOME/miniforge3/bin/conda" \
+    "$USER_HOME/miniconda3/bin/conda" \
+    "$USER_HOME/anaconda3/bin/conda"; do
+    if [[ -x "$candidate" ]]; then
+      CONDA_BIN="$candidate"
+      break
+    fi
+  done
+fi
 if [[ -z "$CONDA_BIN" || ! -x "$CONDA_BIN" ]]; then
   echo "conda was not found; set YOLO_RETRAINING_CONDA_BIN" >&2
   exit 10
