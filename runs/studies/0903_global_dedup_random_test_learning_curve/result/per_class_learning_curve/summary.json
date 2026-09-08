@@ -1,12 +1,16 @@
 {
   "study": "0903_global_dedup_random_test_learning_curve",
   "included_experiments": [
-    "split_s42"
-  ],
-  "omitted_incomplete_experiments": [
+    "split_s42",
     "split_s41",
     "split_s43"
   ],
+  "omitted_incomplete_experiments": [],
+  "resolved_sequences": {
+    "split_s42": "GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42",
+    "split_s41": "GlobalDedupTau099_PostSplit_RandomS41_Rerun__seq-full-cold__stage0-stage7__yolov5s__s42",
+    "split_s43": "GlobalDedupTau099_PostSplit_RandomS43__seq-full-cold__stage0-stage7__yolov5s__s42"
+  },
   "metric_source": "task_result.json -> metrics.best.test.per_class_ap50/per_class_ap",
   "x_axis": "task_result.json -> cost.selected_count",
   "outputs": {
