@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "status": "completed",
+  "output_dir": "/home/lijinhe/work/YOLO_Retraining/runs/studies/0907_stroller_window10_learning_curve/experiment/sequence/StrollerWindow10Tau099_SplitS42__seq-full-cold__stage0-stage7__yolov5s__s42",
+  "tasks": [
+    "/home/lijinhe/work/YOLO_Retraining/runs/studies/0907_stroller_window10_learning_curve/experiment/sequence/StrollerWindow10Tau099_SplitS42__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/000__stage0__full-cold",
+    "/home/lijinhe/work/YOLO_Retraining/runs/studies/0907_stroller_window10_learning_curve/experiment/sequence/StrollerWindow10Tau099_SplitS42__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/001__stage1__full-cold",
+    "/home/lijinhe/work/YOLO_Retraining/runs/studies/0907_stroller_window10_learning_curve/experiment/sequence/StrollerWindow10Tau099_SplitS42__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/002__stage2__full-cold",
+    "/home/lijinhe/work/YOLO_Retraining/runs/studies/0907_stroller_window10_learning_curve/experiment/sequence/StrollerWindow10Tau099_SplitS42__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/003__stage3__full-cold",
+    "/home/lijinhe/work/YOLO_Retraining/runs/studies/0907_stroller_window10_learning_curve/experiment/sequence/StrollerWindow10Tau099_SplitS42__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/004__stage4__full-cold",
+    "/home/lijinhe/work/YOLO_Retraining/runs/studies/0907_stroller_window10_learning_curve/experiment/sequence/StrollerWindow10Tau099_SplitS42__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/005__stage5__full-cold",
+    "/home/lijinhe/work/YOLO_Retraining/runs/studies/0907_stroller_window10_learning_curve/experiment/sequence/StrollerWindow10Tau099_SplitS42__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/006__stage6__full-cold",
+    "/home/lijinhe/work/YOLO_Retraining/runs/studies/0907_stroller_window10_learning_curve/experiment/sequence/StrollerWindow10Tau099_SplitS42__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/007__stage7__full-cold"
+  ],
+  "summary": {
+    "checkpoint": "best",
+    "matrix": [
+      {
+        "test": 0.36544183934971847
+      },
+      {
+        "test": 0.4607949629172663
+      },
+      {
+        "test": 0.4600540404760909
+      },
+      {
+        "test": 0.4944333002943952
+      },
+      {
+        "test": 0.47773965163003734
+      },
+      {
+        "test": 0.5240629391759003
+      },
+      {
+        "test": 0.4403200952652517
+      },
+      {
+        "test": 0.4965222207724816
+      }
+    ],
+    "seen_mean": [
+      0.36544183934971847,
+      0.4607949629172663,
+      0.4600540404760909,
+      0.4944333002943952,
+      0.47773965163003734,
+      0.5240629391759003,
+      0.4403200952652517,
+      0.4965222207724816
+    ],
+    "final_mean_map50_95": 0.4965222207724816,
+    "global_test_regression": {
+      "test": 0.027540718403418707
+    },
+    "final_mean_forgetting": 0.0,
+    "final_forgetting": {},
+    "final_forgetting_ratio": {},
+    "final_retention_ratio": {},
+    "acquisition_abs": {},
+    "acquisition_headroom_ratio": {},
+    "backward_transfer": null,
+    "stage_specific_metrics_available": false
+  }
+}

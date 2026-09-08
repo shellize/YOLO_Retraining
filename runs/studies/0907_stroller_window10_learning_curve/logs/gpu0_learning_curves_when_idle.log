@@ -1,0 +1,35 @@
+[2026-09-07 18:09:19+0800] poller started; GPU0, interval=600s, idle thresholds=5%/512MiB
+[2026-09-07 18:09:19+0800] GPU0: busy util=100% memory=69145MiB compute_apps=1
+[2026-09-07 18:09:19+0800] consecutive idle checks reset to 0
+[2026-09-07 18:09:19+0800] sleeping 600s before the next GPU0 check
+[2026-09-07 18:19:19+0800] GPU0: busy util=100% memory=69145MiB compute_apps=1
+[2026-09-07 18:19:19+0800] consecutive idle checks reset to 0
+[2026-09-07 18:19:19+0800] sleeping 600s before the next GPU0 check
+[2026-09-07 18:29:19+0800] GPU0: idle util=0% memory=0MiB compute_apps=0
+[2026-09-07 18:29:19+0800] consecutive idle checks=1/2
+[2026-09-07 18:29:19+0800] sleeping 600s before the next GPU0 check
+[2026-09-07 18:39:20+0800] GPU0: idle util=0% memory=0MiB compute_apps=0
+[2026-09-07 18:39:20+0800] consecutive idle checks=2/2
+[2026-09-07 18:39:20+0800] GPU0: idle util=0% memory=0MiB compute_apps=0
+[2026-09-07 18:39:20+0800] starting 0903 global dedup randomization controls: /home/lijinhe/work/YOLO_Retraining/runs/studies/0903_global_dedup_random_test_learning_curve/scripts/run_randomization_controls_server.sh
+[2026-09-07 20:13:53+0800] poller started; GPU0, interval=600s, idle thresholds=5%/512MiB
+[2026-09-07 20:13:53+0800] GPU0: busy util=100% memory=53217MiB compute_apps=1
+[2026-09-07 20:13:53+0800] consecutive idle checks reset to 0
+[2026-09-07 20:13:53+0800] sleeping 600s before the next GPU0 check
+[2026-09-07 20:23:53+0800] GPU0: busy util=100% memory=53217MiB compute_apps=1
+[2026-09-07 20:23:53+0800] consecutive idle checks reset to 0
+[2026-09-07 20:23:53+0800] sleeping 600s before the next GPU0 check
+[2026-09-07 20:33:53+0800] GPU0: busy util=100% memory=53217MiB compute_apps=1
+[2026-09-07 20:33:53+0800] consecutive idle checks reset to 0
+[2026-09-07 20:33:53+0800] sleeping 600s before the next GPU0 check
+[2026-09-07 20:43:54+0800] GPU0: idle util=0% memory=0MiB compute_apps=0
+[2026-09-07 20:43:54+0800] consecutive idle checks=1/2
+[2026-09-07 20:43:54+0800] sleeping 600s before the next GPU0 check
+[2026-09-07 20:53:54+0800] GPU0: idle util=0% memory=0MiB compute_apps=0
+[2026-09-07 20:53:54+0800] consecutive idle checks=2/2
+[2026-09-07 20:53:54+0800] GPU0: idle util=0% memory=0MiB compute_apps=0
+[2026-09-07 20:53:54+0800] starting 0903 global dedup randomization controls: /home/lijinhe/work/YOLO_Retraining/runs/studies/0903_global_dedup_random_test_learning_curve/scripts/run_randomization_controls_server.sh
+[2026-09-08 05:27:05+0800] 0903 global dedup randomization controls completed
+[2026-09-08 05:27:05+0800] starting 0907 stroller window10 learning curves: /home/lijinhe/work/YOLO_Retraining/runs/studies/0907_stroller_window10_learning_curve/scripts/run_learning_curve.sh
+[2026-09-08 07:51:03+0800] 0907 stroller window10 learning curves completed
+[2026-09-08 07:51:03+0800] both learning-curve workflows completed

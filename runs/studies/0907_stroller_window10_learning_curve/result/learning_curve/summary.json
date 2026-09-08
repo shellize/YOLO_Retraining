@@ -1,0 +1,128 @@
+{
+  "study": "0907_stroller_window10_learning_curve",
+  "status": "completed",
+  "split_seeds": [
+    41,
+    42,
+    43
+  ],
+  "training_seed_schedule": "42-49 per sequence",
+  "metric_source": "task_result.json -> metrics.best.test",
+  "x_axis": "task_result.json -> cost.selected_count",
+  "test_images_per_curve": 80,
+  "protocol_validation": {
+    "x_points": [
+      81,
+      161,
+      241,
+      321,
+      401,
+      481,
+      561,
+      641
+    ],
+    "per_stage": [
+      {
+        "stage": 0,
+        "cumulative_train_images": 81,
+        "map50_95_mean": 0.35050440162928415,
+        "map50_95_min": 0.2872708253482851,
+        "map50_95_max": 0.3988005401898487,
+        "map50_95_range": 0.1115297148415636,
+        "map50_mean": 0.7880681282263664,
+        "map50_min": 0.7067068010008889,
+        "map50_max": 0.8391240273931654,
+        "map50_range": 0.1324172263922765
+      },
+      {
+        "stage": 1,
+        "cumulative_train_images": 161,
+        "map50_95_mean": 0.4348724356007712,
+        "map50_95_min": 0.3995028151525674,
+        "map50_95_max": 0.4607949629172663,
+        "map50_95_range": 0.06129214776469888,
+        "map50_mean": 0.8521162930364218,
+        "map50_min": 0.819482292107379,
+        "map50_max": 0.8752402302336326,
+        "map50_range": 0.055757938126253626
+      },
+      {
+        "stage": 2,
+        "cumulative_train_images": 241,
+        "map50_95_mean": 0.4604026151537301,
+        "map50_95_min": 0.44650088100274476,
+        "map50_95_max": 0.47465292398235465,
+        "map50_95_range": 0.02815204297960988,
+        "map50_mean": 0.8796206937670515,
+        "map50_min": 0.8671810983798462,
+        "map50_max": 0.8976710886754693,
+        "map50_range": 0.03048999029562305
+      },
+      {
+        "stage": 3,
+        "cumulative_train_images": 321,
+        "map50_95_mean": 0.47451418144158625,
+        "map50_95_min": 0.45807963212785985,
+        "map50_95_max": 0.4944333002943952,
+        "map50_95_range": 0.03635366816653535,
+        "map50_mean": 0.8761431354189341,
+        "map50_min": 0.8558976857604809,
+        "map50_max": 0.8947632391901337,
+        "map50_range": 0.03886555342965281
+      },
+      {
+        "stage": 4,
+        "cumulative_train_images": 401,
+        "map50_95_mean": 0.4624159395611676,
+        "map50_95_min": 0.4155306201211048,
+        "map50_95_max": 0.4939775469323607,
+        "map50_95_range": 0.07844692681125587,
+        "map50_mean": 0.9007048891946284,
+        "map50_min": 0.860658953774012,
+        "map50_max": 0.9350288097475989,
+        "map50_range": 0.07436985597358692
+      },
+      {
+        "stage": 5,
+        "cumulative_train_images": 481,
+        "map50_95_mean": 0.5173292498870435,
+        "map50_95_min": 0.47341098754424704,
+        "map50_95_max": 0.5545138229409831,
+        "map50_95_range": 0.08110283539673602,
+        "map50_mean": 0.919225667019381,
+        "map50_min": 0.8913654581496189,
+        "map50_max": 0.9491044604821045,
+        "map50_range": 0.057739002332485634
+      },
+      {
+        "stage": 6,
+        "cumulative_train_images": 561,
+        "map50_95_mean": 0.48296119078940863,
+        "map50_95_min": 0.4403200952652517,
+        "map50_95_max": 0.5294632265649468,
+        "map50_95_range": 0.08914313129969514,
+        "map50_mean": 0.8925792709678216,
+        "map50_min": 0.8648959552971097,
+        "map50_max": 0.9329969656517862,
+        "map50_range": 0.06810101035467653
+      },
+      {
+        "stage": 7,
+        "cumulative_train_images": 641,
+        "map50_95_mean": 0.5121904881441012,
+        "map50_95_min": 0.4965222207724816,
+        "map50_95_max": 0.5340989251631411,
+        "map50_95_range": 0.037576704390659466,
+        "map50_mean": 0.8962795124875241,
+        "map50_min": 0.844846716856723,
+        "map50_max": 0.9233226087859783,
+        "map50_range": 0.0784758919292553
+      }
+    ]
+  },
+  "outputs": {
+    "csv": "metrics_by_split_seed.csv",
+    "png": "learning_curve_by_split_seed.png",
+    "svg": "learning_curve_by_split_seed.svg"
+  }
+}

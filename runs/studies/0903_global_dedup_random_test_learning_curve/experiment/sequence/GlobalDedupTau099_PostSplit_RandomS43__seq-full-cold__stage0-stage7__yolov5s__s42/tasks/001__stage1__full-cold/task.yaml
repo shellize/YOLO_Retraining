@@ -1,0 +1,59 @@
+task:
+  name: '001'
+  label: full-cold
+  seed: 43
+  parent_result: /home/lijinhe/work/YOLO_Retraining/runs/studies/0903_global_dedup_random_test_learning_curve/experiment/sequence/GlobalDedupTau099_PostSplit_RandomS43__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/000__stage0__full-cold
+  output_root: /home/lijinhe/work/YOLO_Retraining/runs/studies/0903_global_dedup_random_test_learning_curve/experiment/sequence/GlobalDedupTau099_PostSplit_RandomS43__seq-full-cold__stage0-stage7__yolov5s__s42/tasks
+select_policy:
+  name: full
+  params: {}
+epoch_policy:
+  name: static
+  params: {}
+budget:
+  type: epochs
+  value: 100
+backend:
+  params:
+    batch: 64
+    imgsz: 640
+    device: 0
+    workers: 16
+    amp: true
+    best_metric: map50
+evaluation:
+  primary_metric: map50_95
+  test_scope: seen
+  evaluate_checkpoints:
+  - last
+  - best
+  save_prediction_artifacts: true
+  prediction_artifact_checkpoints:
+  - best
+  prediction_artifact_groups:
+  - test
+  confidence_sweep_thresholds:
+  - 0.2
+  - 0.3
+  - 0.4
+  - 0.5
+  - 0.6
+  - 0.7
+  - 0.8
+model:
+  backend: yolov5
+  definition: yolov5s.yaml
+data:
+  layout: /home/lijinhe/work/YOLO_Retraining/runs/studies/0903_global_dedup_random_test_learning_curve/experiment/variants/dedup_tau_0p990_split_s43/layout.yaml
+  current:
+  - stage1
+  candidate:
+  - stage0
+  - stage1
+  validation:
+  - val
+  test:
+  - test
+initialization:
+  source: pretrained
+  checkpoint: yolov5s.pt
