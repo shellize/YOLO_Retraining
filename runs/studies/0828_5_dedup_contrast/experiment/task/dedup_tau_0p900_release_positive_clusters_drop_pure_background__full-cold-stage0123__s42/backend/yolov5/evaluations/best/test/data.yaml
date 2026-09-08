@@ -1,8 +1,0 @@
-train: /home/lijinhe/work/YOLO_Retraining/runs/studies/balance_tau090_label_contrast/tasks/dedup_tau_0p900_release_positive_clusters_drop_pure_background__full-cold-stage0123__stage0+stage1+stage2+stage3__yolov5s__s42/backend/yolov5/evaluations/best/test/images.txt
-val: /home/lijinhe/work/YOLO_Retraining/runs/studies/balance_tau090_label_contrast/tasks/dedup_tau_0p900_release_positive_clusters_drop_pure_background__full-cold-stage0123__stage0+stage1+stage2+stage3__yolov5s__s42/backend/yolov5/evaluations/best/test/images.txt
-nc: 4
-names:
-  0: large luggage
-  1: stroller
-  2: wheelchair
-  3: flatbed truck

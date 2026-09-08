@@ -1,3 +1,4 @@
+# Python caches and local environments
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -5,38 +6,61 @@ __pycache__/
 .coverage
 htmlcov/
 .venv/
+
+# Editor state
 .idea/
 .vscode/
-.third_party/
-/reports
-# Only the repository-root dataset is excluded. Files such as configs/data/
-# and data_analyse/ remain version controlled.
+
+# Local runtime dependencies, datasets, tools, and archives
+/.third_party/
 /data/
-# Local archives downloaded from the server; never commit archived run artifacts.
+/weights/
+/local_tools/
 /archives/
-# Historical non-Study run artifacts are local-only after archive/untracking.
-/runs/sequences/
-/runs/tasks/
-charts/
-!charts/
-charts/*
-!charts/balance_learning_curve_2batch/
-charts/balance_learning_curve_2batch/*
-!charts/balance_learning_curve_2batch/generate_report.py
-weights/
+/.artifact_sync/
+
+# Model binaries and generated dataset caches
 *.pt
 *.onnx
 *.engine
 *.cache
-*.sh
-!/scripts/*.sh
-!/runs/studies/0903_global_dedup_random_test_learning_curve/scripts/run_randomization_controls.sh
-# Keep analysis method scripts and Markdown reports; ignore generated analysis data.
-/result_analysis/**
-!/result_analysis/
-!/result_analysis/**/
-!/result_analysis/**/*.py
-!/result_analysis/**/*.md
-/data_analyse/custom_dataset/results/
-/data_analyse/dataset_redundancy/results/
+events.out.tfevents.*
+
+# Non-Study training outputs are machine-local
+/runs/tasks/
+/runs/sequences/
+
+# A Study's protocol stays tracked; raw runs and derived results do not.
+# Tracked: EXPERIMENT.md, config/, scripts/, experiment/variants/.
+# Local/server artifacts: experiment/sequence/, experiment/task/, logs/, result/.
+/runs/studies/*/experiment/sequence/*
+!/runs/studies/*/experiment/sequence/.gitkeep
+/runs/studies/*/experiment/task/*
+!/runs/studies/*/experiment/task/.gitkeep
+/runs/studies/*/logs/*
+!/runs/studies/*/logs/.gitkeep
+/runs/studies/*/result/*
+!/runs/studies/*/result/.gitkeep
+
+# Analysis method source remains tracked; generated analysis data stays local.
+/data_analyse/**/results/
+/result_analysis/**/results/
+/result_analysis/train_test_overfitting/20*/
+/result_analysis/*.exe
+
+# Reusable chart code stays tracked; generated chart payloads do not.
+/charts/**/*.png
+/charts/**/*.svg
+/charts/**/*.csv
+/charts/**/*.html
+/charts/**/summary.json
+/charts/**/fixed_confidence_cache/
+/charts/**/analysis.md
+/charts/**/comparison_summary.md
+/charts/**/complete_report.md
+/charts/**/fixed_confidence_tables.md
+/charts/**/metrics_tables.md
+
+# Rendered reports are synchronized outside Git.
+/reports/
 

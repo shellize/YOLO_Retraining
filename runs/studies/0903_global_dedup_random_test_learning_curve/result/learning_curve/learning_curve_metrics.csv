@@ -1,9 +1,0 @@
-﻿stage,cumulative_train_images,test_map50_95,test_map50,test_precision,test_recall,checkpoint,test_images,task_dir
-0,615,0.2342620508992252,0.45755897531481415,0.791503457310164,0.3975037115037115,best,1000,sequences\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\000__stage0__full-cold
-1,1230,0.2709009898170951,0.5377866040909152,0.763333801262325,0.44610416666666663,best,1000,sequences\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\001__stage1__full-cold
-2,1844,0.2900833270922114,0.5330359884008523,0.8230793092519098,0.46951148366908796,best,1000,sequences\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\002__stage2__full-cold
-3,2458,0.2962139343532657,0.5339949053149536,0.8644128908171756,0.46526179105692994,best,1000,sequences\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\003__stage3__full-cold
-4,3072,0.28812385093218534,0.5309148007970016,0.859704478791075,0.47812783429074723,best,1000,sequences\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\004__stage4__full-cold
-5,3686,0.321588172675589,0.5814908883961142,0.5663840673069593,0.58094346460679,best,1000,sequences\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\005__stage5__full-cold
-6,4300,0.3449629513802702,0.6287413419042884,0.736143710947867,0.5742591961753419,best,1000,sequences\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\006__stage6__full-cold
-7,4914,0.3274785191179949,0.6018733546613335,0.7293362139402831,0.5773252134710468,best,1000,sequences\GlobalDedupTau099_PostSplit__seq-full-cold__stage0-stage7__yolov5s__s42\tasks\007__stage7__full-cold

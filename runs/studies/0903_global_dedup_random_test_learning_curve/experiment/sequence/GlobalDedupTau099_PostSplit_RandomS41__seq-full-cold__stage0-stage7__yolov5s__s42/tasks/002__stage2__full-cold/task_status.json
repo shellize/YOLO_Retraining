@@ -1,6 +1,0 @@
-{
-  "status": "failed",
-  "updated_at": "2026-09-07T12:06:18+08:00",
-  "error_type": "RuntimeError",
-  "error": "YOLOv5 subprocess failed with exit code 1; see /home/lijinhe/work/YOLO_Retraining/runs/studies/0903_global_dedup_random_test_learning_curve/experiment/sequence/GlobalDedupTau099_PostSplit_RandomS41__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/002__stage2__full-cold/logs/yolov5_train.log"
-}

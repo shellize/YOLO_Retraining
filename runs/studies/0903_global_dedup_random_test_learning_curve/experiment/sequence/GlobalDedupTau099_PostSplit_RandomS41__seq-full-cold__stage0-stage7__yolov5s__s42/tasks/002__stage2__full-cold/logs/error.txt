@@ -1,8 +1,0 @@
-Traceback (most recent call last):
-  File "/home/lijinhe/work/YOLO_Retraining/src/yolo_retraining/engine/task_runner.py", line 76, in run
-    training = self.backend.train(
-  File "/home/lijinhe/work/YOLO_Retraining/src/yolo_retraining/backends/yolov5/backend.py", line 63, in train
-    run_command(command, cwd=source_root, log_path=standard_dir / "logs" / "yolov5_train.log", progress_epochs=int(config["budget"]["value"]))
-  File "/home/lijinhe/work/YOLO_Retraining/src/yolo_retraining/backends/yolov5/trainer.py", line 288, in run_command
-    raise RuntimeError(f"YOLOv5 subprocess failed with exit code {returncode}; see {log_path}")
-RuntimeError: YOLOv5 subprocess failed with exit code 1; see /home/lijinhe/work/YOLO_Retraining/runs/studies/0903_global_dedup_random_test_learning_curve/experiment/sequence/GlobalDedupTau099_PostSplit_RandomS41__seq-full-cold__stage0-stage7__yolov5s__s42/tasks/002__stage2__full-cold/logs/yolov5_train.log
