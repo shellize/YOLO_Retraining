@@ -11,6 +11,9 @@ htmlcov/
 .idea/
 .vscode/
 
+# Local working notes
+/idea.md
+
 # Local runtime dependencies, datasets, tools, and archives
 /.third_party/
 /data/

@@ -196,9 +196,9 @@ Sequence 还包括 `sequence.yaml`、`sequence_status.json`、`sequence_result.j
 ## Git 与产物同步
 
 - Git 只同步源码、配置、启动/分析脚本、Study 协议和 `experiment/variants/`；物理数据、原始训练输出、日志、权重、派生分析和报告不进入 Git。
-- 服务器是训练、推理和重计算型分析产物的写入端；本地保留完整副本供浏览和轻量分析。产物通过 `scripts/sync_artifacts_from_beidou.sh` 从服务器单向镜像到本地，不反向上传。
+- 服务器是训练、推理和重计算型分析产物的写入端；本地保留完整副本供浏览和轻量分析。需要更新本地副本时，手动运行 `scripts/sync_artifacts_from_beidou.sh`，从服务器单向镜像到本地，不反向上传；默认不启用后台定时同步。
 - 本地 `.artifact_sync/config.env` 保存机器专用的服务器地址和 SSH 命令，不提交 Git。同步脚本不使用 `--delete`，因此服务器删除或整理文件不会自动删除本地副本。
-- 自动镜像只覆盖 `runs/tasks/`、`runs/sequences/`、Study 的 `experiment/{sequence,task}/`、`logs/`、`result/`、分析方法的 `results/`、生成的 chart payload 和 `reports/`。Study 的配置、脚本和 variants 始终只由 Git 更新。
+- 手动镜像只覆盖 `runs/tasks/`、`runs/sequences/`、Study 的 `experiment/{sequence,task}/`、`logs/`、`result/`、分析方法的 `results/`、生成的 chart payload 和 `reports/`。Study 的配置、脚本和 variants 始终只由 Git 更新。
 - Git 拉取不等于产物已同步；报告当前状态时分别核对 Git HEAD 和最近一次产物镜像日志。
 
 ## 环境、运行与验证
