@@ -16,7 +16,8 @@
 
 ```text
 <repo-root>/
-├── sync_artifacts_from_beidou.sh  从服务器手动拉取生成产物
+├── sync_artifacts_from_beidou.cmd Windows 手动产物同步入口
+├── sync_artifacts_from_beidou.sh  由 Windows 入口调用的 WSL/rsync 实现
 ├── src/yolo_retraining/   可复用训练框架
 ├── configs/               跨实验共享的默认项、模型、超参、数据和基线配置
 ├── scripts/               跨实验复用的启动、预检、汇总和数据维护工具
@@ -132,7 +133,7 @@ Task 级 warm 配置可能使用父任务 `last.pt`，标准 Sequence 使用 `be
 
 ### 根目录同步入口与公共 `scripts/`
 
-- 根目录 `sync_artifacts_from_beidou.sh` 是服务器到本地的手动产物镜像入口，不属于训练启动器，也不得由计划任务或编辑器后台自动触发。
+- Windows 本地使用根目录 `sync_artifacts_from_beidou.cmd` 手动拉取服务器产物；它调用同目录的 `sync_artifacts_from_beidou.sh` 在 WSL 中执行 rsync。两者都不属于训练启动器，也不得由计划任务或编辑器后台自动触发。
 - 公共 `scripts/` 只保留跨实验复用入口：标准基线/Balance Test 启动器、selection study 启动器和 preflight、`select_best_task.py`、`normalize_batch_names.py`、通用冗余汇总与协议校验等。
 
 具体 Study 的运行命令从其 `scripts/` 启动。新增 Study 时，不要再把它的 `run_*.sh` 放回公共 `scripts/`。
@@ -202,10 +203,10 @@ Sequence 还包括 `sequence.yaml`、`sequence_status.json`、`sequence_result.j
 | 方向 | 机制 | 内容边界 |
 |---|---|---|
 | 本地 → 服务器 | Git push/pull | 源码、配置、启动/分析脚本、说明文档、Study 协议和 `experiment/variants/` |
-| 服务器 → 本地 | 手动运行根目录 `sync_artifacts_from_beidou.sh` | 原始训练输出、日志、权重、派生分析、图表和报告 |
+| 服务器 → 本地 | Windows 手动运行根目录 `sync_artifacts_from_beidou.cmd` | 原始训练输出、日志、权重、派生分析、图表和报告 |
 
 - 产物同步只允许按需手动执行；默认不创建或启用计划任务、编辑器自动同步、文件监视器或其他后台触发器。
-- 使用 `bash sync_artifacts_from_beidou.sh --dry-run` 只读预览，确认范围后再运行 `bash sync_artifacts_from_beidou.sh`。脚本只从服务器拉取，不反向上传，也不使用 `--delete`，所以本地可以保留服务器已删除的历史副本。
+- Windows PowerShell 或 CMD 使用 `sync_artifacts_from_beidou.cmd --dry-run` 只读预览，确认范围后再运行 `sync_artifacts_from_beidou.cmd`。`.sh` 文件是 WSL 内部实现，不是 Windows 用户的主要入口。同步只从服务器拉取，不反向上传，也不使用 `--delete`，所以本地可以保留服务器已删除的历史副本。
 - 镜像范围仅包括 `runs/tasks/`、`runs/sequences/`、Study 的 `experiment/{sequence,task}/`、`logs/`、`result/`、分析方法的 `results/`、生成的 chart payload 和 `reports/`。源码、配置、Study 脚本和 variants 只通过 Git 更新。
 - `data/` 和 `.third_party/` 既不进入 Git，也不属于产物镜像范围；需要新增或更新服务器数据时单独执行显式的数据传输并校验数量与身份。
 - 本地 `.artifact_sync/config.env` 保存机器专用的服务器地址、SSH 命令和凭据路径，不提交 Git。
