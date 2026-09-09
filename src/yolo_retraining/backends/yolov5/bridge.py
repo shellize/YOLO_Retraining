@@ -149,9 +149,13 @@ def inspect_model(args: argparse.Namespace) -> dict[str, Any]:
 
 def predict(args: argparse.Namespace) -> dict[str, Any]:
     _activate_source(args.root)
+    from models.common import AutoShape
     from models.experimental import attempt_load
 
-    model = attempt_load(str(args.weights), device=args.device).autoshape()
+    # YOLOv5 v7.0's attempt_load returns a DetectionModel.  AutoShape is the
+    # supported wrapper for path/PIL inputs; DetectionModel has no autoshape()
+    # method in this pinned source tree.
+    model = AutoShape(attempt_load(str(args.weights), device=args.device))
     paths = json.loads(args.images.read_text(encoding="utf-8"))
     results = model(paths, size=args.imgsz)
     return {
