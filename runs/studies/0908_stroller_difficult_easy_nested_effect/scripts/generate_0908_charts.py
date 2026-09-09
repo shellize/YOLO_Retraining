@@ -68,10 +68,10 @@ def curve_rows(path: Path, *, has_split_mode: bool) -> dict[int, list[dict[str, 
     rows = read_csv(path)
     selected: dict[int, list[dict[str, Any]]] = {seed: [] for seed in SEEDS}
     for row in rows:
+        if has_split_mode and row.get("split_mode") != "random":
+            continue
         seed = integer(row, "split_seed")
         if seed not in selected:
-            continue
-        if has_split_mode and row.get("split_mode") != "random":
             continue
         selected[seed].append(
             {
