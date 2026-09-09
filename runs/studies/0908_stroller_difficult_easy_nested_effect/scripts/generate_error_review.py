@@ -345,7 +345,7 @@ def page_html() -> str:
     .stat .name { color:var(--muted); font-size:11px; font-weight:700; }
     .results-head { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; margin:0 0 13px; color:var(--muted); font-size:13px; }
     .results-head strong { color:var(--ink); }
-    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(510px,1fr)); gap:17px; }
+    .grid { display:grid; grid-template-columns:minmax(0,1fr); gap:17px; }
     .card { overflow:hidden; background:var(--card); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); }
     .card-head { display:flex; justify-content:space-between; gap:12px; padding:15px 16px 12px; border-bottom:1px solid #edf0f2; }
     .card-head h3 { overflow:hidden; margin:2px 0 0; max-width:390px; font-size:15px; text-overflow:ellipsis; white-space:nowrap; }
@@ -363,8 +363,8 @@ def page_html() -> str:
     .tile.good .badge { color:#216b49; background:#e9f7ef; } .tile.bad .badge { color:#943838; background:#ffeceb; }
     .figure { position:relative; overflow:hidden; aspect-ratio:16/9; background:#17202b; }
     .figure img { display:block; width:100%; height:100%; object-fit:contain; }
-    .figure svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
-    .box { fill-opacity:.08; stroke-width:.004; vector-effect:non-scaling-stroke; }
+    .figure svg { position:absolute; inset:0; z-index:2; width:100%; height:100%; pointer-events:none; overflow:visible; }
+    .box { fill-opacity:.10; stroke-width:.006; }
     .box.gt { fill:var(--green); stroke:var(--green); } .box.m1 { fill:var(--blue); stroke:var(--blue); } .box.m2 { fill:var(--orange); stroke:var(--orange); } .box.fp { fill:var(--red); stroke:var(--red); stroke-dasharray:.012 .006; }
     .box-label { font-size:.032px; font-weight:800; }
     .tile-foot { min-height:29px; padding:6px 9px 8px; color:var(--muted); font-size:10px; line-height:1.35; }
@@ -457,7 +457,7 @@ def page_html() -> str:
     const element = document.createElement('section');
     element.className = `tile ${result.correct ? 'good' : 'bad'}`;
     element.setAttribute('aria-label', `${model} ${status}`);
-    element.innerHTML = `<div class="tile-title"><span>${model} <span class="sub">${model === 'm1' ? 'difficult' : 'easy'}</span></span><span class="badge">${status}</span></div><div class="figure"><img loading="lazy" src="${escapeHtml(DATA.image_root + row.image)}" alt="${escapeHtml(row.filename)} · ${model}">${boxSvg(result.boxes, color, names)}</div><div class="tile-foot">${note} · 点击放大</div>`;
+    element.innerHTML = `<div class="tile-title"><span>${model} <span class="sub">${model === 'm1' ? 'difficult' : 'easy'}</span></span><span class="badge">${status}</span></div><div class="figure" style="aspect-ratio:${row.width}/${row.height}"><img loading="lazy" src="${escapeHtml(DATA.image_root + row.image)}" alt="${escapeHtml(row.filename)} · ${model}">${boxSvg(result.boxes, color, names)}</div><div class="tile-foot">${note} · 点击放大</div>`;
     element.addEventListener('click', () => {
       const enlarged = element.classList.toggle('zoomed');
       element.setAttribute('aria-expanded', String(enlarged));
@@ -476,7 +476,7 @@ def page_html() -> str:
     const truth = document.createElement('section');
     truth.className = 'tile good';
     truth.setAttribute('aria-label', '真实标注');
-    truth.innerHTML = `<div class="tile-title"><span>真实标注 <span class="sub">ground truth</span></span><span class="badge">${row.ground_truth.length} 个框</span></div><div class="figure"><img loading="lazy" src="${escapeHtml(DATA.image_root + row.image)}" alt="${escapeHtml(row.filename)} · ground truth">${boxSvg(row.ground_truth, 'gt', names)}</div><div class="tile-foot">绿色框为标签 · 点击放大</div>`;
+    truth.innerHTML = `<div class="tile-title"><span>真实标注 <span class="sub">ground truth</span></span><span class="badge">${row.ground_truth.length} 个框</span></div><div class="figure" style="aspect-ratio:${row.width}/${row.height}"><img loading="lazy" src="${escapeHtml(DATA.image_root + row.image)}" alt="${escapeHtml(row.filename)} · ground truth">${boxSvg(row.ground_truth, 'gt', names)}</div><div class="tile-foot">绿色框为标签 · 点击放大</div>`;
     truth.addEventListener('click', () => { const enlarged = truth.classList.toggle('zoomed'); truth.setAttribute('aria-expanded', String(enlarged)); });
     triptych.appendChild(truth);
     return card;
