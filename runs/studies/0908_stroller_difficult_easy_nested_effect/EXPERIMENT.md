@@ -30,6 +30,9 @@ m1/m2 均为原始 YOLOv5 v7.0、YOLOv5s、100 epochs、640 输入、batch 64、
 - `experiment/task/`：m1/m2 的原始 Task 产物；
 - `result/evaluation/`：跨 test1/test2/testhard 的统一评估和差值；
 - `result/cross_evaluation/`：交叉评估的汇总指标柱状图、按 seed 拆分的指标柱状图、m2−m1 AP 差值图和摘要；
+- `result/error_review/`：按 seed、测试集合和模型正确性筛选的离线逐图审阅页；每张图片独立显示 m1、m2 和真实标注三幅图。页面的视觉状态来自对已完成 `best.pt` 的推理，不替代 canonical AP；
 - `logs/`：准备、校验、训练和评估日志。
 
 交叉评估图只读取已完成的 `result/evaluation/comparison_by_split.csv`，不修改原始 Task 或评估结果。
+
+逐图审阅页的推理使用 YOLOv5 AutoShape 的显示置信度 `0.25`，再以类别一致、IoU `0.50` 的一对一匹配判定 TP/FP/FN；页面只保存预测坐标和相对图片链接，不复制原始图片。
