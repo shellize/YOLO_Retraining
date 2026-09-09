@@ -29,6 +29,7 @@ m1/m2 均为原始 YOLOv5 v7.0、YOLOv5s、100 epochs、640 输入、batch 64、
 - `experiment/variants/`：两套 split 的 m1/m2 训练布局、评估布局、manifest 和嵌套关系审计；
 - `experiment/task/`：m1/m2 的原始 Task 产物；
 - `result/evaluation/`：跨 test1/test2/testhard 的统一评估和差值；
+- `result/cross_evaluation/`：交叉评估的指标柱状图、m2−m1 AP 差值图和摘要；
 - `logs/`：准备、校验、训练和评估日志。
 
-本次只写入脚本和配置，不启动训练。
+交叉评估图只读取已完成的 `result/evaluation/comparison_by_split.csv`，不修改原始 Task 或评估结果。

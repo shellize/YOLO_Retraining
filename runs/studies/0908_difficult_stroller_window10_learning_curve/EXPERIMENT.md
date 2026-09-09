@@ -25,6 +25,7 @@
 - `experiment/variants/`：去冗余 manifest 的 train/val/test/stage 划分；
 - `experiment/sequence/`：原始 Sequence/Task 产物；
 - `result/learning_curve/`：从 `task_result.json` 汇总的曲线和 CSV；
+- `result/easy_vs_difficult/`：与 0907 `stroller_easy` 曲线按随机种子和 stage 对齐后的比较图、CSV 和摘要；
 - `logs/`：准备、校验和训练日志。
 
-本次只写入准备与启动脚本，不启动训练。
+比较图只读取两个 Study 已完成的 canonical 汇总 CSV，不修改原始 Task/Sequence 产物；easy 与 difficult 的测试集大小不同，图表中的差异仅作描述性比较。
