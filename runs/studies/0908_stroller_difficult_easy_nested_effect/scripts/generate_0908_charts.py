@@ -353,7 +353,72 @@ def bars_with_range(
             zorder=4,
         )
 
-def plot_nested(rows: list[dict[str, Any]]) -> dict[str, str]:
+
+def plot_nested_by_seed(rows: list[dict[str, Any]]) -> dict[str, dict[str, str]]:
+    outputs: dict[str, dict[str, str]] = {}
+    colors = {"m1": "#176B87", "m2": "#D95D39"}
+    x = np.arange(len(GROUPS), dtype=float)
+    for seed in SEEDS:
+        seed_rows = [
+            next(row for row in rows if row["split_seed"] == seed and row["test_group"] == group)
+            for group in GROUPS
+        ]
+        group_labels = [
+            f"{row['test_group']}\n(n={row['sample_count']})"
+            for row in seed_rows
+        ]
+        fig, axes = plt.subplots(2, 2, figsize=(14.0, 10.0))
+        fig.patch.set_facecolor("#F7F9FB")
+        for axis, (metric, title) in zip(axes.flat, METRICS):
+            axis.bar(
+                x - 0.17,
+                [row[f"m1_{metric}"] for row in seed_rows],
+                width=0.32,
+                color=colors["m1"],
+                alpha=0.9,
+                label="m1 difficult",
+            )
+            axis.bar(
+                x + 0.17,
+                [row[f"m2_{metric}"] for row in seed_rows],
+                width=0.32,
+                color=colors["m2"],
+                alpha=0.9,
+                label="m2 easy",
+            )
+            axis.set_title(title, fontweight="bold", pad=12)
+            axis.set_xticks(x)
+            axis.set_xticklabels(group_labels)
+            axis.set_ylim(0, 1)
+            axis.set_ylabel("Score")
+            axis.grid(axis="y", color="#DDE3E8", linewidth=0.8)
+            axis.spines[["top", "right"]].set_visible(False)
+        axes[0, 0].legend(frameon=False, loc="upper left")
+        fig.suptitle(
+            f"0908 nested effect — cross-evaluation metrics (seed {seed})",
+            fontsize=16,
+            fontweight="bold",
+            y=0.98,
+        )
+        fig.text(
+            0.5,
+            0.015,
+            f"m1 trained on train1 difficult; m2 trained on train2 easy projection | each bar is the actual seed {seed} result",
+            ha="center",
+            color="#52616B",
+            fontsize=9.5,
+        )
+        fig.tight_layout(rect=(0.02, 0.06, 0.98, 0.94), h_pad=3.0, w_pad=2.4)
+        png = NESTED_OUTPUT / f"nested_cross_evaluation_metrics_seed{seed}.png"
+        svg = NESTED_OUTPUT / f"nested_cross_evaluation_metrics_seed{seed}.svg"
+        fig.savefig(png, dpi=220, bbox_inches="tight", facecolor=fig.get_facecolor())
+        fig.savefig(svg, bbox_inches="tight", facecolor=fig.get_facecolor())
+        plt.close(fig)
+        outputs[str(seed)] = {"png": png.name, "svg": svg.name}
+    return outputs
+
+
+def plot_nested(rows: list[dict[str, Any]]) -> dict[str, Any]:
     NESTED_OUTPUT.mkdir(parents=True, exist_ok=True)
     grouped = nested_summary(rows)
     grouped_rows = [
@@ -409,6 +474,7 @@ def plot_nested(rows: list[dict[str, Any]]) -> dict[str, str]:
     fig.savefig(png, dpi=220, bbox_inches="tight", facecolor=fig.get_facecolor())
     fig.savefig(svg, bbox_inches="tight", facecolor=fig.get_facecolor())
     plt.close(fig)
+    seed_metric_outputs = plot_nested_by_seed(rows)
 
     fig, axes = plt.subplots(1, 2, figsize=(13.4, 5.8), sharex=True)
     fig.patch.set_facecolor("#F7F9FB")
@@ -470,6 +536,7 @@ def plot_nested(rows: list[dict[str, Any]]) -> dict[str, str]:
     return {
         "metrics_png": png.name,
         "metrics_svg": svg.name,
+        "metrics_by_seed": seed_metric_outputs,
         "delta_png": delta_png.name,
         "delta_svg": delta_svg.name,
     }
