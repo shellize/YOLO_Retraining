@@ -1,5 +1,6 @@
 {
-  "purpose": "Fixed train/val/test split of the reviewed deduplicated all-data pool",
+  "purpose": "Candidate train/val/test split of the reviewed deduplicated all-data pool",
+  "protocol_status": "provisional_temporal_leakage_detected",
   "source_variant": "global_order_window20_tau0p990_label_aware_reviewed_final",
   "split_variant": "random_stratified_s42_8_1_1",
   "unit": "individual image",
@@ -15,6 +16,7 @@
     "multilabel class presence",
     "10 global-frame quantile bins"
   ],
-  "selection_boundary": "Validation is used for model selection; test remains fixed and is not used to revise the split or protocol.",
+  "selection_boundary": "Do not use for formal training or conclusions until retained temporal neighbors are audited and the split is rebuilt with an event-binding rule.",
+  "known_issue": "The retained pool contains adjacent event frames below tau=0.99; 1393 adjacent retained pairs and 53 exact filename-timestamp pairs cross split boundaries.",
   "source_images_and_labels_mutated": false
 }
