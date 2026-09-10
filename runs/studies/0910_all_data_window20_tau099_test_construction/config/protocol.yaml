@@ -1,8 +1,8 @@
 source_layout: configs/data/self_improving.yaml
 source_embeddings: data_analyse/dataset_redundancy/results/20260824-182608/embeddings.npz
-variant_name: global_order_window20_tau0p990_positive_representative
-temporal_result_name: global_temporal_cluster_preview
-post_dedup_result_name: global_post_dedup_similarity
+variant_name: global_order_window20_tau0p990_label_aware_independent_representative
+temporal_result_name: global_temporal_cluster_preview_label_aware
+post_dedup_result_name: global_post_dedup_similarity_label_aware
 threshold: 0.99
 temporal_window: 20
 top_similar_pairs: 200

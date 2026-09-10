@@ -21,12 +21,12 @@ if str(PROJECT_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from data_analyse.dataset_redundancy.redundancy_analysis import (  # noqa: E402
+    AnnotationInfo,
     ImageRecord,
     SimilarityEdge,
     inspect_annotation,
     load_embeddings,
     load_layout_records,
-    representative_groups,
 )
 from yolo_retraining.data import write_image_manifest  # noqa: E402
 
@@ -115,6 +115,46 @@ def global_temporal_similarity_edges(
     return edges
 
 
+def label_aware_representative_groups(
+    indices: Sequence[int],
+    edges: Sequence[SimilarityEdge],
+    annotations: Sequence[AnnotationInfo],
+    threshold: float,
+) -> list[tuple[int, int, list[int]]]:
+    allowed = set(indices)
+    adjacency: dict[int, dict[int, float]] = {index: {} for index in indices}
+    for edge in edges:
+        if edge.score < threshold or edge.left not in allowed or edge.right not in allowed:
+            continue
+        adjacency[edge.left][edge.right] = edge.score
+        adjacency[edge.right][edge.left] = edge.score
+
+    def coverage_key(index: int, unassigned: set[int]) -> tuple[int, float, int]:
+        return (
+            -sum(neighbor in unassigned for neighbor in adjacency[index]),
+            -sum(score for neighbor, score in adjacency[index].items() if neighbor in unassigned),
+            index,
+        )
+
+    unassigned = set(indices)
+    groups: list[tuple[int, int, list[int]]] = []
+    while unassigned:
+        ordinary_representative = min(unassigned, key=lambda index: coverage_key(index, unassigned))
+        ordinary_members = {ordinary_representative} | (set(adjacency[ordinary_representative]) & unassigned)
+        positive_candidates = [index for index in ordinary_members if annotations[index].has_annotation]
+        if annotations[ordinary_representative].has_annotation or not positive_candidates:
+            selected_representative = ordinary_representative
+        else:
+            selected_representative = min(
+                positive_candidates,
+                key=lambda index: coverage_key(index, unassigned),
+            )
+        members = sorted({selected_representative} | (set(adjacency[selected_representative]) & unassigned))
+        groups.append((ordinary_representative, selected_representative, members))
+        unassigned.difference_update(members)
+    return groups
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     config_path = args.config.expanduser().resolve()
@@ -173,19 +213,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     mixed_annotation_clusters = 0
     positive_override_clusters = 0
 
-    groups = representative_groups(range(len(records)), edges, threshold)
-    for cluster_number, (ordinary_representative, members) in enumerate(groups):
+    groups = label_aware_representative_groups(range(len(records)), edges, annotations, threshold)
+    for cluster_number, (ordinary_representative, selected_representative, members) in enumerate(groups):
         positive_members = [index for index in members if annotations[index].has_annotation]
-        if annotations[ordinary_representative].has_annotation or not positive_members:
-            selected_representative = ordinary_representative
-        else:
-            selected_representative = min(
-                positive_members,
-                key=lambda index: (
-                    -edge_scores[(min(ordinary_representative, index), max(ordinary_representative, index))],
-                    global_frame_number(records[index]),
-                ),
-            )
+        if selected_representative != ordinary_representative:
             positive_override_clusters += 1
 
         cluster_batches = list(dict.fromkeys(records[index].path.parent.name for index in members))
@@ -200,7 +231,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if has_positive and has_background:
             mixed_annotation_clusters += 1
         for member in members:
-            pair = (min(ordinary_representative, member), max(ordinary_representative, member))
+            pair = (min(selected_representative, member), max(selected_representative, member))
             cluster_rows.append(
                 {
                     "batch": records[member].path.parent.name,
@@ -213,8 +244,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "annotation_status": annotations[member].status,
                     "ordinary_representative": relative_image(records[ordinary_representative], dataset_root),
                     "selected_representative": relative_image(records[selected_representative], dataset_root),
-                    "score_to_ordinary_representative": 1.0
-                    if member == ordinary_representative
+                    "score_to_selected_representative": 1.0
+                    if member == selected_representative
                     else edge_scores[pair],
                 }
             )
@@ -228,6 +259,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             batch_stats["retained_background_images"] += 1
     for batch_stats in per_batch.values():
         batch_stats["removed_images"] = batch_stats["original_images"] - batch_stats["retained_images"]
+
+    selected_set = set(selected_indices)
+    residual_edges = [edge for edge in edges if edge.left in selected_set and edge.right in selected_set]
+    if residual_edges:
+        raise RuntimeError(
+            "label-aware grouping left a temporal edge between retained representatives: "
+            f"count={len(residual_edges)} first={residual_edges[0]}"
+        )
 
     selected_indices.sort(key=lambda index: global_frame_number(records[index]))
     manifest_path = write_image_manifest(
@@ -256,8 +295,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         "first_global_frame_number": frame_numbers[0],
         "last_global_frame_number": frame_numbers[-1],
         "candidate_rule": "global numeric frame order; compare the next N available images, including batch boundaries",
-        "grouping_rule": "project greedy representative grouping",
-        "representative_rule": "prefer a non-empty YOLO-labeled member; otherwise keep ordinary representative",
+        "grouping_rule": "label-aware greedy star grouping; group membership is recomputed from the selected representative",
+        "representative_rule": "when the ordinary representative neighborhood contains a labeled image, choose the labeled candidate with best current coverage",
         "class_names": list(names),
     }
     (variant_dir / "protocol.json").write_text(
@@ -274,6 +313,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "clusters": len(selected_indices),
         "non_singleton_clusters": non_singleton_clusters,
         "cross_batch_clusters": cross_batch_clusters,
+        "retained_temporal_conflicts": len(residual_edges),
         "mixed_annotation_clusters": mixed_annotation_clusters,
         "positive_representative_overrides": positive_override_clusters,
         "missing_label_files": sum(annotation.status == "missing" for annotation in annotations),

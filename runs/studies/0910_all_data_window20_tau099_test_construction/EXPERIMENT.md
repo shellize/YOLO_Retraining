@@ -14,18 +14,17 @@
 - 时序顺序：解析文件名开头的全局帧号，在全部物理 batch 间统一排序。当前输入的全局帧号唯一，覆盖 `1..9575`，缺少两帧。
 - 时序候选：每张图片与全局顺序中向后的 20 张现存图片比较，比较会跨越 `0720_1 → 0720_2` 等 batch 边界。
 - 去重阈值：余弦相似度 `tau=0.99`。
-- 分组：沿用项目已有的 greedy representative grouping；每簇保留一个代表。
-- 代表选择：如果簇内存在至少一张带非空 YOLO 标注的图片，最终代表必须优先从带标注成员中选择；否则保留普通代表。
+- 分组与代表选择：每轮先找覆盖能力最强的普通 greedy 候选；如果其当前邻域含带非空 YOLO 标注的图片，则从这些带标注候选中选择覆盖能力最强者，并以实际选中的代表重新确定本簇成员。这样优先保留正样本，同时保证最终任意两个代表之间不存在本协议定义的超阈值时序边。
 - 原始图片和标签始终只读，不复制、不移动、不改名、不删除。
 
 `temporal-window=20` 比项目的相邻帧主协议更宽，可能连接同一相机的短时回访帧。簇预览 HTML 因而是协议的一部分，不能只看统计数字决定去重结果有效。
 
-本 Study 的第一次试运行曾沿用公共工具“按父目录分别排序”的定义。第二层审计的最高相似对立即发现 `0720_1/00500...` 与 `0720_2/00502...` 是跨 batch 的连续画面，因此该试运行被判为协议失败，只保留为 batch 边界诊断，不作为候选池。正式输出改用上述全局帧号顺序。
+本 Study 的审计先后排除了两个有缺陷的候选池：第一次试运行沿用公共工具“按父目录分别排序”的定义，最高相似对发现 `0720_1/00500...` 与 `0720_2/00502...` 是跨 batch 的连续画面；第二次虽改为全局顺序，但仍采用“成簇后替换带标注代表”，最高相似对发现帧距仅 2、相似度 `0.99890` 的 `04996/04998` 同时保留，说明事后替换破坏了代表集合的去重约束。两次输出只保留为方法诊断，不作为候选池；正式输出采用上述标注感知 greedy。
 
 ## 两层人工审计
 
-1. `result/global_temporal_cluster_preview/cluster_preview.html` 展示所有非单例时序簇、真实框、普通代表和标注优先代表，也标明跨 batch 簇，用于检查 window=20 是否把不同场景误合并。
-2. `result/global_post_dedup_similarity/top_similar_pairs.html` 在去重后代表集合中做全局余弦近邻审计，按相似度展示最高的图片对。页面可人工标记“不同场景”“仍是同场景/重复”“不确定”，并导出 CSV。
+1. `result/global_temporal_cluster_preview_label_aware/cluster_preview.html` 展示所有非单例时序簇、真实框、普通候选和实际标注优先代表，也标明跨 batch 簇，用于检查 window=20 是否把不同场景误合并。
+2. `result/global_post_dedup_similarity_label_aware/top_similar_pairs.html` 在去重后代表集合中做全局余弦近邻审计，按相似度展示最高的图片对及其全局序列距离。页面可人工标记“不同场景”“仍是同场景/重复”“不确定”，并导出 CSV。
 
 第二层高相似图片对不受 temporal window 限制。它用于验证“高特征相似度不必然等于连续重复帧”，审阅结果不会自动触发二次删除。
 
@@ -34,13 +33,13 @@
 ```text
 runs/studies/0910_all_data_window20_tau099_test_construction/
 ├── config/protocol.yaml
-├── experiment/variants/global_order_window20_tau0p990_positive_representative/
+├── experiment/variants/global_order_window20_tau0p990_label_aware_independent_representative/
 │   ├── manifest.txt
 │   ├── clusters.csv
 │   ├── protocol.json
 │   └── summary.json
-├── result/global_temporal_cluster_preview/
-├── result/global_post_dedup_similarity/
+├── result/global_temporal_cluster_preview_label_aware/
+├── result/global_post_dedup_similarity_label_aware/
 ├── logs/
 └── scripts/
 ```

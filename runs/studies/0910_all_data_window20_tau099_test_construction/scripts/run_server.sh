@@ -29,9 +29,9 @@ else
   exit 1
 fi
 
-VARIANT_DIR="$STUDY_ROOT/experiment/variants/global_order_window20_tau0p990_positive_representative"
-TEMPORAL_DIR="$STUDY_ROOT/result/global_temporal_cluster_preview"
-POST_DIR="$STUDY_ROOT/result/global_post_dedup_similarity"
+VARIANT_DIR="$STUDY_ROOT/experiment/variants/global_order_window20_tau0p990_label_aware_independent_representative"
+TEMPORAL_DIR="$STUDY_ROOT/result/global_temporal_cluster_preview_label_aware"
+POST_DIR="$STUDY_ROOT/result/global_post_dedup_similarity_label_aware"
 for path in "$VARIANT_DIR" "$TEMPORAL_DIR" "$POST_DIR"; do
   if [[ -d "$path" ]] && find "$path" -mindepth 1 -maxdepth 1 -print -quit | grep -q .; then
     echo "refusing to overwrite non-empty output: $path" >&2
@@ -47,11 +47,11 @@ echo "analysis environment: $ANALYSIS_ENV"
 "$CONDA_BIN" run --no-capture-output -n "$ANALYSIS_ENV" \
   python "$SCRIPT_DIR/build_all_data_dedup.py" \
   --config "$STUDY_ROOT/config/protocol.yaml" \
-  2>&1 | tee "$LOG_DIR/build_global_order_dedup.log"
+  2>&1 | tee "$LOG_DIR/build_global_order_label_aware_dedup.log"
 
 "$CONDA_BIN" run --no-capture-output -n "$ANALYSIS_ENV" \
   python "$SCRIPT_DIR/generate_audit_html.py" \
   --config "$STUDY_ROOT/config/protocol.yaml" \
-  2>&1 | tee "$LOG_DIR/generate_global_order_audit_html.log"
+  2>&1 | tee "$LOG_DIR/generate_global_order_label_aware_audit_html.log"
 
 echo "completed: $STUDY_ROOT"
