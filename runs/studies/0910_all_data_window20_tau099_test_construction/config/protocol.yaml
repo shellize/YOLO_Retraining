@@ -2,6 +2,13 @@ source_layout: configs/data/self_improving.yaml
 source_embeddings: data_analyse/dataset_redundancy/results/20260824-182608/embeddings.npz
 variant_name: global_order_window20_tau0p990_label_aware_independent_representative
 final_variant_name: global_order_window20_tau0p990_label_aware_reviewed_final
+split_variant_name: random_stratified_s42_8_1_1
+split_seed: 42
+split_fractions:
+  train: 0.8
+  val: 0.1
+  test: 0.1
+split_time_bins: 10
 temporal_result_name: global_temporal_cluster_preview_label_aware
 post_dedup_result_name: global_post_dedup_similarity_label_aware
 threshold: 0.99

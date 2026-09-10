@@ -2,9 +2,9 @@
 
 ## 研究目的
 
-本 Study 为后续 train/val/test 构造准备一个冻结的去冗余全量数据池。它先在 `data/self_improving` 的全部 20 个物理 batch、9,573 张图片上执行 YOLOv5 多尺度特征时序去重，再对去重后仍然全局高相似的代表图进行人工场景审计。
+本 Study 从 `data/self_improving` 构造冻结的去冗余全量数据池，并进一步生成固定的 train/val/test。它先在全部 20 个物理 batch、9,573 张图片上执行 YOLOv5 多尺度特征时序去重，再对去重后仍然全局高相似的代表图进行人工场景审计。
 
-本阶段不直接生成 train/val/test 划分。时序去重先保留 6,039 张图片；人工审阅在最高相似的 200 对中将 13 对标为连续片段或近重复，这些关系形成 10 个连通组。每组优先保留带非空标注的图片，其次保留全局帧号更小者，共排除 12 张，冻结 6,027 张作为后续唯一的全量划分输入。原始图片和标签不做物理删除。
+时序去重先保留 6,039 张图片；人工审阅在最高相似的 200 对中将 13 对标为连续片段或近重复，这些关系形成 10 个连通组。每组优先保留带非空标注的图片，其次保留全局帧号更小者，共排除 12 张，冻结 6,027 张作为唯一的全量划分输入。随后以图片为单位、固定 seed 42 按 8:1:1 分配 train/val/test；分层特征包括类别是否出现、正样本/背景状态和全局帧序号的十分位区间。原始图片和标签不做物理删除。
 
 ## 固定协议
 
@@ -28,7 +28,16 @@
 
 第二层高相似图片对不受 temporal window 限制。人工导出的状态是二次复核的唯一输入：`near_duplicate` 关系按无向连通组折叠；未审阅以及“同机位但不同时间”“不同机位/场景”“不确定”均保留。复核只生成新的最终 manifest，不修改源数据。
 
-时序去重结果的最高 200 对相似度均高于 `0.99`，但协议内冲突为 0；人工仍识别出 13 条较长距离的连续片段或近重复关系，并将其折叠为 10 个组。最终 6,027 张数据是完成冗余复核后的全量池，不等于已经构造好的 benchmark。后续切分仍需定义机位、时间或事件分组，并采用 group-disjoint 协议，不能直接随机抽图。
+时序去重结果的最高 200 对相似度均高于 `0.99`，但协议内冲突为 0；人工仍识别出 13 条较长距离的连续片段或近重复关系，并将其折叠为 10 个组。人工复核表明，其余高相似图片基本属于同一视角下的不同时间，而不是应继续折叠的连续帧。当前评估目标是同一业务环境和相机分布内的随机泛化，因此最终切分不按 batch、时间段或机位成组，而采用图片级分层随机划分。同一视角跨集合是本协议有意保留的目标分布，不解释为场景外泛化能力。
+
+## 固定划分
+
+- 输入：`global_order_window20_tau0p990_label_aware_reviewed_final/manifest.txt` 中的 6,027 张图片。
+- 比例与数量：train/val/test 为 8:1:1，目标数量分别为 4,821、603、603。
+- 随机性：固定 split seed 42；训练 seed 是另一变量，不由本划分定义。
+- 分层约束：同时平衡多标签类别出现、正样本/背景比例，并让三个集合覆盖全局帧序号的十个等频区间。
+- 使用边界：val 用于模型选择；test 固定后不参与阈值、超参数或划分方案选择。
+- 后续学习曲线：只从 train 构造嵌套训练子集，val/test 始终保持不变。
 
 ## 输出边界
 
@@ -46,10 +55,16 @@ runs/studies/0910_all_data_window20_tau099_test_construction/
 │   ├── review_decisions.csv
 │   ├── protocol.json
 │   └── summary.json
+├── experiment/variants/random_stratified_s42_8_1_1/
+│   ├── manifests/{train,val,test}.txt
+│   ├── layout.yaml
+│   ├── assignments.csv
+│   ├── protocol.json
+│   └── summary.json
 ├── result/global_temporal_cluster_preview_label_aware/
 ├── result/global_post_dedup_similarity_label_aware/
 ├── logs/
 └── scripts/
 ```
 
-`global_order_window20_tau0p990_label_aware_reviewed_final/manifest.txt` 是冻结的最终全量数据池，后续 train/val/test 只能从该清单划分。`manual_review.csv` 保存原始人工判断，`review_decisions.csv` 保存每个近重复连通组的保留与排除结果，`summary.json` 和 `protocol.json` 记录数量、规则与清单哈希。两个 HTML 是审计界面，不作为最终数据身份来源。
+`global_order_window20_tau0p990_label_aware_reviewed_final/manifest.txt` 是冻结的最终全量数据池。`random_stratified_s42_8_1_1/` 是当前固定划分，其中三个 manifest 是 train/val/test 的数据身份来源，`layout.yaml` 可直接交给训练框架。`manual_review.csv` 保存原始人工判断，`review_decisions.csv` 保存每个近重复连通组的保留与排除结果。两个 HTML 是审计界面，不作为最终数据身份来源。
