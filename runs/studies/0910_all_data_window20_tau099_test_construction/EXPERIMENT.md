@@ -1,10 +1,10 @@
-# 全量数据时序去重与 test 候选池审计
+# 全量数据时序去重、人工复核与最终数据池
 
 ## 研究目的
 
-本 Study 为后续 test 构造准备一个去冗余候选池。它先在 `data/self_improving` 的全部 20 个物理 batch、9,573 张图片上执行 YOLOv5 多尺度特征时序去重，再对去重后仍然全局高相似的代表图进行人工场景审计。
+本 Study 为后续 train/val/test 构造准备一个冻结的去冗余全量数据池。它先在 `data/self_improving` 的全部 20 个物理 batch、9,573 张图片上执行 YOLOv5 多尺度特征时序去重，再对去重后仍然全局高相似的代表图进行人工场景审计。
 
-本阶段不直接生成最终 train/val/test 划分。人工审阅完成前，去重 manifest 只能称为 test 候选池，不能作为已经冻结的 benchmark。
+本阶段不直接生成 train/val/test 划分。时序去重先保留 6,039 张图片；人工审阅在最高相似的 200 对中将 13 对标为连续片段或近重复，这些关系形成 10 个连通组。每组优先保留带非空标注的图片，其次保留全局帧号更小者，共排除 12 张，冻结 6,027 张作为后续唯一的全量划分输入。原始图片和标签不做物理删除。
 
 ## 固定协议
 
@@ -26,9 +26,9 @@
 1. `result/global_temporal_cluster_preview_label_aware/cluster_preview.html` 展示所有非单例时序簇、真实框、普通候选和实际标注优先代表，也标明跨 batch 簇，用于检查 window=20 是否把不同场景误合并。
 2. `result/global_post_dedup_similarity_label_aware/top_similar_pairs.html` 在去重后代表集合中做全局余弦近邻审计，按相似度展示最高的图片对及其全局序列距离。页面把人工结论拆成“连续片段/近重复”“同机位但不同时间”“不同机位/场景”“不确定”，并可导出 CSV。
 
-第二层高相似图片对不受 temporal window 限制。它用于验证“高特征相似度不必然等于连续重复帧”，审阅结果不会自动触发二次删除。
+第二层高相似图片对不受 temporal window 限制。人工导出的状态是二次复核的唯一输入：`near_duplicate` 关系按无向连通组折叠；未审阅以及“同机位但不同时间”“不同机位/场景”“不确定”均保留。复核只生成新的最终 manifest，不修改源数据。
 
-正式候选池的最高 200 对相似度均高于 `0.99`，但其最小全局序列距离为 21，协议内冲突为 0。对排名前三的初步人工检查显示，它们是相同固定机位在不同时间拍到的不同人员/事件，并非连续帧；因此当前结果支持“时序去重已生效”，却不支持“剩余高相似样本属于完全不同物理场景”。如果 test 需要衡量跨机位或跨场景泛化，后续切分还必须使用机位/场景 group-disjoint 协议，不能在这 6,039 张代表中直接随机抽图。
+时序去重结果的最高 200 对相似度均高于 `0.99`，但协议内冲突为 0；人工仍识别出 13 条较长距离的连续片段或近重复关系，并将其折叠为 10 个组。最终 6,027 张数据是完成冗余复核后的全量池，不等于已经构造好的 benchmark。后续切分仍需定义机位、时间或事件分组，并采用 group-disjoint 协议，不能直接随机抽图。
 
 ## 输出边界
 
@@ -40,10 +40,16 @@ runs/studies/0910_all_data_window20_tau099_test_construction/
 │   ├── clusters.csv
 │   ├── protocol.json
 │   └── summary.json
+├── experiment/variants/global_order_window20_tau0p990_label_aware_reviewed_final/
+│   ├── manifest.txt
+│   ├── manual_review.csv
+│   ├── review_decisions.csv
+│   ├── protocol.json
+│   └── summary.json
 ├── result/global_temporal_cluster_preview_label_aware/
 ├── result/global_post_dedup_similarity_label_aware/
 ├── logs/
 └── scripts/
 ```
 
-`experiment/variants/` 的 manifest 与协议是派生 test 候选池；两个 HTML 和人工导出的 CSV 是审计材料。最终 test 的 group-disjoint 划分需要在人工审核后另行冻结，并记录版本和清单哈希。
+`global_order_window20_tau0p990_label_aware_reviewed_final/manifest.txt` 是冻结的最终全量数据池，后续 train/val/test 只能从该清单划分。`manual_review.csv` 保存原始人工判断，`review_decisions.csv` 保存每个近重复连通组的保留与排除结果，`summary.json` 和 `protocol.json` 记录数量、规则与清单哈希。两个 HTML 是审计界面，不作为最终数据身份来源。
