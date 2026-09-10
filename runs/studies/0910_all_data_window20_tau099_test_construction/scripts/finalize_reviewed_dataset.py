@@ -4,7 +4,6 @@ import argparse
 import csv
 import hashlib
 import json
-import shutil
 import tempfile
 from collections import Counter
 from pathlib import Path
@@ -255,9 +254,21 @@ def main(argv: Sequence[str] | None = None) -> int:
         temp_dir = Path(temp)
         final_manifest = temp_dir / "manifest.txt"
         final_manifest.write_text("\n".join(final_lines) + "\n", encoding="utf-8")
-        shutil.copyfile(review_path, temp_dir / "manual_review.csv")
+        stored_review = temp_dir / "manual_review.csv"
+        with stored_review.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(
+                handle,
+                fieldnames=list(review_rows[0]),
+                lineterminator="\n",
+            )
+            writer.writeheader()
+            writer.writerows(review_rows)
         with (temp_dir / "review_decisions.csv").open("w", newline="", encoding="utf-8") as handle:
-            writer = csv.DictWriter(handle, fieldnames=list(decision_rows[0]))
+            writer = csv.DictWriter(
+                handle,
+                fieldnames=list(decision_rows[0]),
+                lineterminator="\n",
+            )
             writer.writeheader()
             writer.writerows(decision_rows)
 
@@ -281,7 +292,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             "selection_rule": selection_rule,
             "per_batch": dict(sorted(per_batch.items())),
             "source_manifest_sha256": sha256(source_manifest),
-            "manual_review_sha256": sha256(temp_dir / "manual_review.csv"),
+            "manual_review_source_sha256": sha256(review_path),
+            "manual_review_sha256": sha256(stored_review),
             "final_manifest_sha256": sha256(final_manifest),
             "manifest": final_manifest.name,
             "manual_review": "manual_review.csv",

@@ -276,7 +276,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     clusters_path = variant_dir / "clusters.csv"
     with clusters_path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(cluster_rows[0]))
+        writer = csv.DictWriter(handle, fieldnames=list(cluster_rows[0]), lineterminator="\n")
         writer.writeheader()
         writer.writerows(cluster_rows)
 
