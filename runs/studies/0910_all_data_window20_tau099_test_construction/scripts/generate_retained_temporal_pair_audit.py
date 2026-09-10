@@ -96,17 +96,17 @@ def page(payload: dict[str, object], image_root: str) -> str:
     root = json.dumps(image_root, ensure_ascii=False)
     colors = json.dumps(CLASS_COLORS)
     return f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>去重后序号相邻候选链审计</title><style>
+<title>去重后带标注序号相邻候选链审计</title><style>
 :root{{--bg:#f4f7fb;--surface:#fff;--ink:#172033;--muted:#647087;--line:#d9e0eb;--blue:#2563eb;--green:#15803d;--red:#b91c1c;--orange:#c2410c;--shadow:0 10px 28px rgba(32,50,86,.08)}}*{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "Segoe UI","Microsoft YaHei",sans-serif}}main{{max-width:1720px;margin:auto;padding:24px}}h1{{margin:0 0 6px;font-size:26px}}.muted{{color:var(--muted)}}.summary,.toolbar,.review,.pages{{display:flex;flex-wrap:wrap;gap:9px;align-items:center}}.summary{{margin:18px 0}}.metric,.pair,.chain-card{{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}}.metric{{min-width:155px;padding:10px 13px}}.metric small{{display:block;color:var(--muted)}}.metric strong{{font-size:21px}}button,select,input{{font:inherit;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 10px}}button{{cursor:pointer}}.toolbar{{position:sticky;top:0;z-index:8;background:rgba(244,247,251,.95);backdrop-filter:blur(8px);padding:12px 0}}#pairs{{display:grid;gap:12px}}.pair,.chain-card{{padding:12px}}.pair.exact{{border:2px solid var(--orange)}}.head{{display:flex;justify-content:space-between;gap:12px;margin-bottom:9px}}.score{{font-weight:700;color:var(--blue)}}.images{{display:grid;grid-template-columns:1fr 1fr;gap:12px}}.chain-images{{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start}}.chain-images .tile{{width:250px;flex:0 0 250px}}.tile .figure{{position:relative;background:#e9eef5;cursor:zoom-in}}.tile img{{display:block;width:100%;height:auto}}.tile svg{{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}}.box{{fill-opacity:.07;stroke-width:.006}}.caption{{font-size:12px;color:var(--muted);padding:5px 1px;overflow-wrap:anywhere}}.review{{margin-top:8px;padding-top:9px;border-top:1px solid var(--line)}}.choice.active[data-status=near_duplicate]{{background:var(--red);color:#fff}}.choice.active[data-status=same_event_distinct]{{background:var(--orange);color:#fff}}.choice.active[data-status=different]{{background:var(--green);color:#fff}}.choice.active[data-status=unsure]{{background:var(--blue);color:#fff}}textarea{{width:100%;min-height:45px;border:1px solid var(--line);border-radius:8px;padding:7px;font:inherit}}.tile.big{{width:100%;flex-basis:100%;grid-column:1/-1}}.tile.big .figure{{max-width:1200px}}.pages{{margin:16px 0}}.pages button[aria-current=page]{{background:var(--blue);color:#fff}}@media(max-width:760px){{main{{padding:14px}}.images{{grid-template-columns:1fr}}.chain-images .tile{{width:100%;flex-basis:100%}}}}
-</style></head><body><main><h1>去重后序号相邻候选链 · 时序漏洞审计</h1><div class="muted">这里不是相似度 top 200，而是最终 6,027 张数据按前缀序号排序后的全部相邻保留对。序号连续只用于提供完整上下文，不预设它们属于同一事件；人工确认的连续边才会在后续按连通分量合并。橙色边框表示文件名来源时间戳完全相同。</div>
-<section class="summary"><div class="metric"><small>相邻候选对</small><strong>{payload['pair_count']}</strong></div><div class="metric"><small>序号差 1</small><strong>{payload['gap_one_pairs']}</strong></div><div class="metric"><small>多图候选链</small><strong>{payload['multi_image_chains']}</strong></div><div class="metric"><small>最长候选链</small><strong>{payload['max_chain_size']}</strong></div><div class="metric"><small>同时间戳</small><strong>{payload['same_timestamp_pairs']}</strong></div><div class="metric"><small>跨 split</small><strong>{payload['cross_split_pairs']}</strong></div><div class="metric"><small>已审阅</small><strong id="reviewed">0</strong></div></section>
-<div class="toolbar"><select id="view"><option value="chains">完整连续链视图</option><option value="pairs">相邻两图 / 桥接对视图</option></select><select id="status"><option value="all">全部状态</option><option value="unreviewed">未审阅</option><option value="near_duplicate">连续帧 / 近重复</option><option value="same_event_distinct">同事件但应保留</option><option value="different">不同事件或链内有断点</option><option value="unsure">不确定</option></select><select id="scope"><option value="all">全部范围</option><option value="same_timestamp">含同时间戳</option><option value="gap1">仅帧距 1</option><option value="cross_split">含跨 split</option><option value="both_positive">双方正样本</option><option value="either_positive">至少一方正样本</option></select><select id="batch"><option value="all">全部 batch</option></select><select id="sort"><option value="size">链长度降序</option><option value="timestamp_first">同时间戳优先，其次帧距</option><option value="gap">帧距升序</option><option value="similarity">相似度降序</option></select><input id="search" placeholder="搜索文件名或链 ID"><button id="export">导出审阅 CSV</button><button id="clear">清空审阅</button><span class="muted" id="shown"></span></div><section id="pairs"></section><div class="pages" id="pages"></div>
+</style></head><body><main><h1>去重后带标注且序号相邻 · 候选链审计</h1><div class="muted">主视图只包含“两张都带有效标注、前缀序号差 1、且未被 tau=0.99 合并”的关系。每条链中的所有图片均为正样本。序号连续只提供上下文，不预设属于同一事件；人工确认的连续边才会在后续合并。</div>
+<section class="summary"><div class="metric"><small>双方正样本相邻边</small><strong>{payload['positive_gap_one_pairs']}</strong></div><div class="metric"><small>正样本候选链</small><strong>{payload['multi_image_chains']}</strong></div><div class="metric"><small>链内正样本图片</small><strong>{payload['images_in_multi_image_chains']}</strong></div><div class="metric"><small>最长候选链</small><strong>{payload['max_chain_size']}</strong></div><div class="metric"><small>全部序号差 1</small><strong>{payload['gap_one_pairs']}</strong></div><div class="metric"><small>已审阅</small><strong id="reviewed">0</strong></div></section>
+<div class="toolbar"><select id="view"><option value="chains">带标注完整候选链</option><option value="pairs">辅助两图 / 桥接对视图</option></select><select id="status"><option value="all">全部状态</option><option value="unreviewed">未审阅</option><option value="near_duplicate">连续帧 / 近重复</option><option value="same_event_distinct">同事件但应保留</option><option value="different">不同事件或链内有断点</option><option value="unsure">不确定</option></select><select id="scope"><option value="positive_gap1" selected>双方正样本且序号差 1</option><option value="all">全部范围</option><option value="same_timestamp">含同时间戳</option><option value="gap1">仅序号差 1</option><option value="cross_split">含跨 split</option><option value="both_positive">双方正样本</option><option value="either_positive">至少一方正样本</option></select><select id="batch"><option value="all">全部 batch</option></select><select id="sort"><option value="risk">跨 split 风险优先</option><option value="size">链长度降序</option><option value="timestamp_first">同时间戳优先，其次帧距</option><option value="gap">帧距升序</option><option value="similarity">相似度降序</option></select><input id="search" placeholder="搜索文件名或链 ID"><button id="export">导出审阅 CSV</button><button id="clear">清空审阅</button><span class="muted" id="shown"></span></div><section id="pairs"></section><div class="pages" id="pages"></div>
 </main><script>
 const DATA={data},ROOT={root},COLORS={colors},KEY='0910_retained_temporal_pair_audit_v2';let review=JSON.parse(localStorage.getItem(KEY)||'{{}}'),page=1;const $=id=>document.getElementById(id),esc=x=>String(x).replace(/[&<>"']/g,c=>({{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}}[c])),save=()=>localStorage.setItem(KEY,JSON.stringify(review));
 function boxes(image){{return DATA.annotations[image].boxes.map(b=>{{const x=Math.max(0,b.x-b.w/2),y=Math.max(0,b.y-b.h/2),w=Math.min(1-x,b.w),h=Math.min(1-y,b.h),color=COLORS[b.c%COLORS.length];return `<rect class="box" x="${{x}}" y="${{y}}" width="${{w}}" height="${{h}}" style="stroke:${{color}};fill:${{color}}"><title>${{esc(DATA.class_names[b.c]??b.c)}}</title></rect>`}}).join('')}}
-function pairRows(){{let out=DATA.pairs.slice(),s=$('status').value,scope=$('scope').value,b=$('batch').value,q=$('search').value.trim().toLowerCase();if(s==='unreviewed')out=out.filter(r=>!review['edge:'+r.rank]?.status);else if(s!=='all')out=out.filter(r=>review['edge:'+r.rank]?.status===s);if(scope==='same_timestamp')out=out.filter(r=>r.same_timestamp);if(scope==='gap1')out=out.filter(r=>r.frame_gap===1);if(scope==='cross_split')out=out.filter(r=>r.cross_split);if(scope==='both_positive')out=out.filter(r=>r.both_positive);if(scope==='either_positive')out=out.filter(r=>r.either_positive);if(b!=='all')out=out.filter(r=>r.batch===b);if(q)out=out.filter(r=>r.left.toLowerCase().includes(q)||r.right.toLowerCase().includes(q)||r.chain_id.toLowerCase().includes(q));const mode=$('sort').value;if(mode==='timestamp_first'||mode==='size')out.sort((a,b)=>Number(b.same_timestamp)-Number(a.same_timestamp)||a.frame_gap-b.frame_gap||b.similarity-a.similarity);if(mode==='gap')out.sort((a,b)=>a.frame_gap-b.frame_gap||b.similarity-a.similarity);if(mode==='similarity')out.sort((a,b)=>b.similarity-a.similarity||a.frame_gap-b.frame_gap);return out}}
+function pairRows(){{let out=DATA.pairs.slice(),s=$('status').value,scope=$('scope').value,b=$('batch').value,q=$('search').value.trim().toLowerCase();if(s==='unreviewed')out=out.filter(r=>!review['edge:'+r.rank]?.status);else if(s!=='all')out=out.filter(r=>review['edge:'+r.rank]?.status===s);if(scope==='positive_gap1')out=out.filter(r=>r.frame_gap===1&&r.both_positive);if(scope==='same_timestamp')out=out.filter(r=>r.same_timestamp);if(scope==='gap1')out=out.filter(r=>r.frame_gap===1);if(scope==='cross_split')out=out.filter(r=>r.cross_split);if(scope==='both_positive')out=out.filter(r=>r.both_positive);if(scope==='either_positive')out=out.filter(r=>r.either_positive);if(b!=='all')out=out.filter(r=>r.batch===b);if(q)out=out.filter(r=>r.left.toLowerCase().includes(q)||r.right.toLowerCase().includes(q)||r.chain_id.toLowerCase().includes(q));const mode=$('sort').value;if(mode==='risk')out.sort((a,b)=>Number(b.cross_split)-Number(a.cross_split)||b.similarity-a.similarity||a.frame_gap-b.frame_gap);if(mode==='timestamp_first'||mode==='size')out.sort((a,b)=>Number(b.same_timestamp)-Number(a.same_timestamp)||a.frame_gap-b.frame_gap||b.similarity-a.similarity);if(mode==='gap')out.sort((a,b)=>a.frame_gap-b.frame_gap||b.similarity-a.similarity);if(mode==='similarity')out.sort((a,b)=>b.similarity-a.similarity||a.frame_gap-b.frame_gap);return out}}
 function allChains(){{const grouped=new Map;for(const edge of DATA.pairs){{if(!edge.chain_id)continue;if(!grouped.has(edge.chain_id))grouped.set(edge.chain_id,[]);grouped.get(edge.chain_id).push(edge)}}return[...grouped].map(([id,edges])=>{{edges.sort((a,b)=>a.rank-b.rank);return{{id,edges,size:edges.length+1,members:[edges[0].left,...edges.map(e=>e.right)],batch:edges[0].batch,same_timestamp:edges.some(e=>e.same_timestamp),cross_split:edges.some(e=>e.cross_split),both_positive:edges.some(e=>e.both_positive),either_positive:edges.some(e=>e.either_positive),similarity:Math.max(...edges.map(e=>e.similarity)),frame_gap:1}}}})}}
-function chainRows(){{let out=allChains(),s=$('status').value,scope=$('scope').value,b=$('batch').value,q=$('search').value.trim().toLowerCase();if(s==='unreviewed')out=out.filter(r=>!review['chain:'+r.id]?.status);else if(s!=='all')out=out.filter(r=>review['chain:'+r.id]?.status===s);if(scope==='same_timestamp')out=out.filter(r=>r.same_timestamp);if(scope==='cross_split')out=out.filter(r=>r.cross_split);if(scope==='both_positive')out=out.filter(r=>r.both_positive);if(scope==='either_positive')out=out.filter(r=>r.either_positive);if(b!=='all')out=out.filter(r=>r.batch===b);if(q)out=out.filter(r=>r.id.toLowerCase().includes(q)||r.members.some(x=>x.toLowerCase().includes(q)));const mode=$('sort').value;if(mode==='size')out.sort((a,b)=>b.size-a.size||a.id.localeCompare(b.id));if(mode==='timestamp_first')out.sort((a,b)=>Number(b.same_timestamp)-Number(a.same_timestamp)||b.size-a.size);if(mode==='similarity')out.sort((a,b)=>b.similarity-a.similarity||b.size-a.size);return out}}
+function chainRows(){{let out=allChains(),s=$('status').value,scope=$('scope').value,b=$('batch').value,q=$('search').value.trim().toLowerCase();if(s==='unreviewed')out=out.filter(r=>!review['chain:'+r.id]?.status);else if(s!=='all')out=out.filter(r=>review['chain:'+r.id]?.status===s);if(scope==='same_timestamp')out=out.filter(r=>r.same_timestamp);if(scope==='cross_split')out=out.filter(r=>r.cross_split);if(scope==='both_positive')out=out.filter(r=>r.both_positive);if(scope==='either_positive')out=out.filter(r=>r.either_positive);if(b!=='all')out=out.filter(r=>r.batch===b);if(q)out=out.filter(r=>r.id.toLowerCase().includes(q)||r.members.some(x=>x.toLowerCase().includes(q)));const mode=$('sort').value;if(mode==='risk')out.sort((a,b)=>Number(b.cross_split)-Number(a.cross_split)||b.size-a.size||b.similarity-a.similarity);if(mode==='size')out.sort((a,b)=>b.size-a.size||a.id.localeCompare(b.id));if(mode==='timestamp_first')out.sort((a,b)=>Number(b.same_timestamp)-Number(a.same_timestamp)||b.size-a.size);if(mode==='similarity')out.sort((a,b)=>b.similarity-a.similarity||b.size-a.size);return out}}
 function tile(image){{const a=DATA.annotations[image],names=a.classes.map(c=>DATA.class_names[c]).join(' / ')||'背景';return `<div class="tile"><div class="figure"><img loading="lazy" src="${{ROOT+'/'+image}}" alt="${{esc(image)}}"><svg viewBox="0 0 1 1" preserveAspectRatio="none">${{boxes(image)}}</svg></div><div class="caption">${{esc(image)}}<br>${{esc(names)}} · ${{a.label_count}} 个框</div></div>`}}
 function choices(r,chain){{return `<button class="choice ${{r.status==='near_duplicate'?'active':''}}" data-status="near_duplicate">${{chain?'整链近重复':'连续帧 / 近重复'}}</button><button class="choice ${{r.status==='same_event_distinct'?'active':''}}" data-status="same_event_distinct">${{chain?'整链同事件但应保留':'同事件但应保留'}}</button><button class="choice ${{r.status==='different'?'active':''}}" data-status="different">${{chain?'链内有断点':'不同事件'}}</button><button class="choice ${{r.status==='unsure'?'active':''}}" data-status="unsure">不确定</button>`}}
 function pairCard(row){{const key='edge:'+row.rank,r=review[key]||{{status:'',note:''}},chain=row.chain_id?` · 连续链 ${{row.chain_id}}（${{row.chain_size}} 张）`:'';return `<article class="pair ${{row.same_timestamp?'exact':''}}" data-key="${{key}}"><div class="head"><strong>#${{row.rank}} · 帧距 ${{row.frame_gap}} · ${{esc(row.batch)}} · ${{esc(row.left_split)}}/${{esc(row.right_split)}}${{row.same_timestamp?' · 同时间戳':''}}${{chain}}</strong><span class="score">similarity=${{row.similarity.toFixed(8)}}</span></div><div class="images">${{tile(row.left)}}${{tile(row.right)}}</div><div class="review">${{choices(r,false)}}<textarea placeholder="备注">${{esc(r.note||'')}}</textarea></div></article>`}}
@@ -141,15 +141,28 @@ def main() -> int:
         annotations[relative] = label_payload(image, dataset_root)
 
     chains: list[list[Path]] = []
-    current_chain = [images[0]]
-    for image in images[1:]:
-        previous = current_chain[-1]
-        if image.parent == previous.parent and frame(image) - frame(previous) == 1:
-            current_chain.append(image)
-        else:
+    current_chain: list[Path] = []
+    for previous, image in zip(images, images[1:]):
+        previous_relative = previous.relative_to(dataset_root).as_posix()
+        image_relative = image.relative_to(dataset_root).as_posix()
+        qualifies = (
+            image.parent == previous.parent
+            and frame(image) - frame(previous) == 1
+            and bool(annotations[previous_relative]["label_count"])
+            and bool(annotations[image_relative]["label_count"])
+        )
+        if qualifies:
+            if current_chain and current_chain[-1] == previous:
+                current_chain.append(image)
+            else:
+                if current_chain:
+                    chains.append(current_chain)
+                current_chain = [previous, image]
+        elif current_chain:
             chains.append(current_chain)
-            current_chain = [image]
-    chains.append(current_chain)
+            current_chain = []
+    if current_chain:
+        chains.append(current_chain)
     chain_info: dict[Path, tuple[str, int]] = {}
     for index, chain in enumerate(chains, start=1):
         chain_id = f"gap1_{index:04d}"
@@ -167,9 +180,9 @@ def main() -> int:
         right_index = archive_indices[image_key(right)]
         left_positive = bool(annotations[left]["label_count"])
         right_positive = bool(annotations[right]["label_count"])
-        left_chain_id, left_chain_size = chain_info[left_path]
-        right_chain_id, _ = chain_info[right_path]
-        pair_chain_id = left_chain_id if left_chain_id == right_chain_id else ""
+        left_chain_id, left_chain_size = chain_info.get(left_path, ("", 0))
+        right_chain_id, _ = chain_info.get(right_path, ("", 0))
+        pair_chain_id = left_chain_id if left_chain_id and left_chain_id == right_chain_id else ""
         pairs.append(
             {
                 "rank": len(pairs) + 1,
@@ -192,6 +205,7 @@ def main() -> int:
         "retained_images": len(images),
         "pair_count": len(pairs),
         "gap_one_pairs": sum(row["frame_gap"] == 1 for row in pairs),
+        "positive_gap_one_pairs": sum(row["frame_gap"] == 1 and row["both_positive"] for row in pairs),
         "same_timestamp_pairs": sum(row["same_timestamp"] for row in pairs),
         "cross_split_pairs": sum(row["cross_split"] for row in pairs),
         "multi_image_chains": sum(len(chain) > 1 for chain in chains),
@@ -217,6 +231,7 @@ def main() -> int:
         "retained_images": len(images),
         "pair_count": len(pairs),
         "gap_one_pairs": payload["gap_one_pairs"],
+        "positive_gap_one_pairs": payload["positive_gap_one_pairs"],
         "same_timestamp_pairs": payload["same_timestamp_pairs"],
         "cross_split_pairs": payload["cross_split_pairs"],
         "multi_image_chains": payload["multi_image_chains"],
