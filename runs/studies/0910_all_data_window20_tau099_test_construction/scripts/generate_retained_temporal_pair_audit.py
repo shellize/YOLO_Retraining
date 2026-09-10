@@ -35,6 +35,8 @@ def parse_args() -> argparse.Namespace:
 
 def image_key(path: str | Path) -> str:
     normalized = str(path).replace("\\", "/")
+    if normalized.casefold().startswith("images/"):
+        return normalized.casefold()
     marker = "/images/"
     index = normalized.casefold().rfind(marker)
     if index < 0:
