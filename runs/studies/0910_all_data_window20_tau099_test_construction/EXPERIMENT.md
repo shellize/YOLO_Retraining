@@ -24,9 +24,11 @@
 ## 两层人工审计
 
 1. `result/global_temporal_cluster_preview_label_aware/cluster_preview.html` 展示所有非单例时序簇、真实框、普通候选和实际标注优先代表，也标明跨 batch 簇，用于检查 window=20 是否把不同场景误合并。
-2. `result/global_post_dedup_similarity_label_aware/top_similar_pairs.html` 在去重后代表集合中做全局余弦近邻审计，按相似度展示最高的图片对及其全局序列距离。页面可人工标记“不同场景”“仍是同场景/重复”“不确定”，并导出 CSV。
+2. `result/global_post_dedup_similarity_label_aware/top_similar_pairs.html` 在去重后代表集合中做全局余弦近邻审计，按相似度展示最高的图片对及其全局序列距离。页面把人工结论拆成“连续片段/近重复”“同机位但不同时间”“不同机位/场景”“不确定”，并可导出 CSV。
 
 第二层高相似图片对不受 temporal window 限制。它用于验证“高特征相似度不必然等于连续重复帧”，审阅结果不会自动触发二次删除。
+
+正式候选池的最高 200 对相似度均高于 `0.99`，但其最小全局序列距离为 21，协议内冲突为 0。对排名前三的初步人工检查显示，它们是相同固定机位在不同时间拍到的不同人员/事件，并非连续帧；因此当前结果支持“时序去重已生效”，却不支持“剩余高相似样本属于完全不同物理场景”。如果 test 需要衡量跨机位或跨场景泛化，后续切分还必须使用机位/场景 group-disjoint 协议，不能在这 6,039 张代表中直接随机抽图。
 
 ## 输出边界
 
