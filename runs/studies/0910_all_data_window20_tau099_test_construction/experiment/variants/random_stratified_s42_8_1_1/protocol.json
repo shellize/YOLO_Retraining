@@ -1,0 +1,20 @@
+{
+  "purpose": "Fixed train/val/test split of the reviewed deduplicated all-data pool",
+  "source_variant": "global_order_window20_tau0p990_label_aware_reviewed_final",
+  "split_variant": "random_stratified_s42_8_1_1",
+  "unit": "individual image",
+  "grouping": null,
+  "seed": 42,
+  "fractions": {
+    "train": 0.8,
+    "val": 0.1,
+    "test": 0.1
+  },
+  "stratification_features": [
+    "positive/background",
+    "multilabel class presence",
+    "10 global-frame quantile bins"
+  ],
+  "selection_boundary": "Validation is used for model selection; test remains fixed and is not used to revise the split or protocol.",
+  "source_images_and_labels_mutated": false
+}

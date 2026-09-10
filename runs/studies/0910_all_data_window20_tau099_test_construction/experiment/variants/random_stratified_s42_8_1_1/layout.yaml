@@ -1,0 +1,16 @@
+path: ../../../../../../data/self_improving
+names:
+  0: large luggage
+  1: stroller
+  2: wheelchair
+  3: flatbed truck
+groups:
+  train:
+    split: train
+    manifest: ../../runs/studies/0910_all_data_window20_tau099_test_construction/experiment/variants/random_stratified_s42_8_1_1/manifests/train.txt
+  val:
+    split: val
+    manifest: ../../runs/studies/0910_all_data_window20_tau099_test_construction/experiment/variants/random_stratified_s42_8_1_1/manifests/val.txt
+  test:
+    split: test
+    manifest: ../../runs/studies/0910_all_data_window20_tau099_test_construction/experiment/variants/random_stratified_s42_8_1_1/manifests/test.txt

@@ -1,0 +1,181 @@
+{
+  "status": "completed",
+  "method": "image-level deterministic multilabel stratification with positive/background and global-time-bin coverage",
+  "seed": 42,
+  "fractions": {
+    "train": 0.8,
+    "val": 0.1,
+    "test": 0.1
+  },
+  "time_bins": 10,
+  "source_manifest": "../global_order_window20_tau0p990_label_aware_reviewed_final/manifest.txt",
+  "source_manifest_sha256": "69f91848caee514bd21ec56390dfbe94549956cfac7c77f42c50dd7e197e7f42",
+  "total_images": 6027,
+  "splits": {
+    "train": {
+      "images": 4821,
+      "positive_images": 2582,
+      "background_images": 2239,
+      "class_positive_images": {
+        "large luggage": 1807,
+        "stroller": 834,
+        "wheelchair": 186,
+        "flatbed truck": 19
+      },
+      "class_instances": {
+        "large luggage": 2525,
+        "stroller": 880,
+        "wheelchair": 197,
+        "flatbed truck": 20
+      },
+      "time_bins": {
+        "0": 481,
+        "1": 483,
+        "2": 483,
+        "3": 481,
+        "4": 483,
+        "5": 483,
+        "6": 482,
+        "7": 481,
+        "8": 483,
+        "9": 481
+      },
+      "frame_min": 2,
+      "frame_max": 9574,
+      "per_batch": {
+        "0720_1": 266,
+        "0720_10": 175,
+        "0720_11": 170,
+        "0720_12": 171,
+        "0720_13": 159,
+        "0720_14": 164,
+        "0720_15": 172,
+        "0720_16": 185,
+        "0720_17": 201,
+        "0720_18": 168,
+        "0720_19": 207,
+        "0720_2": 356,
+        "0720_20": 39,
+        "0720_3": 398,
+        "0720_4": 366,
+        "0720_5": 322,
+        "0720_6": 343,
+        "0720_7": 367,
+        "0720_8": 354,
+        "0720_9": 238
+      },
+      "manifest": "manifests/train.txt",
+      "manifest_sha256": "15f87301e6a7de3e04835b02e82812fa8284282a9add071af7b286f31931ec54"
+    },
+    "val": {
+      "images": 603,
+      "positive_images": 322,
+      "background_images": 281,
+      "class_positive_images": {
+        "large luggage": 225,
+        "stroller": 103,
+        "wheelchair": 24,
+        "flatbed truck": 2
+      },
+      "class_instances": {
+        "large luggage": 316,
+        "stroller": 111,
+        "wheelchair": 25,
+        "flatbed truck": 3
+      },
+      "time_bins": {
+        "0": 61,
+        "1": 60,
+        "2": 60,
+        "3": 61,
+        "4": 60,
+        "5": 60,
+        "6": 60,
+        "7": 61,
+        "8": 60,
+        "9": 60
+      },
+      "frame_min": 14,
+      "frame_max": 9569,
+      "per_batch": {
+        "0720_1": 34,
+        "0720_10": 21,
+        "0720_11": 20,
+        "0720_12": 27,
+        "0720_13": 20,
+        "0720_14": 18,
+        "0720_15": 17,
+        "0720_16": 25,
+        "0720_17": 25,
+        "0720_18": 22,
+        "0720_19": 29,
+        "0720_2": 43,
+        "0720_20": 2,
+        "0720_3": 51,
+        "0720_4": 49,
+        "0720_5": 32,
+        "0720_6": 47,
+        "0720_7": 46,
+        "0720_8": 44,
+        "0720_9": 31
+      },
+      "manifest": "manifests/val.txt",
+      "manifest_sha256": "c142d409e42643e14eeace758453b0d80f0f7fdcd83fa594071405816ccd902e"
+    },
+    "test": {
+      "images": 603,
+      "positive_images": 323,
+      "background_images": 280,
+      "class_positive_images": {
+        "large luggage": 223,
+        "stroller": 103,
+        "wheelchair": 24,
+        "flatbed truck": 3
+      },
+      "class_instances": {
+        "large luggage": 313,
+        "stroller": 107,
+        "wheelchair": 25,
+        "flatbed truck": 3
+      },
+      "time_bins": {
+        "0": 61,
+        "1": 60,
+        "2": 60,
+        "3": 60,
+        "4": 60,
+        "5": 60,
+        "6": 60,
+        "7": 61,
+        "8": 60,
+        "9": 61
+      },
+      "frame_min": 30,
+      "frame_max": 9575,
+      "per_batch": {
+        "0720_1": 36,
+        "0720_10": 23,
+        "0720_11": 21,
+        "0720_12": 23,
+        "0720_13": 19,
+        "0720_14": 21,
+        "0720_15": 26,
+        "0720_16": 21,
+        "0720_17": 21,
+        "0720_18": 22,
+        "0720_19": 24,
+        "0720_2": 47,
+        "0720_20": 9,
+        "0720_3": 41,
+        "0720_4": 50,
+        "0720_5": 35,
+        "0720_6": 45,
+        "0720_7": 48,
+        "0720_8": 44,
+        "0720_9": 27
+      },
+      "manifest": "manifests/test.txt",
+      "manifest_sha256": "3cfa5503b5963490672fb693c5575e896a1673c6a1898fba4f5633e788446aea"
+    }
+  }
+}
