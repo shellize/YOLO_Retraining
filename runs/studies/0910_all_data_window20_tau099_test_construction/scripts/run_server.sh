@@ -47,11 +47,11 @@ echo "analysis environment: $ANALYSIS_ENV"
 "$CONDA_BIN" run --no-capture-output -n "$ANALYSIS_ENV" \
   python "$SCRIPT_DIR/build_all_data_dedup.py" \
   --config "$STUDY_ROOT/config/protocol.yaml" \
-  2>&1 | tee "$LOG_DIR/build_all_data_dedup.log"
+  2>&1 | tee "$LOG_DIR/build_global_order_dedup.log"
 
 "$CONDA_BIN" run --no-capture-output -n "$ANALYSIS_ENV" \
   python "$SCRIPT_DIR/generate_audit_html.py" \
   --config "$STUDY_ROOT/config/protocol.yaml" \
-  2>&1 | tee "$LOG_DIR/generate_audit_html.log"
+  2>&1 | tee "$LOG_DIR/generate_global_order_audit_html.log"
 
 echo "completed: $STUDY_ROOT"
