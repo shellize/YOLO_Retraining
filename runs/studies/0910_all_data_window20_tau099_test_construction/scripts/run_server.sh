@@ -18,6 +18,17 @@ else
   exit 1
 fi
 
+if [[ -n "${YOLO_ANALYSIS_ENV:-}" ]]; then
+  ANALYSIS_ENV="$YOLO_ANALYSIS_ENV"
+elif "$CONDA_BIN" env list | awk '{print $1}' | grep -Fxq yolo-result-analysis; then
+  ANALYSIS_ENV="yolo-result-analysis"
+elif "$CONDA_BIN" env list | awk '{print $1}' | grep -Fxq yolo-retraining-v5; then
+  ANALYSIS_ENV="yolo-retraining-v5"
+else
+  echo "neither yolo-result-analysis nor yolo-retraining-v5 conda environment exists" >&2
+  exit 1
+fi
+
 VARIANT_DIR="$STUDY_ROOT/experiment/variants/window20_tau0p990_positive_representative"
 TEMPORAL_DIR="$STUDY_ROOT/result/temporal_cluster_preview"
 POST_DIR="$STUDY_ROOT/result/post_dedup_similarity"
@@ -31,12 +42,14 @@ done
 cd "$PROJECT_ROOT"
 export PYTHONPATH="$PROJECT_ROOT/src:$PROJECT_ROOT${PYTHONPATH:+:$PYTHONPATH}"
 
-"$CONDA_BIN" run --no-capture-output -n yolo-result-analysis \
+echo "analysis environment: $ANALYSIS_ENV"
+
+"$CONDA_BIN" run --no-capture-output -n "$ANALYSIS_ENV" \
   python "$SCRIPT_DIR/build_all_data_dedup.py" \
   --config "$STUDY_ROOT/config/protocol.yaml" \
   2>&1 | tee "$LOG_DIR/build_all_data_dedup.log"
 
-"$CONDA_BIN" run --no-capture-output -n yolo-result-analysis \
+"$CONDA_BIN" run --no-capture-output -n "$ANALYSIS_ENV" \
   python "$SCRIPT_DIR/generate_audit_html.py" \
   --config "$STUDY_ROOT/config/protocol.yaml" \
   2>&1 | tee "$LOG_DIR/generate_audit_html.log"
