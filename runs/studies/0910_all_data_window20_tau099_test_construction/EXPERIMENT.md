@@ -38,6 +38,7 @@
 - 分层约束：同时平衡多标签类别出现、正样本/背景比例，并让三个集合覆盖全局帧序号的十个等频区间。
 - 使用边界：val 用于模型选择；test 固定后不参与阈值、超参数或划分方案选择。
 - 后续学习曲线：只从 train 构造嵌套训练子集，val/test 始终保持不变。
+- test 难度审阅：只展示 test 中带有效标注的正样本；背景图片不参与人工筛除。人工明确标记为 `difficult` 的图片将在后续 filtered test 中排除，未审阅、`normal` 和 `unsure` 均默认保留。完整 test 始终保留不变。
 
 ## 输出边界
 
@@ -63,6 +64,7 @@ runs/studies/0910_all_data_window20_tau099_test_construction/
 │   └── summary.json
 ├── result/global_temporal_cluster_preview_label_aware/
 ├── result/global_post_dedup_similarity_label_aware/
+├── result/test_positive_difficulty_review/
 ├── logs/
 └── scripts/
 ```

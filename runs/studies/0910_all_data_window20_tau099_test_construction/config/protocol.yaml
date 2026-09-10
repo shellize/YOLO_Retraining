@@ -9,6 +9,7 @@ split_fractions:
   val: 0.1
   test: 0.1
 split_time_bins: 10
+test_difficulty_review_result_name: test_positive_difficulty_review
 temporal_result_name: global_temporal_cluster_preview_label_aware
 post_dedup_result_name: global_post_dedup_similarity_label_aware
 threshold: 0.99
