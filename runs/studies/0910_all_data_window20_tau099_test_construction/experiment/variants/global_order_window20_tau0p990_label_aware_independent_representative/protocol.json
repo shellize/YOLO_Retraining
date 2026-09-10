@@ -1,0 +1,54 @@
+{
+  "study": "0910_all_data_window20_tau099_test_construction",
+  "source_layout": "configs/data/self_improving.yaml",
+  "source_embeddings": "data_analyse/dataset_redundancy/results/20260824-182608/embeddings.npz",
+  "source_embedding_sha256": "17489a44317f19e361e2eb9b9bdc6bd0b1383a1f942385c59d5c5418b95007fb",
+  "source_embedding_metadata": {
+    "extractor": "yolov5s_multiscale_spatial_pyramid",
+    "layers": [
+      17,
+      20,
+      23
+    ],
+    "pool_grids": [
+      4,
+      2,
+      1
+    ],
+    "imgsz": 640,
+    "weights": "/home/lijinhe/work/YOLO_Retraining/.third_party/yolov5/yolov5s.pt",
+    "weights_sha256": "8b3b748c1e592ddd8868022e8732fde20025197328490623cc16c6f24d0782ee",
+    "yolov5_commit": "915bbf294bb74c859f0b41f1c23bc395014ea679",
+    "yolov5_tag": "v7.0",
+    "device": "cuda:0",
+    "embedding_shape": [
+      9573,
+      3584
+    ],
+    "inventory_sha256": "a1124ef24d2875da126338046431f5a6878f2513405473a02b402b5f1461858e"
+  },
+  "source_groups": [
+    "test",
+    "val",
+    "stage0",
+    "stage1",
+    "stage2",
+    "stage3"
+  ],
+  "dataset_root": "data/self_improving",
+  "image_count": 9573,
+  "threshold": 0.99,
+  "temporal_window": 20,
+  "sequence_order": "numeric filename prefix across all physical batch directories",
+  "first_global_frame_number": 1,
+  "last_global_frame_number": 9575,
+  "candidate_rule": "global numeric frame order; compare the next N available images, including batch boundaries",
+  "grouping_rule": "label-aware greedy star grouping; group membership is recomputed from the selected representative",
+  "representative_rule": "when the ordinary representative neighborhood contains a labeled image, choose the labeled candidate with best current coverage",
+  "class_names": [
+    "large luggage",
+    "stroller",
+    "wheelchair",
+    "flatbed truck"
+  ]
+}

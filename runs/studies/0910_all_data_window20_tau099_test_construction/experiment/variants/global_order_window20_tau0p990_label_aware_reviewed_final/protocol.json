@@ -1,0 +1,142 @@
+{
+  "purpose": "Final reviewed all-data pool before train/val/test construction",
+  "source_variant": "global_order_window20_tau0p990_label_aware_independent_representative",
+  "source_manifest": "experiment/variants/global_order_window20_tau0p990_label_aware_independent_representative/manifest.txt",
+  "canonical_pair_audit": "result/global_post_dedup_similarity_label_aware/top_similar_pairs.csv",
+  "review_semantics": {
+    "near_duplicate": "collapse by connected component",
+    "unreviewed": "keep",
+    "same_view_distinct_time": "keep",
+    "different_scene": "keep",
+    "unsure": "keep"
+  },
+  "representative_rule": "Treat near_duplicate rows as undirected edges; retain one image per connected component, preferring a non-empty label, then the smaller global frame number, then the image path. Blank and all other review statuses remain in the dataset.",
+  "source_images_and_labels_mutated": false,
+  "summary": {
+    "status": "completed",
+    "source_variant": "global_order_window20_tau0p990_label_aware_independent_representative",
+    "source_images": 6039,
+    "review_rows": 200,
+    "review_status_counts": {
+      "near_duplicate": 13,
+      "same_view_distinct_time": 2,
+      "unreviewed": 185
+    },
+    "near_duplicate_edges": 13,
+    "near_duplicate_components": 10,
+    "images_in_near_duplicate_components": 22,
+    "manually_excluded_images": 12,
+    "excluded_positive_images": 1,
+    "final_images": 6027,
+    "selection_rule": "Treat near_duplicate rows as undirected edges; retain one image per connected component, preferring a non-empty label, then the smaller global frame number, then the image path. Blank and all other review statuses remain in the dataset.",
+    "per_batch": {
+      "0720_1": {
+        "images": 336,
+        "positive_images": 74,
+        "background_images": 262
+      },
+      "0720_10": {
+        "images": 219,
+        "positive_images": 64,
+        "background_images": 155
+      },
+      "0720_11": {
+        "images": 211,
+        "positive_images": 79,
+        "background_images": 132
+      },
+      "0720_12": {
+        "images": 221,
+        "positive_images": 77,
+        "background_images": 144
+      },
+      "0720_13": {
+        "images": 198,
+        "positive_images": 67,
+        "background_images": 131
+      },
+      "0720_14": {
+        "images": 203,
+        "positive_images": 68,
+        "background_images": 135
+      },
+      "0720_15": {
+        "images": 215,
+        "positive_images": 75,
+        "background_images": 140
+      },
+      "0720_16": {
+        "images": 231,
+        "positive_images": 62,
+        "background_images": 169
+      },
+      "0720_17": {
+        "images": 247,
+        "positive_images": 116,
+        "background_images": 131
+      },
+      "0720_18": {
+        "images": 212,
+        "positive_images": 71,
+        "background_images": 141
+      },
+      "0720_19": {
+        "images": 260,
+        "positive_images": 110,
+        "background_images": 150
+      },
+      "0720_2": {
+        "images": 446,
+        "positive_images": 215,
+        "background_images": 231
+      },
+      "0720_20": {
+        "images": 50,
+        "positive_images": 20,
+        "background_images": 30
+      },
+      "0720_3": {
+        "images": 490,
+        "positive_images": 358,
+        "background_images": 132
+      },
+      "0720_4": {
+        "images": 465,
+        "positive_images": 333,
+        "background_images": 132
+      },
+      "0720_5": {
+        "images": 389,
+        "positive_images": 284,
+        "background_images": 105
+      },
+      "0720_6": {
+        "images": 435,
+        "positive_images": 381,
+        "background_images": 54
+      },
+      "0720_7": {
+        "images": 461,
+        "positive_images": 396,
+        "background_images": 65
+      },
+      "0720_8": {
+        "images": 442,
+        "positive_images": 241,
+        "background_images": 201
+      },
+      "0720_9": {
+        "images": 296,
+        "positive_images": 136,
+        "background_images": 160
+      }
+    },
+    "source_manifest_sha256": "ffcb92676a808c7f6d0c2fed4299edf649c228deff2b30ed36b2b92ba2d3beb8",
+    "manual_review_source_sha256": "5048cb68d22270e395aaae60c56f67b455c02d2e36ee1b2b9c5ebb82ffebe917",
+    "manual_review_sha256": "9ba34935dbf0817b142e8cbb1b5f090ffca970be74955881131bea78ea08ac49",
+    "final_manifest_sha256": "69f91848caee514bd21ec56390dfbe94549956cfac7c77f42c50dd7e197e7f42",
+    "manifest": "manifest.txt",
+    "manual_review": "manual_review.csv",
+    "review_decisions": "review_decisions.csv"
+  }
+}
