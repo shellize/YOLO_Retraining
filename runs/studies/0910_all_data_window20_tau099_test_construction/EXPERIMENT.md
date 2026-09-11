@@ -48,7 +48,9 @@
 
 该几何距离用于缩短审阅顺序，不是重复关系的自动阈值：遇到首个“不重复”后仍应继续查看一小段缓冲区，确认后续已稳定不重复，再把停止位置作为经验候选阈值。第一轮只审阅帧号差 1 的候选；由于第一轮去重可能已经移除中间帧，补充审阅 `positive_box_layout_nonconsecutive_pair_audit` 使用去重后保留序列中的相邻图片，限定原始帧号差 2～20、双方正样本、总框数相同且图像特征余弦相似度严格大于 `0.96`，并沿用相同的框布局距离排序。两轮审阅结果在最终合并时共同作为重复边证据。
 
-另有 165 对文件名来源时间戳完全相同，其中 53 对跨 split。同时间戳双图只是最容易确认的漏洞，不是最终分组单位。这说明 `tau=0.99` 只完成了近乎完全重复压缩，不能独立承担连续事件隔离。人工确认的 `duplicate` 边后续按连通分量合并，从而覆盖两张、三张及更长连续事件链。`random_stratified_s42_8_1_1` 因而保留为候选和问题证据；正式 split 必须等待该审计确定事件绑定规则后重建。test 困难样本审阅也随之暂停。
+另有 165 对文件名来源时间戳完全相同，其中 53 对跨 split。同时间戳双图只是最容易确认的漏洞，不是最终分组单位。这说明 `tau=0.99` 只完成了近乎完全重复压缩，不能独立承担连续事件隔离。两轮人工确认的 `duplicate` 边共同按连通分量合并，每个分量保留全局帧号最小的图片，形成 `global_order_window20_tau0p990_label_aware_pair_reviewed_final`。
+
+最后从该 manifest 只抽取有有效标注的正样本，按全局帧号排序，在正样本序列内使用 `window=10` 比较并以余弦相似度 `tau=0.95` 建边；非单例连通簇在 `final_positive_tau095_window10_cluster_audit` 中按最高内部相似度降序展示。这一步只作最终人工漏检审计，不自动继续删除图片。`random_stratified_s42_8_1_1` 保留为候选和问题证据；正式 split 等最终审计完成后重建。test 困难样本审阅也随之暂停。
 
 ## 输出边界
 
@@ -66,6 +68,11 @@ runs/studies/0910_all_data_window20_tau099_test_construction/
 │   ├── review_decisions.csv
 │   ├── protocol.json
 │   └── summary.json
+├── experiment/variants/global_order_window20_tau0p990_label_aware_pair_reviewed_final/
+│   ├── manifest.txt
+│   ├── review_decisions.csv
+│   ├── protocol.json
+│   └── summary.json
 ├── experiment/variants/random_stratified_s42_8_1_1/
 │   ├── manifests/{train,val,test}.txt
 │   ├── layout.yaml
@@ -78,6 +85,7 @@ runs/studies/0910_all_data_window20_tau099_test_construction/
 ├── result/retained_temporal_pair_audit/
 ├── result/positive_box_layout_pair_audit/
 ├── result/positive_box_layout_nonconsecutive_pair_audit/
+├── result/final_positive_tau095_window10_cluster_audit/
 ├── logs/
 └── scripts/
 ```
