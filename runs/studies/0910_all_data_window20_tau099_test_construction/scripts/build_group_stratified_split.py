@@ -152,13 +152,11 @@ def assignment_gain(
     score = 0.0
     for feature, value in unit.features.items():
         target = targets[split][feature]
-        deficit = max(0.0, target - current[split][feature])
         scale = max(1.0, target)
-        covered = min(value, deficit) / scale
-        overflow = max(0.0, value - deficit) / scale
-        score += feature_weight(feature) * (covered - 0.35 * overflow)
-    capacity_need = (capacities[split] - current[split]["images"]) / capacities[split]
-    return score + 0.05 * capacity_need - large_group_cost(unit, split, threshold=threshold, penalty=penalty)
+        before = ((current[split][feature] - target) / scale) ** 2
+        after = ((current[split][feature] + value - target) / scale) ** 2
+        score += feature_weight(feature) * (before - after)
+    return score - large_group_cost(unit, split, threshold=threshold, penalty=penalty)
 
 
 def final_cost(
