@@ -1,111 +1,126 @@
-# 全量数据时序去重、人工复核与最终数据池
+# 全量数据去重、事件隔离与测试集构造
 
 ## 研究目的
 
-本 Study 从 `data/self_improving` 构造冻结的去冗余全量数据池，并进一步生成固定的 train/val/test。它先在全部 20 个物理 batch、9,573 张图片上执行 YOLOv5 多尺度特征时序去重，再对去重后仍然全局高相似的代表图进行人工场景审计。
+既有实验中，按 batch 取 test 会因时间分布偏移而表现很差，图片级随机取 test 又会因连续事件泄露而表现过好，因此当前主要问题不是继续调整训练方法，而是建立可信的评估数据协议。
 
-时序去重先保留 6,039 张图片；人工审阅在最高相似的 200 对中将 13 对标为连续片段或近重复，这些关系形成 10 个连通组。每组优先保留带非空标注的图片，其次保留全局帧号更小者，共排除 12 张，冻结 6,027 张作为唯一的全量划分输入。随后以图片为单位、固定 seed 42 按 8:1:1 分配 train/val/test；分层特征包括类别是否出现、正样本/背景状态和全局帧序号的十分位区间。原始图片和标签不做物理删除。
+本 Study 从 `data/self_improving` 的 20 个物理 batch、9,573 张图片出发，先压缩近乎完全重复的临近图片，再人工排除未被整图相似度捕获的连续正样本，最后使用目标级相似度把同一目标的持续出现绑定为不可跨 split 的图片组。原始图片和标签始终只读，不复制、不移动、不改名、不删除。
 
-## 固定协议
+当前结果是 5,763 张最终图片，以及 225 个不可跨 split 的图片级 group，共约束 871 张图片。旧的 6,027 张图片级随机划分仅保留为问题证据，不再作为正式训练、验证或测试数据。
+
+## 固定数据与时序协议
 
 - 输入布局：公共 `configs/data/self_improving.yaml` 中的全部图片，包括原有 train、val、test 逻辑组。
-- 特征缓存：复用 `data_analyse/dataset_redundancy/results/20260824-182608/embeddings.npz`。运行时必须核对其图片清单与当前布局的 9,573 张图片完全一致。
-- 特征定义：固定 YOLOv5 v7.0 `yolov5s.pt` 的 P3/P4/P5 多尺度特征，沿用缓存内记录的提取元数据。
-- 时序顺序：解析文件名开头的全局帧号，在全部物理 batch 间统一排序。当前输入的全局帧号唯一，覆盖 `1..9575`，缺少两帧。
-- 时序候选：每张图片与全局顺序中向后的 20 张现存图片比较，比较会跨越 `0720_1 → 0720_2` 等 batch 边界。
-- 去重阈值：余弦相似度 `tau=0.99`。
-- 分组与代表选择：每轮先找覆盖能力最强的普通 greedy 候选；如果其当前邻域含带非空 YOLO 标注的图片，则从这些带标注候选中选择覆盖能力最强者，并以实际选中的代表重新确定本簇成员。这样优先保留正样本，同时保证最终任意两个代表之间不存在本协议定义的超阈值时序边。
-- 原始图片和标签始终只读，不复制、不移动、不改名、不删除。
+- 特征缓存：复用 `data_analyse/dataset_redundancy/results/20260824-182608/embeddings.npz`，其图片清单必须与当前布局的 9,573 张图片一致。
+- 整图特征：固定 YOLOv5 v7.0 `yolov5s.pt` 的 P3/P4/P5 多尺度特征。
+- 时序顺序：解析文件名开头的全局帧号，在所有 batch 间统一排序；batch 只是物理切分，不作为事件边界。当前帧号唯一，覆盖 `1..9575`，缺少两帧。
+- “去重后距离”表示图片在完整的去重后 manifest 中的位置差；背景图片即使不参与目标匹配，也仍占据序列位置。
+- 原始数据始终只读；人工判断只生成新的 manifest 或 group 约束。
 
-`temporal-window=20` 比项目的相邻帧主协议更宽，可能连接同一相机的短时回访帧。簇预览 HTML 因而是协议的一部分，不能只看统计数字决定去重结果有效。
+## 实验过程与方法转变
 
-本 Study 的审计先后排除了两个有缺陷的候选池：第一次试运行沿用公共工具“按父目录分别排序”的定义，最高相似对发现 `0720_1/00500...` 与 `0720_2/00502...` 是跨 batch 的连续画面；第二次虽改为全局顺序，但仍采用“成簇后替换带标注代表”，最高相似对发现帧距仅 2、相似度 `0.99890` 的 `04996/04998` 同时保留，说明事后替换破坏了代表集合的去重约束。两次输出只保留为方法诊断，不作为候选池；正式输出采用上述标注感知 greedy。
+### 1. 按相似度对临近图片去重
 
-## 两层人工审计
+最初假设是连续采集图片通常高度相似，因此在全局帧序列中比较每张图片之后的 20 张现存图片，并以余弦相似度 `tau=0.99` 建立时序关系。代表选择采用标注感知 greedy：如果候选邻域中存在带非空标注的图片，就优先从正样本中选择覆盖能力最强者，并按实际代表重新确定簇成员。
 
-1. `result/global_temporal_cluster_preview_label_aware/cluster_preview.html` 展示所有非单例时序簇、真实框、普通候选和实际标注优先代表，也标明跨 batch 簇，用于检查 window=20 是否把不同场景误合并。
-2. `result/global_post_dedup_similarity_label_aware/top_similar_pairs.html` 在去重后代表集合中做全局余弦近邻审计，按相似度展示最高的图片对及其全局序列距离。页面把人工结论拆成“连续片段/近重复”“同机位但不同时间”“不同机位/场景”“不确定”，并可导出 CSV。
+这一阶段发现：
 
-第二层高相似图片对不受 temporal window 限制。人工导出的状态是二次复核的唯一输入：`near_duplicate` 关系按无向连通组折叠；未审阅以及“同机位但不同时间”“不同机位/场景”“不确定”均保留。复核只生成新的最终 manifest，不修改源数据。
+- 相似度很高不一定表示重复，也可能是同一机位下的不同时刻。
+- 相似度不高也可能是重复或连续事件帧，因为目标、遮挡和背景变化会降低整图相似度。
+- 图片在时间上临近，是判断连续事件的重要条件；只做全局高相似检索不能替代时序关系。
+- batch 之间也可能连续，因此必须使用跨 batch 的全局帧顺序。
 
-时序去重结果的最高 200 对相似度均高于 `0.99`，但协议内冲突为 0；人工仍识别出 13 条较长距离的连续片段或近重复关系，并将其折叠为 10 个组。人工复核表明，其余高相似图片基本属于同一视角下的不同时间，而不是应继续折叠的连续帧。当前评估目标是同一业务环境和相机分布内的随机泛化，因此最终切分不按 batch、时间段或机位成组，而采用图片级分层随机划分。同一视角跨集合是本协议有意保留的目标分布，不解释为场景外泛化能力。
+审计还排除了两个有缺陷的候选池：第一次按父目录分别排序，漏掉了跨 batch 的连续图片；第二次先成簇再替换带标注代表，使帧距 2、相似度 `0.99890` 的图片同时保留，破坏了代表集合的去重约束。正式实现改为上述标注感知 greedy。
 
-## 候选划分与已发现的时序漏洞
+自动时序去重将 9,573 张图片缩减为 6,039 张。随后审阅去重后全局相似度最高的 200 对图片，人工确认 13 条近重复边、10 个连通组，再排除 12 张，得到 6,027 张候选数据。该审阅同时确认：其余大量高相似图片只是同机位的不同时刻，不应继续删除。
 
-- 输入：`global_order_window20_tau0p990_label_aware_reviewed_final/manifest.txt` 中的 6,027 张图片。
-- 比例与数量：train/val/test 为 8:1:1，目标数量分别为 4,821、603、603。
-- 随机性：固定 split seed 42；训练 seed 是另一变量，不由本划分定义。
-- 分层约束：同时平衡多标签类别出现、正样本/背景比例，并让三个集合覆盖全局帧序号的十个等频区间。
-- 使用边界：该候选划分在相邻保留帧审计完成前不用于正式训练或结论。
-- 后续学习曲线：只从 train 构造嵌套训练子集，val/test 始终保持不变。
-- test 难度审阅：只展示 test 中带有效标注的正样本；背景图片不参与人工筛除。人工明确标记为 `difficult` 的图片将在后续 filtered test 中排除，未审阅、`normal` 和 `unsure` 均默认保留。完整 test 始终保留不变。
+### 2. 人工审计临近且标注位置相似的正样本
 
-在 test 难度审阅中发现 `0720_2/00550...` 与 `00551...` 是明显的连续事件帧。两者虽在 window=20 内，但 YOLO 特征余弦相似度仅为 `0.967472`，低于 `tau=0.99`，因此均作为单例保留；非单例簇审阅页不会展示它们。全局高相似审阅页又只展示相似度最高的 200 对，其最低相似度约为 `0.996158`，“按帧距排序”只对这 200 对重排，因此也无法暴露该图片对。
+基于 6,027 张图片曾构造一版 seed 42、比例 8:1:1 的图片级分层随机划分，同时平衡类别、正样本/背景和全局时间十分位。它得到 train/val/test = 4,821/603/603，但只作为候选划分。
 
-进一步审计发现最终池仍有 4,036 对前缀序号差 1 的相邻保留图片，其中候选随机划分有 1,393 对跨 split。纯背景之间的重复不是本轮主要排除目标；最高优先级是“两张都带有效标注、序号相邻、未被 `tau=0.99` 合并”的正样本关系，因为同一目标或同一事件跨 train 与 val/test 会直接造成严重泄露。正样本与背景的高相似关系作为潜在漏标或标注不一致诊断，背景与背景的重复只作低优先级场景审计。
+在 test 正样本难度审阅中发现 `0720_2/00550...` 与 `00551...` 是明显连续帧，而整图余弦相似度只有 `0.967472`：低于 `tau=0.99`，也低于最高 200 对审阅页约 `0.996158` 的展示下限。进一步统计发现仍有 4,036 对帧号差 1 的保留图片，其中 1,393 对跨越候选 split；另有 165 对来源时间戳相同，其中 53 对跨 split。这证明 `tau=0.99` 只能压缩近乎完全重复，不能承担连续事件隔离。
 
-宽口径的 `retained_temporal_pair_audit` 保留为关系数量和候选链诊断，不再作为主要人工入口。实际审阅使用 `positive_box_layout_pair_audit`：只保留双方正样本、全局帧号差 1、总框数相同的图片对；将两边的 YOLO 框视为无序集合，用匈牙利算法做一一最优匹配，并按平均 `中心坐标 L2 距离 + 0.5 × 宽高 L2 距离` 从小到大排列。类别不参与匹配，以免漏掉标注类别不一致但画面重复的情况；页面同时显示类别组成、匹配类别不一致数、平均匹配 IoU 和图像特征相似度供判断。人工界面每次只展示一对图片。
+真正严重的评估泄露是同一个带标注目标同时进入 train 与 val/test，因此人工审计不再关注大量纯背景，只筛选双方都有有效标注的临近图片。为了减少审阅量，进一步要求两图总框数相同，并将 YOLO 框视为无序集合，用匈牙利算法一一匹配，按照平均 `中心坐标 L2 距离 + 0.5 × 宽高 L2 距离` 从小到大展示。类别不参与匹配，以免漏掉画面重复但标注类别不一致的图片。
 
-该几何距离用于缩短审阅顺序，不是重复关系的自动阈值：遇到首个“不重复”后仍应继续查看一小段缓冲区，确认后续已稳定不重复，再把停止位置作为经验候选阈值。第一轮只审阅帧号差 1 的候选；由于第一轮去重可能已经移除中间帧，补充审阅 `positive_box_layout_nonconsecutive_pair_audit` 使用去重后保留序列中的相邻图片，限定原始帧号差 2～20、双方正样本、总框数相同且图像特征余弦相似度严格大于 `0.96`，并沿用相同的框布局距离排序。两轮审阅结果在最终合并时共同作为重复边证据。
+人工双图审计分两轮：
 
-另有 165 对文件名来源时间戳完全相同，其中 53 对跨 split。同时间戳双图只是最容易确认的漏洞，不是最终分组单位。这说明 `tau=0.99` 只完成了近乎完全重复压缩，不能独立承担连续事件隔离。两轮人工确认的 `duplicate` 边共同按连通分量合并，每个分量保留全局帧号最小的图片，形成 `global_order_window20_tau0p990_label_aware_pair_reviewed_final`。
+1. 原始帧号差 1、双方正样本、总框数相同：1,114 对候选，确认 211 条重复边。
+2. 去重后保留序列中相邻、原始帧号差 2～20、双方正样本、总框数相同且整图相似度大于 `0.96`：96 对候选，确认 53 条重复边。
 
-最后从该 manifest 只抽取有有效标注的正样本，按全局帧号排序，在正样本序列内使用 `window=10` 比较并以余弦相似度 `tau=0.95` 建边；非单例连通簇在 `final_positive_tau095_window10_cluster_audit` 中按最高内部相似度降序展示。这一步只作最终人工漏检审计，不自动继续删除图片。`random_stratified_s42_8_1_1` 保留为候选和问题证据；正式 split 等最终审计完成后重建。test 困难样本审阅也随之暂停。
+两轮共确认 264 条重复边，形成 183 个连通分量；每个分量保留全局帧号最小的图片，最终排除 264 张，得到 5,763 张最终数据池 `global_order_window20_tau0p990_label_aware_pair_reviewed_final`。
 
-整图聚类容易被地铁环境中变化的人群背景干扰，因此正式的事件绑定候选改为目标级顺序轨迹。`target_track_candidate_audit` 在完整的去重后 manifest 顺序中定义位置距离，背景图片同样占据位置；每个标注框只与此前 20 个保留位置内的同类别目标匹配。粗筛使用偏低的匹配阈值以优先保证召回，结合紧框和外扩上下文的 HSV/HOG 外观描述以及框中心、大小约束，并要求新目标同时匹配轨迹原型和最近目标，避免简单连通分量的链式漂移。轨迹得分定义为轨迹中最低的连接得分，审阅页按该分数降序排列，只显示目标裁剪序列，人工只确认是否属于同一轨迹。
+这一阶段又暴露出整图方法的上限：地铁场景中，同一个人可能在站台停留数分钟，目标位置和外观基本不动，但背景人群持续变化。即使属于同一目标事件，整图相似度也可能较低，双图近重复审计无法完整描述这种长时间持续出现。
 
-轨迹人工结果中，`same_track` 整体形成目标事件，未审阅和 `not_same_track` 默认不绑定。`unsure` 以及人工指出的漏标轨迹按 `config/target_track_manual_overrides.yaml` 拆分：每一行是一个独立子轨迹，候选轨迹扣除这些子轨迹后的剩余成员视为主要轨迹；单图子轨迹只从主要轨迹移除，不产生跨图片约束。目标事件共享图片时继续合并为最终的图片级 split group，输出到 `target_track_groups_reviewed_final`。
+### 3. 使用目标相似度形成轨迹和 split group
 
-第二轮 `target_track_second_pass_audit` 排除第一轮已经绑定到图片级 split group 的全部图片，只在剩余图片中重新生成候选轨迹。序列位置仍来自完整的 5,763 张去重后 manifest，被排除图片仍占据位置；匹配得分把紧贴标注框的目标外观权重提高到 `0.80`，外扩上下文和框几何各占 `0.10`，其余窗口、低阈值和排序语义保持不变。第二轮使用独立浏览器存储键和 CSV 文件名，不覆盖第一轮审阅。
+为处理同一目标在背景变化下的持续出现，判断单位从“整张图片是否重复”改成“标注框中的目标是否属于同一轨迹”。`target_track_candidate_audit` 在完整的 5,763 张 manifest 顺序中，只匹配前后距离不超过 20 的同类别目标，并综合：
 
-第二轮人工结果沿用第一轮语义，并由 `config/target_track_second_pass_manual_overrides.yaml` 拆分不确定轨迹；`target_track_second_pass_groups_reviewed_final` 保存该轮独立结果。两轮确认的目标事件随后统一重编号，并按共享图片关系重新形成图片级约束，最终写入 `target_track_groups_two_pass_final`，作为后续 group-aware train/val/test 划分的唯一轨迹约束来源。
+- 紧贴标注框的目标外观；
+- 少量外扩上下文；
+- 框中心和大小变化；
+- HSV 直方图与 HOG 描述；
+- 当前目标同时对轨迹原型和最近节点的匹配程度。
 
-## 输出边界
+粗筛采用偏低阈值以优先保证召回，轨迹得分取轨迹内最低连接得分并由高到低排序。审阅页只展示目标裁剪序列，人工判断 `same_track`、`not_same_track` 或 `unsure`。`same_track` 整体形成目标事件；未审阅和 `not_same_track` 默认不绑定；`unsure` 按手工清单拆分，单图条目只从错误轨迹中剥离，不产生跨图片约束。
+
+第一轮处理 4,176 个标注目标，生成 653 条候选轨迹。人工审阅和拆分后确认 248 条目标事件，形成 192 个图片级 group，共约束 779 张图片，最大 group 为 21 张。
+
+第二轮只处理尚未绑定轨迹的剩余图片，同时将紧框目标外观、外扩上下文和框几何的权重调整为 `0.80/0.10/0.10`。该轮处理 2,923 个目标，生成 372 条候选轨迹；人工审阅后新增 34 条目标事件、33 个图片级 group，共约束 92 张图片。
+
+两轮结果统一重编号，并按共享图片关系合并，最终得到：
+
+- 282 条人工确认的目标事件；
+- 225 个不可跨 split 的图片级 group；
+- 871 张被 group 约束的图片；
+- 最大 group 为 21 张。
+
+`target_track_groups_two_pass_final/image_split_groups.csv` 是后续正式划分的唯一轨迹约束来源。目标级轨迹阶段不再删除图片，只规定哪些图片必须进入同一个 split。
+
+## 当前结论与后续评估边界
+
+当前方法转变可以概括为：
+
+```text
+整图相似度去重
+  → 相似度不能准确等价于重复
+标注感知的临近双图审计
+  → 同一目标可能长期停留且背景持续变化
+目标级轨迹识别与人工分组
+  → 得到不可跨 split 的事件约束
+```
+
+下一步应从 5,763 张最终数据池重新构造 group-aware 的 8:1:1 随机分层划分：同一 group 必须整体进入 train、val 或 test，同时尽量平衡类别、正负样本和全局时间区间。旧的 `random_stratified_s42_8_1_1` 不再用于正式训练或结论。
+
+正式 split 冻结后，只审阅 test 中的正样本困难度，并保留两套评价：完整 test 表示真实目标分布，filtered test 排除人工明确确认的极困难或不可判定标注。学习曲线用于检查评估是否稳定，但不能反向调整 test 直到曲线符合预期，以免对测试集产生人为过拟合。
+
+当前证据只约束人工确认的同一轨迹。未审阅候选默认独立，目标匹配窗口也有限，因此不能声称所有潜在身份泄露已经被完全消除。
+
+## 主要产物
 
 ```text
 runs/studies/0910_all_data_window20_tau099_test_construction/
 ├── config/protocol.yaml
-├── experiment/variants/global_order_window20_tau0p990_label_aware_independent_representative/
-│   ├── manifest.txt
-│   ├── clusters.csv
-│   ├── protocol.json
-│   └── summary.json
-├── experiment/variants/global_order_window20_tau0p990_label_aware_reviewed_final/
-│   ├── manifest.txt
-│   ├── manual_review.csv
-│   ├── review_decisions.csv
-│   ├── protocol.json
-│   └── summary.json
-├── experiment/variants/global_order_window20_tau0p990_label_aware_pair_reviewed_final/
-│   ├── manifest.txt
-│   ├── review_decisions.csv
-│   ├── protocol.json
-│   └── summary.json
-├── experiment/variants/target_track_groups_reviewed_final/
-│   ├── target_event_members.csv
-│   ├── image_split_groups.csv
-│   ├── manual_override_audit.csv
-│   ├── manual_review.csv
-│   └── summary.json
-├── experiment/variants/target_track_second_pass_groups_reviewed_final/
-├── experiment/variants/target_track_groups_two_pass_final/
-├── experiment/variants/random_stratified_s42_8_1_1/
-│   ├── manifests/{train,val,test}.txt
-│   ├── layout.yaml
-│   ├── assignments.csv
-│   ├── protocol.json
-│   └── summary.json
-├── result/global_temporal_cluster_preview_label_aware/
-├── result/global_post_dedup_similarity_label_aware/
-├── result/test_positive_difficulty_review/
-├── result/retained_temporal_pair_audit/
-├── result/positive_box_layout_pair_audit/
-├── result/positive_box_layout_nonconsecutive_pair_audit/
-├── result/final_positive_tau095_window10_cluster_audit/
-├── result/target_track_candidate_audit/
-├── result/target_track_second_pass_audit/
-├── logs/
+├── config/target_track_manual_overrides.yaml
+├── config/target_track_second_pass_manual_overrides.yaml
+├── experiment/variants/
+│   ├── global_order_window20_tau0p990_label_aware_independent_representative/
+│   ├── global_order_window20_tau0p990_label_aware_reviewed_final/
+│   ├── global_order_window20_tau0p990_label_aware_pair_reviewed_final/
+│   ├── random_stratified_s42_8_1_1/                    # 已作废的图片级候选划分
+│   ├── target_track_groups_reviewed_final/
+│   ├── target_track_second_pass_groups_reviewed_final/
+│   └── target_track_groups_two_pass_final/             # 最终轨迹约束
+├── result/
+│   ├── global_temporal_cluster_preview_label_aware/
+│   ├── global_post_dedup_similarity_label_aware/
+│   ├── test_positive_difficulty_review/                 # 旧候选 test 审阅，暂停使用
+│   ├── retained_temporal_pair_audit/
+│   ├── positive_box_layout_pair_audit/
+│   ├── positive_box_layout_nonconsecutive_pair_audit/
+│   ├── final_positive_tau095_window10_cluster_audit/
+│   ├── target_track_candidate_audit/
+│   └── target_track_second_pass_audit/
 └── scripts/
 ```
 
-`global_order_window20_tau0p990_label_aware_reviewed_final/manifest.txt` 是冻结的最终全量数据池。`random_stratified_s42_8_1_1/` 是当前固定划分，其中三个 manifest 是 train/val/test 的数据身份来源，`layout.yaml` 可直接交给训练框架。`manual_review.csv` 保存原始人工判断，`review_decisions.csv` 保存每个近重复连通组的保留与排除结果。两个 HTML 是审计界面，不作为最终数据身份来源。
+HTML 和图表只用于人工审计，不作为数据身份来源。最终图片身份由 `global_order_window20_tau0p990_label_aware_pair_reviewed_final/manifest.txt` 给出，最终事件约束由 `target_track_groups_two_pass_final/image_split_groups.csv` 给出。
