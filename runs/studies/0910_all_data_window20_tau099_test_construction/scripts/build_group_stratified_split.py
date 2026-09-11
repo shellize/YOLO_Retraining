@@ -347,6 +347,25 @@ def main() -> int:
             for sample in unit.samples:
                 sample_units[sample.relative_image] = unit
 
+    expected_images = {sample.relative_image for sample in samples}
+    image_splits: dict[str, str] = {}
+    for split in SPLITS:
+        for sample in split_samples[split]:
+            if sample.relative_image in image_splits:
+                raise RuntimeError(f"image assigned to multiple splits: {sample.relative_image}")
+            image_splits[sample.relative_image] = split
+    if set(image_splits) != expected_images:
+        raise RuntimeError("split assignment does not exactly cover the final manifest")
+    group_integrity_violations = []
+    for unit in units:
+        if not unit.grouped:
+            continue
+        destinations = {image_splits[sample.relative_image] for sample in unit.samples}
+        if len(destinations) != 1:
+            group_integrity_violations.append(unit.group_id)
+    if group_integrity_violations:
+        raise RuntimeError(f"split groups cross boundaries: {group_integrity_violations[:3]}")
+
     manifests: dict[str, Path] = {}
     for split in SPLITS:
         manifest = output / "manifests" / f"{split}.txt"
@@ -385,6 +404,11 @@ def main() -> int:
         "group_constraints": os.path.relpath(groups_path, output).replace(os.sep, "/"),
         "group_constraints_sha256": sha256(groups_path),
         "total_images": len(samples),
+        "validation": {
+            "complete_manifest_coverage": True,
+            "split_overlap_images": 0,
+            "group_integrity_violations": 0,
+        },
         "allocation": split_group_stats,
         "splits": {split: split_summary(split_samples[split], time_bins=args.time_bins) for split in SPLITS},
     }
@@ -407,6 +431,7 @@ def main() -> int:
         "swap_attempts": args.swap_attempts,
         "large_group_threshold": args.large_group_threshold,
         "large_group_penalty": args.large_group_penalty,
+        "large_group_policy": "Groups at or above the threshold prefer train; fall back only if train has insufficient capacity.",
         "selection_boundary": "Validation is used for model selection; test remains fixed and is not used to revise the split or protocol.",
         "source_images_and_labels_mutated": False,
     }

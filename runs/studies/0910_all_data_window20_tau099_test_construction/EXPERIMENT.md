@@ -6,7 +6,7 @@
 
 本 Study 从 `data/self_improving` 的 20 个物理 batch、9,573 张图片出发，先压缩近乎完全重复的临近图片，再人工排除未被整图相似度捕获的连续正样本，最后使用目标级相似度把同一目标的持续出现绑定为不可跨 split 的图片组。原始图片和标签始终只读，不复制、不移动、不改名、不删除。
 
-当前结果是 5,763 张最终图片，以及 225 个不可跨 split 的图片级 group，共约束 871 张图片。旧的 6,027 张图片级随机划分仅保留为问题证据，不再作为正式训练、验证或测试数据。
+当前结果是 5,763 张最终图片，以及 225 个不可跨 split 的图片级 group，共约束 871 张图片。在此基础上已经冻结 group-aware 的 8:1:1 随机分层划分；旧的 6,027 张图片级随机划分仅保留为问题证据，不再作为正式训练、验证或测试数据。
 
 ## 固定数据与时序协议
 
@@ -89,7 +89,9 @@
   → 得到不可跨 split 的事件约束
 ```
 
-下一步应从 5,763 张最终数据池重新构造 group-aware 的 8:1:1 随机分层划分：同一 group 必须整体进入 train、val 或 test，同时尽量平衡类别、正负样本和全局时间区间。旧的 `random_stratified_s42_8_1_1` 不再用于正式训练或结论。
+最终划分 `group_stratified_s42_8_1_1` 从 5,763 张数据池出发，把 225 个 group 和其余独立图片视为不可拆分的分配单元。硬约束包括 group 完整、全部图片恰好分配一次和图片数量精确为 8:1:1；软目标同时平衡类别正样本图片数、类别实例数、正负样本和十个全局时间区间。为避免 val/test 被单一轨迹稀释，group 图片总量也按约 8:1:1 分配，且 10 张及以上的大 group 优先进入 train。
+
+最终 train/val/test 图片数为 `4,611/576/576`，正样本数为 `2,371/296/296`。225 个 group 按 `199/13/13` 分配，group 图片数为 `697/87/87`；16 个大小不低于 10 的 group 全部进入 train，val 和 test 的最大 group 均为 9 张。三个 split 对最终 manifest 完整覆盖、互不重叠，且同一 group 不跨 split。旧的 `random_stratified_s42_8_1_1` 不再用于正式训练或结论。
 
 正式 split 冻结后，只审阅 test 中的正样本困难度，并保留两套评价：完整 test 表示真实目标分布，filtered test 排除人工明确确认的极困难或不可判定标注。学习曲线用于检查评估是否稳定，但不能反向调整 test 直到曲线符合预期，以免对测试集产生人为过拟合。
 
@@ -107,6 +109,7 @@ runs/studies/0910_all_data_window20_tau099_test_construction/
 │   ├── global_order_window20_tau0p990_label_aware_reviewed_final/
 │   ├── global_order_window20_tau0p990_label_aware_pair_reviewed_final/
 │   ├── random_stratified_s42_8_1_1/                    # 已作废的图片级候选划分
+│   ├── group_stratified_s42_8_1_1/                     # 正式 group-aware 划分
 │   ├── target_track_groups_reviewed_final/
 │   ├── target_track_second_pass_groups_reviewed_final/
 │   └── target_track_groups_two_pass_final/             # 最终轨迹约束
