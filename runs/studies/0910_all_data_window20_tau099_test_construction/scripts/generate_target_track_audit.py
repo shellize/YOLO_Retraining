@@ -62,10 +62,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--variant-dir", type=Path, default=DEFAULT_VARIANT)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--window", type=int, default=20)
-    parser.add_argument("--min-score", type=float, default=0.76)
-    parser.add_argument("--min-tight-similarity", type=float, default=0.68)
-    parser.add_argument("--max-center-distance", type=float, default=0.16)
-    parser.add_argument("--max-size-distance", type=float, default=0.18)
+    parser.add_argument("--min-score", type=float, default=0.62)
+    parser.add_argument("--min-tight-similarity", type=float, default=0.55)
+    parser.add_argument("--max-center-distance", type=float, default=0.20)
+    parser.add_argument("--max-size-distance", type=float, default=0.22)
     return parser.parse_args()
 
 
@@ -174,17 +174,17 @@ def main() -> int:
             nodes_by_index[sequence_index].append(Node(relative, sequence_index, frame(image_path), box_index, int(box["c"]), float(box["x"]), float(box["y"]), float(box["w"]), float(box["h"]), descriptor(crop(image, box, 0.03)), descriptor(crop(image, box, 0.22))))
             object_count += 1
     tracks = build_tracks(nodes_by_index, window=args.window, min_score=args.min_score, min_tight=args.min_tight_similarity, max_center=args.max_center_distance, max_size=args.max_size_distance)
-    tracks.sort(key=lambda track: (-len(track.nodes), -min(track.link_scores), track.nodes[0].sequence_index))
+    tracks.sort(key=lambda track: (-min(track.link_scores), -len(track.nodes), track.nodes[0].sequence_index))
     rows = []
     for index, track in enumerate(tracks, start=1):
-        rows.append({"id": f"track_{index:04d}", "class_id": track.class_id, "min_link_score": min(track.link_scores), "nodes": [{"image": node.image, "sequence_index": node.sequence_index, "frame": node.frame, "box_index": node.box_index, "x": node.x, "y": node.y, "w": node.w, "h": node.h} for node in track.nodes]})
+        rows.append({"id": f"track_{index:04d}", "class_id": track.class_id, "track_score": min(track.link_scores), "nodes": [{"image": node.image, "sequence_index": node.sequence_index, "frame": node.frame, "box_index": node.box_index, "x": node.x, "y": node.y, "w": node.w, "h": node.h} for node in track.nodes]})
     payload = {"final_images": len(images), "labeled_objects": object_count, "track_count": len(rows), "node_count": sum(len(row["nodes"]) for row in rows), "max_track_size": max(len(row["nodes"]) for row in rows), "class_names": CLASS_NAMES, "tracks": rows}
     if output.exists() and any(output.iterdir()):
         raise FileExistsError(f"refusing to overwrite audit output: {output}")
     output.mkdir(parents=True, exist_ok=True)
     image_root = Path(os.path.relpath(dataset, output)).as_posix()
     (output / "track_review.html").write_text(html(payload, image_root), encoding="utf-8", newline="\n")
-    summary = {"status": "completed", "source_variant": variant.name, "sequence_definition": "position in the complete post-dedup manifest", "window": args.window, "feature": "tight/context HSV histogram plus HOG", "matching": {"min_score": args.min_score, "min_tight_similarity": args.min_tight_similarity, "max_center_distance": args.max_center_distance, "max_size_distance": args.max_size_distance}, **{key: payload[key] for key in ("final_images", "labeled_objects", "track_count", "node_count", "max_track_size")}, "html": "track_review.html", "browser_export": "target_track_manual_review.csv"}
+    summary = {"status": "completed", "source_variant": variant.name, "sequence_definition": "position in the complete post-dedup manifest", "window": args.window, "feature": "tight/context HSV histogram plus HOG", "track_score": "minimum accepted link score in the trajectory; tracks sorted descending", "matching": {"min_score": args.min_score, "min_tight_similarity": args.min_tight_similarity, "max_center_distance": args.max_center_distance, "max_size_distance": args.max_size_distance}, **{key: payload[key] for key in ("final_images", "labeled_objects", "track_count", "node_count", "max_track_size")}, "html": "track_review.html", "browser_export": "target_track_manual_review.csv"}
     (output / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     return 0
