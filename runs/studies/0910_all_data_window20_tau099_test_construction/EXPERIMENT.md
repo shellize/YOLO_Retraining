@@ -52,6 +52,8 @@
 
 最后从该 manifest 只抽取有有效标注的正样本，按全局帧号排序，在正样本序列内使用 `window=10` 比较并以余弦相似度 `tau=0.95` 建边；非单例连通簇在 `final_positive_tau095_window10_cluster_audit` 中按最高内部相似度降序展示。这一步只作最终人工漏检审计，不自动继续删除图片。`random_stratified_s42_8_1_1` 保留为候选和问题证据；正式 split 等最终审计完成后重建。test 困难样本审阅也随之暂停。
 
+整图聚类容易被地铁环境中变化的人群背景干扰，因此正式的事件绑定候选改为目标级顺序轨迹。`target_track_candidate_audit` 在完整的去重后 manifest 顺序中定义位置距离，背景图片同样占据位置；每个标注框只与此前 20 个保留位置内的同类别目标匹配。粗筛使用紧框和外扩上下文的 HSV/HOG 外观描述以及框中心、大小约束，并要求新目标同时匹配轨迹原型和最近目标，避免简单连通分量的链式漂移。审阅页只显示目标裁剪序列，人工只确认是否属于同一轨迹。
+
 ## 输出边界
 
 ```text
@@ -86,6 +88,7 @@ runs/studies/0910_all_data_window20_tau099_test_construction/
 ├── result/positive_box_layout_pair_audit/
 ├── result/positive_box_layout_nonconsecutive_pair_audit/
 ├── result/final_positive_tau095_window10_cluster_audit/
+├── result/target_track_candidate_audit/
 ├── logs/
 └── scripts/
 ```
