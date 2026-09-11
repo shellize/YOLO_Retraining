@@ -10,6 +10,9 @@ split_fractions:
   val: 0.1
   test: 0.1
 split_time_bins: 10
+train_stage_count: 8
+train_stage_order: group_median_global_frame
+materialized_dataset_root: data/self_improving
 test_difficulty_review_result_name: test_positive_difficulty_review
 positive_box_layout_pair_result_name: positive_box_layout_pair_audit
 positive_box_layout_nonconsecutive_pair_result_name: positive_box_layout_nonconsecutive_pair_audit

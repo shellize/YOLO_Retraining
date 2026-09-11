@@ -93,6 +93,25 @@
 
 最终 train/val/test 图片数为 `4,611/576/576`，正样本数为 `2,371/296/296`。225 个 group 按 `199/13/13` 分配，group 图片数为 `697/87/87`；16 个大小不低于 10 的 group 全部进入 train，val 和 test 的最大 group 均为 9 张。三个 split 对最终 manifest 完整覆盖、互不重叠，且同一 group 不跨 split。旧的 `random_stratified_s42_8_1_1` 不再用于正式训练或结论。
 
+### 实体数据替换与八阶段训练序列
+
+正式 split 冻结后，服务器原 `data/` 中的全量原始数据、历史 stroller 数据和辅助文件不再作为后续实验输入。替换时先在仓库外构造实体暂存副本，确认全部 manifest 可解析后，将旧 `data/` 改名保留、切换新目录并再次核验，最后才删除旧目录。新的 `data/self_improving/` 只包含最终 manifest 引用的 5,763 张图片和 5,763 个对应标签，保留 `images/0720_x/...` 与 `labels/0720_x/...` 相对路径；所有文件均为实体文件，符号链接数为 0。服务器数据占用由约 6.5 GB 降至约 3.1 GB。本地仍保留原始数据备份。
+
+train 的 4,611 张图片按全局帧顺序划分为 8 个 stage。同一 train group 被视为不可拆分的时序单元，并以组内中位全局帧确定排序位置；随后只在单元边界上选择最接近八等分的位置。因此 stage 保持整体时间顺序且 group 不跨 stage，但不能要求每条原始帧边界绝对无重叠：`stage4` 与 `stage5` 因完整保留跨边界 group，帧范围分别为 `3536..4600` 和 `4595..6368`。
+
+| Stage | 图片 | 正样本 | 背景 | 全局帧范围 |
+|---|---:|---:|---:|---:|
+| stage0 | 576 | 181 | 395 | 2..949 |
+| stage1 | 577 | 425 | 152 | 950..1750 |
+| stage2 | 576 | 417 | 159 | 1754..2671 |
+| stage3 | 576 | 506 | 70 | 2672..3535 |
+| stage4 | 577 | 281 | 296 | 3536..4600 |
+| stage5 | 576 | 175 | 401 | 4595..6368 |
+| stage6 | 577 | 166 | 411 | 6369..8041 |
+| stage7 | 576 | 220 | 356 | 8046..9575 |
+
+八个 stage 完整覆盖 train、互不重复，group 跨 stage 违规数为 0。`group_stratified_s42_8_1_1/layout.yaml` 现以固定 val/test 和 `stage0..stage7` 作为正式训练框架入口；聚合的 `train.txt` 继续保留用于全量训练身份核对。
+
 正式 split 冻结后，只审阅 test 中的正样本困难度，并保留两套评价：完整 test 表示真实目标分布，filtered test 排除人工明确确认的极困难或不可判定标注。学习曲线用于检查评估是否稳定，但不能反向调整 test 直到曲线符合预期，以免对测试集产生人为过拟合。
 
 当前证据只约束人工确认的同一轨迹。未审阅候选默认独立，目标匹配窗口也有限，因此不能声称所有潜在身份泄露已经被完全消除。
@@ -110,6 +129,10 @@ runs/studies/0910_all_data_window20_tau099_test_construction/
 │   ├── global_order_window20_tau0p990_label_aware_pair_reviewed_final/
 │   ├── random_stratified_s42_8_1_1/                    # 已作废的图片级候选划分
 │   ├── group_stratified_s42_8_1_1/                     # 正式 group-aware 划分
+│   │   ├── manifests/{train,val,test,stage0..stage7}.txt
+│   │   ├── layout.yaml
+│   │   ├── stage_assignments.csv
+│   │   └── materialization_summary.json
 │   ├── target_track_groups_reviewed_final/
 │   ├── target_track_second_pass_groups_reviewed_final/
 │   └── target_track_groups_two_pass_final/             # 最终轨迹约束
