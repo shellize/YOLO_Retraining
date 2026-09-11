@@ -62,11 +62,11 @@ def test_real_yolov5s_full_cold(tmp_path: Path) -> None:
     assert set(result["metrics"]) == {"last", "best"}
     for checkpoint in ("last", "best"):
         metrics = result["metrics"][checkpoint]["smoke"]
-        assert {"map50_95", "map50", "precision", "recall"}.issubset(metrics)
+        assert {"map10", "map20", "map30", "map50_95", "map50", "precision", "recall"}.issubset(metrics)
         assert set(metrics["per_class_ap"]) == set(prepared["names"])
     assert result["backend"]["family"] == "original-yolov5"
     assert result["backend"]["source_commit"] == "915bbf294bb74c859f0b41f1c23bc395014ea679"
-    assert result["backend"]["best_selection_metric"] == "map50"
+    assert result["backend"]["best_selection_metric"] == "map30"
     assert result["backend"]["data_loader_adaptation"] == "read_only_incomplete_jpeg"
     assert source_hashes == {path: hashlib.sha256(path.read_bytes()).hexdigest() for path in source_hashes}
     train_log = (output / "logs" / "yolov5_train.log").read_text(encoding="utf-8")

@@ -61,22 +61,25 @@ conda run -n yolo-retraining-v5 python -m pip install -r requirements/ultralytic
 
 ## Data
 
-The preferred data protocol separates logical experiment groups from physical batch folders. [`configs/data/self_improving.yaml`](configs/data/self_improving.yaml) maps the fixed `test` and `val` groups and the arriving `stage0`, `stage1`, ... groups onto `images/0720_*` directories. A group accepts a list, so one stage may contain any number of batch directories:
+The default data protocol is frozen by explicit UTF-8 TXT manifests. [`configs/data/self_improving.yaml`](configs/data/self_improving.yaml) maps `stage0` through `stage7`, fixed `val`, complete `test`, and the nested `test_filtered`/`test_difficult` subsets to the checked-in manifests under `configs/data/manifests/self_improving/`:
 
 ```yaml
 groups:
   test:
     split: test
-    images: [images/0720_1, images/0720_2]
-  val:
-    split: val
-    images: [images/0720_3, images/0720_4]
+    manifest: ../../configs/data/manifests/self_improving/test.txt
+  test_filtered:
+    split: test
+    subset_of: test
+    manifest: ../../configs/data/manifests/self_improving/test_filtered.txt
   stage0:
     split: train
-    images: [images/0720_5, images/0720_6]
+    manifest: ../../configs/data/manifests/self_improving/stage0.txt
 ```
 
-Regrouping batches only changes this YAML; it does not move images or labels. The older catalog protocol, where each stage points to a complete YOLO YAML containing `train`, `val`, and `test`, remains supported for compatibility. Images must use the native `images/...` and `labels/...` layout. Algorithms operate stable IDs of the form:
+The standard Task and Sequence configs evaluate both `test` and `test_filtered`. To also report the excluded 55-image difficult subset, append `test_difficult` to `data.test`, for example `--set 'data.test=[test,test_filtered,test_difficult]'`. A `subset_of` relation explicitly permits a test manifest to overlap its parent while still rejecting accidental overlap between train, validation, or unrelated test groups.
+
+The older directory-based layout and catalog protocols remain supported only for historical compatibility; the current default protocol is manifest-only. Images must use the native `images/...` and `labels/...` layout. Algorithms operate stable IDs of the form:
 
 ```text
 group_id::relative/path/to/image.jpg
@@ -84,9 +87,8 @@ group_id::relative/path/to/image.jpg
 
 Selected images are passed to the detector through a small text manifest. Images and labels are never copied, moved, hard-linked, or soft-linked.
 
-A logical group may also use an explicit UTF-8 TXT manifest. Each non-comment
-line is an image path relative to the TXT file (absolute paths are accepted but
-less portable):
+A manifest contains one image path per non-comment line, relative to the TXT
+file. Absolute paths remain accepted but are less portable:
 
 ```yaml
 groups:
@@ -147,9 +149,9 @@ The waiter samples GPU state every 60 seconds, resets the ten-minute timer after
 
 ## Results
 
-Every completed Task contains resolved `task.yaml`, selected ID files, `last.pt`, `best.pt`, train/evaluation metrics, cost accounting, and `task_result.json`. By default, each `best/test` evaluation also writes compact `predictions.jsonl` and `confidence_sweep.json` next to `metrics.json`; these are generated from the same predictions used for mAP and do not trigger a second inference pass. A failed Task writes `task_status.json` and `logs/error.txt`, does not write `task_result.json`, and stops its Sequence. Resume and overwrite are not supported.
+Every completed Task contains resolved `task.yaml`, selected ID files, `last.pt`, `best.pt`, train/evaluation metrics, cost accounting, and `task_result.json`. Evaluation reports AP@0.1, AP@0.2, AP@0.3, AP@0.5, and standard AP@0.5:0.95; AP@0.3 is the default primary metric. By default, each `best` evaluation for `test`, `test_filtered`, and the optionally enabled `test_difficult` group also writes `predictions.jsonl` and `confidence_sweep.json` next to `metrics.json`. These artifacts are generated from the same inference pass. A failed Task writes `task_status.json` and `logs/error.txt`, does not write `task_result.json`, and stops its Sequence. Resume and overwrite are not supported.
 
-`predictions.jsonl` has one line per test image and stores the image path, ground-truth class IDs, prediction confidence/class, and correctness at the ten IoU thresholds from 0.50 to 0.95. It intentionally omits box coordinates to keep the artifact compact. By default, `confidence_sweep.json` records the seven fixed thresholds `0.2` through `0.8` at `0.1` intervals, including macro/micro Precision, Recall, F1, TP, FP, and FN, plus per-class curves. To change the default scope or threshold list, set `evaluation.prediction_artifact_checkpoints`, `evaluation.prediction_artifact_groups`, or `evaluation.confidence_sweep_thresholds`; set `evaluation.save_prediction_artifacts: false` to disable them.
+`predictions.jsonl` has one line per evaluated image. It stores normalized ground-truth and predicted boxes, prediction confidence/class, and correctness at IoU thresholds `[0.1, 0.2, 0.3, 0.5, ..., 0.95]`, so later subset analysis does not require another inference pass. `confidence_sweep.json` uses IoU 0.3 by default and records the seven confidence thresholds `0.2` through `0.8`, including macro/micro Precision, Recall, F1, TP, FP, and FN, plus per-class curves. To change the artifact scope or confidence list, set `evaluation.prediction_artifact_checkpoints`, `evaluation.prediction_artifact_groups`, or `evaluation.confidence_sweep_thresholds`; set `evaluation.save_prediction_artifacts: false` to disable them.
 
 Each completed Task also writes local TensorBoard events under its `tensorboard/` directory. To compare all Tasks and Sequence Tasks under the project `runs` directory, start TensorBoard from the project root:
 
@@ -184,6 +186,6 @@ This sample crosses the original batches only to test the engineering pipeline; 
 
 ## YOLOv5 semantics
 
-Training calls the original `train.py` in an isolated subprocess. Its SGD, augmentation, AutoAnchor, and AMP checks remain intact. By default, `best.pt` is selected by validation `mAP50`; set `backend.params.best_metric: yolov5_fitness` to retain the original `0.1 × mAP50 + 0.9 × mAP50-95` rule. The selected rule is recorded in Task provenance. A later Sequence Task initializes from the previous `best.pt` by default, or from the checkpoint selected by `initialization.subsequent.checkpoint`; this is a weight-only warm start, not an optimizer/scheduler resume.
+Training calls the original `train.py` in an isolated subprocess. Its SGD, augmentation, AutoAnchor, and AMP checks remain intact. The adapter extends validation with AP@0.1/AP@0.2/AP@0.3 while reconstructing the unchanged standard AP@0.5 and AP@0.5:0.95 values. By default, `best.pt` and early stopping use validation AP@0.3. Set `backend.params.best_metric: map50` for AP@0.5 selection or `backend.params.best_metric: yolov5_fitness` for the original `0.1 × AP@0.5 + 0.9 × AP@0.5:0.95` rule. The effective rule is recorded in Task provenance, and per-epoch low-IoU validation metrics are saved in `metrics/validation_iou_metrics.jsonl` and merged into `metrics/train_history.csv`. A later Sequence Task initializes from the previous `best.pt` by default, or from the checkpoint selected by `initialization.subsequent.checkpoint`; this is a weight-only warm start, not an optimizer/scheduler resume.
 
 The subprocess invokes the fixed source's original `train.main()` through a narrow adapter. YOLOv5 v7.0 normally rewrites JPEG files whose end marker is incomplete; the adapter suppresses only that write-back and accepts the image read-only. This preserves immutable source data without copying images or modifying the pinned YOLOv5 checkout, and the adaptation is recorded in `task_result.json` provenance.

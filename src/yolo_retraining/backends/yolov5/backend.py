@@ -29,8 +29,12 @@ class Yolov5Backend(DetectionBackend):
     def provenance(self, config: Mapping[str, Any]) -> dict[str, Any]:
         source = validate_yolov5_source()
         params = config["backend"].get("params", {})
-        best_metric = str(params.get("best_metric", "map50"))
-        best_selection_metric = "map50" if best_metric == "map50" else "0.1*map50+0.9*map50_95"
+        best_metric = str(params.get("best_metric", "map30"))
+        best_selection_metric = {
+            "map30": "map30",
+            "map50": "map50",
+            "yolov5_fitness": "0.1*map50+0.9*map50_95",
+        }[best_metric]
         return {
             "name": "yolov5",
             "family": "original-yolov5",
@@ -58,7 +62,17 @@ class Yolov5Backend(DetectionBackend):
         source = validate_yolov5_source()
         source_root = Path(source["root"])
         checkpoint = resolve_checkpoint(str(request["initial_checkpoint"]), source_root)
-        command = build_train_command(config, source_root=source_root, checkpoint=checkpoint, data_yaml=data_yaml, output_dir=raw_dir)
+        metrics_sidecar = standard_dir / "metrics" / "validation_iou_metrics.jsonl"
+        if metrics_sidecar.exists():
+            raise FileExistsError(f"refusing to overwrite validation metrics: {metrics_sidecar}")
+        command = build_train_command(
+            config,
+            source_root=source_root,
+            checkpoint=checkpoint,
+            data_yaml=data_yaml,
+            output_dir=raw_dir,
+            metrics_sidecar=metrics_sidecar,
+        )
         started = time.perf_counter()
         run_command(command, cwd=source_root, log_path=standard_dir / "logs" / "yolov5_train.log", progress_epochs=int(config["budget"]["value"]))
         elapsed = time.perf_counter() - started
@@ -78,13 +92,14 @@ class Yolov5Backend(DetectionBackend):
         return {
             "last_checkpoint": str(last),
             "best_checkpoint": str(best),
-            "history": read_training_history(training_dir / "results.csv"),
+            "history": read_training_history(training_dir / "results.csv", metrics_sidecar),
             "training_seconds": elapsed,
             "images_read": len(selected_ids) * epochs,
             "optimizer_steps": estimated_optimizer_steps(len(selected_ids), int(params["batch"]), epochs),
             "data_yaml": str(data_yaml),
             "train_command": command,
             "backend_provenance": self.provenance(config),
+            "validation_iou_metrics": str(metrics_sidecar),
         }
 
     def evaluate(self, request: Mapping[str, Any]) -> dict[str, Any]:
@@ -100,7 +115,12 @@ class Yolov5Backend(DetectionBackend):
         checkpoint_name = str(request.get("checkpoint_name", ""))
         evaluation_group = str(request.get("evaluation_group", ""))
         artifact_checkpoints = {str(value) for value in evaluation_config.get("prediction_artifact_checkpoints", ["best"])}
-        artifact_groups = {str(value) for value in evaluation_config.get("prediction_artifact_groups", ["test"])}
+        artifact_groups = {
+            str(value)
+            for value in evaluation_config.get(
+                "prediction_artifact_groups", ["test", "test_filtered", "test_difficult"]
+            )
+        }
         save_prediction_artifacts = bool(evaluation_config.get("save_prediction_artifacts", True))
         save_prediction_artifacts = save_prediction_artifacts and checkpoint_name in artifact_checkpoints and evaluation_group in artifact_groups
         confidence_thresholds = evaluation_config.get("confidence_sweep_thresholds", [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
@@ -281,7 +301,20 @@ def normalize_evaluation(
     sample_count: int,
     evaluation_seconds: float,
 ) -> dict[str, Any]:
-    required = ("map50_95", "map50", "precision", "recall", "per_class_ap")
+    required = (
+        "map10",
+        "map20",
+        "map30",
+        "map50",
+        "map50_95",
+        "precision",
+        "recall",
+        "per_class_ap10",
+        "per_class_ap20",
+        "per_class_ap30",
+        "per_class_ap50",
+        "per_class_ap",
+    )
     missing = [key for key in required if key not in payload]
     if missing:
         raise ValueError(f"YOLOv5 evaluation output is missing fields: {missing}")
@@ -289,6 +322,9 @@ def normalize_evaluation(
     if len(maps) != len(names):
         raise ValueError(f"YOLOv5 returned {len(maps)} per-class AP values for {len(names)} classes")
     result = {
+        "map10": float(payload["map10"]),
+        "map20": float(payload["map20"]),
+        "map30": float(payload["map30"]),
         "map50_95": float(payload["map50_95"]),
         "map50": float(payload["map50"]),
         "precision": float(payload["precision"]),
@@ -297,9 +333,16 @@ def normalize_evaluation(
         "sample_count": sample_count,
         "evaluation_seconds": evaluation_seconds,
     }
-    if "per_class_ap50" in payload:
-        maps50 = list(payload["per_class_ap50"])
-        if len(maps50) != len(names):
-            raise ValueError(f"YOLOv5 returned {len(maps50)} per-class AP50 values for {len(names)} classes")
-        result["per_class_ap50"] = {name: float(maps50[index]) for index, name in enumerate(names)}
+    for metric, payload_key in (
+        ("per_class_ap10", "per_class_ap10"),
+        ("per_class_ap20", "per_class_ap20"),
+        ("per_class_ap30", "per_class_ap30"),
+        ("per_class_ap50", "per_class_ap50"),
+    ):
+        values = list(payload[payload_key])
+        if len(values) != len(names):
+            raise ValueError(f"YOLOv5 returned {len(values)} {metric} values for {len(names)} classes")
+        result[metric] = {name: float(values[index]) for index, name in enumerate(names)}
+    result["precision_recall_iou"] = float(payload.get("precision_recall_iou", 0.3))
+    result["iou_thresholds"] = [float(value) for value in payload.get("iou_thresholds", [])]
     return result

@@ -6,6 +6,8 @@ from typing import Any
 
 import numpy as np
 
+from .iou_metrics import IOU_THRESHOLDS
+
 
 def _smooth(values: np.ndarray, fraction: float = 0.1) -> np.ndarray:
     filter_size = round(len(values) * fraction * 2) // 2 + 1
@@ -24,6 +26,8 @@ def confidence_sweep(
     points: int | None = None,
     conf_floor: float = 0.001,
     thresholds: list[float] | tuple[float, ...] | None = None,
+    iou_index: int = 0,
+    iou_threshold: float = 0.5,
 ) -> dict[str, Any]:
     """Build fixed-confidence P/R/F1 curves from one YOLOv5 validation pass."""
     conf_floor = float(conf_floor)
@@ -49,7 +53,13 @@ def confidence_sweep(
     predicted_class = np.asarray(pred_cls, dtype=int).reshape(-1)
     target_class = np.asarray(target_cls, dtype=int).reshape(-1)
     correct = np.asarray(tp, dtype=bool)
-    correct50 = correct[:, 0] if correct.ndim == 2 and correct.shape[1] else np.zeros(confidence.size, dtype=bool)
+    if correct.ndim == 2 and not 0 <= int(iou_index) < correct.shape[1]:
+        raise ValueError(f"confidence sweep IoU index is outside correctness matrix: {iou_index}")
+    correct_at_iou = (
+        correct[:, int(iou_index)]
+        if correct.ndim == 2 and correct.shape[1]
+        else np.zeros(confidence.size, dtype=bool)
+    )
 
     if isinstance(names, dict):
         class_names = {int(class_id): str(class_name) for class_id, class_name in names.items()}
@@ -80,8 +90,8 @@ def confidence_sweep(
 
     for index, threshold in enumerate(threshold_values):
         included = confidence >= threshold
-        true_positive = included & correct50
-        false_positive = included & ~correct50
+        true_positive = included & correct_at_iou
+        false_positive = included & ~correct_at_iou
         tp_counts = np.bincount(predicted_class[true_positive], minlength=class_count)[:class_count] if class_count else np.zeros(0, dtype=int)
         fp_counts = np.bincount(predicted_class[false_positive], minlength=class_count)[:class_count] if class_count else np.zeros(0, dtype=int)
         fn_counts = np.maximum(ground_truth_counts - tp_counts, 0)
@@ -137,7 +147,7 @@ def confidence_sweep(
     return {
         "schema_version": 1,
         "confidence_floor": conf_floor,
-        "iou_threshold": 0.5,
+        "iou_threshold": float(iou_threshold),
         "thresholds": float_values(threshold_values),
         "prediction_count_after_conf_floor": int(confidence.size),
         "ground_truth_count": int(target_class.size),
@@ -175,7 +185,7 @@ class PredictionArtifactCollector:
         self._predicted_classes: list[int] = []
         self._target_classes: list[int] = []
         self._image_index = 0
-        self._iou_points = 10
+        self._iou_points = len(IOU_THRESHOLDS)
 
     def record_correct(self, correct: Any) -> None:
         array = correct.detach().cpu().numpy().astype(bool)
@@ -184,9 +194,23 @@ class PredictionArtifactCollector:
 
     def on_val_batch_end(self, _batch_i: int, _images: Any, targets: Any, paths: Any, _shapes: Any, predictions: Any) -> None:
         targets_cpu = targets.detach().cpu()
+        image_height = float(_images.shape[2])
+        image_width = float(_images.shape[3])
         for sample_index, (path, prediction) in enumerate(zip(paths, predictions)):
             target_rows = targets_cpu[targets_cpu[:, 0] == sample_index]
             target_class_ids = [int(value) for value in target_rows[:, 1].tolist()]
+            target_boxes = [
+                {
+                    "class_id": int(row[1]),
+                    "xywh_normalized": [
+                        round(float(row[2]) / image_width, 8),
+                        round(float(row[3]) / image_height, 8),
+                        round(float(row[4]) / image_width, 8),
+                        round(float(row[5]) / image_height, 8),
+                    ],
+                }
+                for row in target_rows.tolist()
+            ]
             prediction_rows = prediction.detach().cpu().tolist()
             if target_class_ids and prediction_rows:
                 if not self._pending_correct:
@@ -205,6 +229,12 @@ class PredictionArtifactCollector:
                     {
                         "confidence": confidence,
                         "predicted_class_id": class_id,
+                        "xyxy_normalized": [
+                            round(float(row[0]) / image_width, 8),
+                            round(float(row[1]) / image_height, 8),
+                            round(float(row[2]) / image_width, 8),
+                            round(float(row[3]) / image_height, 8),
+                        ],
                         "correct_iou": [bool(value) for value in correct_row],
                     }
                 )
@@ -217,7 +247,9 @@ class PredictionArtifactCollector:
                     {
                         "image_index": self._image_index,
                         "image_path": str(path),
+                        "iou_thresholds": list(IOU_THRESHOLDS),
                         "target_class_ids": target_class_ids,
+                        "target_boxes": target_boxes,
                         "predictions": record_predictions,
                     },
                     separators=(",", ":"),

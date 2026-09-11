@@ -79,10 +79,10 @@ class FakeBackend(DetectionBackend):
         last.write_bytes(b"last")
         best.write_bytes(b"best")
         sample_count = len(request["selected_ids"])
-        return {"last_checkpoint": str(last), "best_checkpoint": str(best), "history": [{"epoch": 0, "map50_95": 0.5}], "training_seconds": 1.0, "images_read": sample_count, "optimizer_steps": 1}
+        return {"last_checkpoint": str(last), "best_checkpoint": str(best), "history": [{"epoch": 0, "map30": 0.7, "map50_95": 0.5}], "training_seconds": 1.0, "images_read": sample_count, "optimizer_steps": 1}
 
     def evaluate(self, request: Mapping[str, Any]) -> dict[str, Any]:
         first = request["sample_ids"][0]
         group = first.split("::", 1)[0]
         score = 0.5 + (int(group.removeprefix("stage")) * 0.01 if group.startswith("stage") else 0.0)
-        return {"map50_95": score, "map50": score + 0.1, "precision": 0.7, "recall": 0.6, "per_class_ap": {"object": score}, "sample_count": len(request["sample_ids"]), "evaluation_seconds": 0.1}
+        return {"map10": score + 0.3, "map20": score + 0.25, "map30": score + 0.2, "map50_95": score, "map50": score + 0.1, "precision": 0.7, "recall": 0.6, "per_class_ap": {"object": score}, "sample_count": len(request["sample_ids"]), "evaluation_seconds": 0.1}

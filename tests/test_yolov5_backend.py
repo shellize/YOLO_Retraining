@@ -40,7 +40,7 @@ def test_single_gpu_train_command(tmp_path: Path, catalog: dict[str, str]) -> No
     assert "torch.distributed.run" not in command
     assert command[command.index("--device") + 1] == "0"
     assert command[command.index("--weights") + 1].endswith("yolov5s.pt")
-    assert command[command.index("--best-metric") + 1] == "map50"
+    assert command[command.index("--best-metric") + 1] == "map30"
 
 
 def test_two_gpu_train_command(tmp_path: Path, catalog: dict[str, str]) -> None:
@@ -91,7 +91,7 @@ def test_custom_hyperparameter_file_is_forwarded(tmp_path: Path, catalog: dict[s
         ({"amp": False}, "amp=false"),
         ({"custom": 1}, "unknown YOLOv5 backend params"),
         ({"device": [0, 1], "batch": 3}, "divisible"),
-        ({"best_metric": "map50_95"}, "best_metric must be map50 or yolov5_fitness"),
+        ({"best_metric": "map50_95"}, "best_metric must be map30, map50, or yolov5_fitness"),
     ],
 )
 def test_yolov5_backend_rejects_unsupported_params(
@@ -109,10 +109,16 @@ def test_yolov5_backend_rejects_unsupported_params(
 def test_evaluation_and_results_csv_conversion(tmp_path: Path) -> None:
     converted = normalize_evaluation(
         {
+            "map10": 0.9,
+            "map20": 0.8,
+            "map30": 0.75,
             "map50_95": 0.4,
             "map50": 0.7,
             "precision": 0.8,
             "recall": 0.6,
+            "per_class_ap10": [0.8, 1.0],
+            "per_class_ap20": [0.7, 0.9],
+            "per_class_ap30": [0.7, 0.8],
             "per_class_ap50": [0.6, 0.8],
             "per_class_ap": [0.3, 0.5],
         },
@@ -121,11 +127,24 @@ def test_evaluation_and_results_csv_conversion(tmp_path: Path) -> None:
         evaluation_seconds=1.25,
     )
     assert converted["per_class_ap50"] == {"car": 0.6, "bus": 0.8}
+    assert converted["map30"] == 0.75
+    assert converted["per_class_ap30"] == {"car": 0.7, "bus": 0.8}
     assert converted["per_class_ap"] == {"car": 0.3, "bus": 0.5}
     assert converted["sample_count"] == 16
     results = tmp_path / "results.csv"
     results.write_text("epoch,metrics/mAP_0.5,metrics/mAP_0.5:0.95\n0,0.7,0.4\n", encoding="utf-8")
-    assert read_training_history(results) == [{"epoch": 0.0, "metrics/mAP_0.5": 0.7, "metrics/mAP_0.5:0.95": 0.4}]
+    sidecar = tmp_path / "validation_iou_metrics.jsonl"
+    sidecar.write_text('{"map10":0.9,"map20":0.8,"map30":0.75}\n', encoding="utf-8")
+    assert read_training_history(results, sidecar) == [
+        {
+            "epoch": 0.0,
+            "metrics/mAP_0.5": 0.7,
+            "metrics/mAP_0.5:0.95": 0.4,
+            "map10": 0.9,
+            "map20": 0.8,
+            "map30": 0.75,
+        }
+    ]
 
 
 def test_subprocess_failure_reports_log(tmp_path: Path) -> None:

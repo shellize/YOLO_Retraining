@@ -12,14 +12,14 @@ BUILTIN_DEFAULTS: dict[str, Any] = {
     "select_policy": {"name": "full", "params": {}},
     "epoch_policy": {"name": "static", "params": {}},
     "budget": {"type": "epochs", "value": 100},
-    "backend": {"params": {"batch": 64, "imgsz": 640, "device": 0, "workers": 16, "amp": True, "best_metric": "map50"}},
+    "backend": {"params": {"batch": 64, "imgsz": 640, "device": 0, "workers": 16, "amp": True, "best_metric": "map30"}},
     "evaluation": {
-        "primary_metric": "map50_95",
+        "primary_metric": "map30",
         "test_scope": "seen",
         "evaluate_checkpoints": ["last", "best"],
         "save_prediction_artifacts": True,
         "prediction_artifact_checkpoints": ["best"],
-        "prediction_artifact_groups": ["test"],
+        "prediction_artifact_groups": ["test", "test_filtered", "test_difficult"],
         "confidence_sweep_thresholds": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8],
     },
 }
@@ -180,6 +180,11 @@ def validate_task_config(config: Mapping[str, Any]) -> None:
         raise ValueError("budget must be a positive epochs budget")
     if config["model"].get("backend") not in {"yolov5", "ultralytics"}:
         raise ValueError("phase 1 supports model.backend=yolov5 or ultralytics")
+    primary_metric = str(config["evaluation"].get("primary_metric", "map30"))
+    if primary_metric not in {"map10", "map20", "map30", "map50", "map50_95"}:
+        raise ValueError("evaluation.primary_metric must be map10, map20, map30, map50, or map50_95")
+    if primary_metric in {"map10", "map20", "map30"} and config["model"].get("backend") != "yolov5":
+        raise ValueError("AP below IoU 0.5 is currently supported only by the original YOLOv5 backend")
     source = config["initialization"].get("source")
     if source not in {"pretrained", "parent", "explicit"}:
         raise ValueError("initialization.source must be pretrained, parent, or explicit")

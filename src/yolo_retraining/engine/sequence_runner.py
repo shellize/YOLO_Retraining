@@ -59,9 +59,13 @@ class SequenceRunner:
                 results.append(result)
                 previous_result = result_dir
                 write_json(status_path, status_payload("running", completed_tasks=len(results), current_task=index + 1))
+            primary_metric = str(
+                self.config["task_template"].get("evaluation", {}).get("primary_metric", "map30")
+            )
             summary = summarize_matrix(
                 [{"metrics": result["metrics"].get("best", {})} for result in results],
                 stage_ids=[str(arrival["id"]) for arrival in self.config["arrivals"]],
+                metric=primary_metric,
             )
             self._write_summaries(results, summary)
             write_json(self.output_dir / "sequence_result.json", {"schema_version": 1, "status": "completed", "output_dir": str(self.output_dir.resolve()), "tasks": [result["output_dir"] for result in results], "summary": summary})
@@ -116,10 +120,9 @@ class SequenceRunner:
         for index, result in enumerate(results):
             row: dict[str, Any] = {"task": index, "task_label": result["task_label"]}
             for group, metrics in result["metrics"].get("best", {}).items():
-                row[f"{group}.map50_95"] = metrics["map50_95"]
-                row[f"{group}.map50"] = metrics["map50"]
-                row[f"{group}.precision"] = metrics["precision"]
-                row[f"{group}.recall"] = metrics["recall"]
+                for metric in ("map10", "map20", "map30", "map50", "map50_95", "precision", "recall"):
+                    if metric in metrics:
+                        row[f"{group}.{metric}"] = metrics[metric]
             row["seen_mean"] = summary["seen_mean"][index]
             metric_rows.append(row)
             cost_rows.append({"task": index, **result["cost"]})

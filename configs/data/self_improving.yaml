@@ -1,5 +1,5 @@
-# Logical experiment groups mapped onto the physical 0720 batch folders.
-# Change only this file when regrouping batches; no image movement is required.
+# Frozen group-aware 8:1:1 protocol published from Study 0910.
+# Every logical group is constrained by an explicit UTF-8 TXT manifest.
 path: ../../data/self_improving
 names:
   0: large luggage
@@ -7,34 +7,41 @@ names:
   2: wheelchair
   3: flatbed truck
 groups:
-  test:
-    split: test
-    images: [images/0720_1, images/0720_2]
   val:
     split: val
-    images: [images/0720_3, images/0720_4]
+    manifest: ../../configs/data/manifests/self_improving/val.txt
+  test:
+    split: test
+    manifest: ../../configs/data/manifests/self_improving/test.txt
+  test_filtered:
+    split: test
+    subset_of: test
+    manifest: ../../configs/data/manifests/self_improving/test_filtered.txt
+  test_difficult:
+    split: test
+    subset_of: test
+    manifest: ../../configs/data/manifests/self_improving/test_difficult.txt
   stage0:
     split: train
-    # Larger base-training set: 4496 trainable images across 9 batches.
-    images:
-      - images/0720_5
-      - images/0720_6
-      - images/0720_7
-      - images/0720_8
-      - images/0720_9
-      - images/0720_10
-      - images/0720_11
-      - images/0720_12
-      - images/0720_13
+    manifest: ../../configs/data/manifests/self_improving/stage0.txt
   stage1:
     split: train
-    # Increment 1: 1000 trainable images across 2 batches.
-    images: [images/0720_14, images/0720_15]
+    manifest: ../../configs/data/manifests/self_improving/stage1.txt
   stage2:
     split: train
-    # Increment 2: 1000 trainable images across 2 batches.
-    images: [images/0720_16, images/0720_17]
+    manifest: ../../configs/data/manifests/self_improving/stage2.txt
   stage3:
     split: train
-    # Increment 3: 1075 trainable images across 3 batches.
-    images: [images/0720_18, images/0720_19, images/0720_20]
+    manifest: ../../configs/data/manifests/self_improving/stage3.txt
+  stage4:
+    split: train
+    manifest: ../../configs/data/manifests/self_improving/stage4.txt
+  stage5:
+    split: train
+    manifest: ../../configs/data/manifests/self_improving/stage5.txt
+  stage6:
+    split: train
+    manifest: ../../configs/data/manifests/self_improving/stage6.txt
+  stage7:
+    split: train
+    manifest: ../../configs/data/manifests/self_improving/stage7.txt

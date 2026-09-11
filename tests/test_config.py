@@ -18,7 +18,9 @@ def test_checked_in_task_config_and_override() -> None:
     assert config["initialization"] == {"source": "pretrained", "checkpoint": "yolov5s.pt"}
     assert Path(config["data"]["layout"]).is_absolute()
     assert config["data"]["validation"] == ["val"]
-    assert config["data"]["test"] == ["test"]
+    assert config["data"]["test"] == ["test", "test_filtered"]
+    assert config["evaluation"]["primary_metric"] == "map30"
+    assert config["backend"]["params"]["best_metric"] == "map30"
 
 
 def test_warm_config_requires_parent() -> None:

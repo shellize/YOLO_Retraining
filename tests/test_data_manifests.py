@@ -92,3 +92,46 @@ def test_layout_rejects_images_and_manifest_together(tmp_path: Path) -> None:
     )
     with pytest.raises(ValueError, match="exactly one"):
         build_registry({"stage0": str(layout)})
+
+
+def test_layout_allows_explicit_nested_test_subsets(tmp_path: Path) -> None:
+    root = tmp_path / "dataset"
+    first = _make_image(root, "test/first.jpg")
+    second = _make_image(root, "test/second.jpg")
+    manifests = tmp_path / "manifests"
+    full = write_image_manifest([first, second], manifests / "test.txt")
+    filtered = write_image_manifest([first], manifests / "test_filtered.txt")
+    difficult = write_image_manifest([second], manifests / "test_difficult.txt")
+    layout = tmp_path / "layout.yaml"
+    layout.write_text(
+        yaml.safe_dump(
+            {
+                "path": str(root),
+                "names": {0: "object"},
+                "groups": {
+                    "test": {"split": "test", "manifest": str(full)},
+                    "test_filtered": {
+                        "split": "test",
+                        "subset_of": "test",
+                        "manifest": str(filtered),
+                    },
+                    "test_difficult": {
+                        "split": "test",
+                        "subset_of": "test",
+                        "manifest": str(difficult),
+                    },
+                },
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    registry = build_registry(
+        {group: str(layout) for group in ("test", "test_filtered", "test_difficult")}
+    )
+
+    assert registry["subset_of"] == {"test_difficult": "test", "test_filtered": "test"}
+    assert len(registry["groups"]["test"]["test"]) == 2
+    assert len(registry["groups"]["test_filtered"]["test"]) == 1
+    assert len(registry["groups"]["test_difficult"]["test"]) == 1

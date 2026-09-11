@@ -23,11 +23,14 @@ def build_registry(catalog: Mapping[str, str]) -> dict[str, Any]:
     records: dict[str, dict[str, Any]] = {}
     groups: dict[str, dict[str, list[str]]] = {}
     names: list[str] | None = None
-    path_owners: dict[str, tuple[str, str]] = {}
+    path_owners: dict[str, list[tuple[str, str]]] = {}
     sources: dict[str, str] = {}
+    subset_of: dict[str, str] = {}
     for group_id, yaml_path in catalog.items():
         group = load_group(str(group_id), yaml_path)
         sources[str(group_id)] = group["yaml_path"]
+        if group.get("subset_of") is not None:
+            subset_of[str(group_id)] = str(group["subset_of"])
         if names is None:
             names = list(group["names"])
         elif names != group["names"]:
@@ -40,16 +43,41 @@ def build_registry(catalog: Mapping[str, str]) -> dict[str, Any]:
                 if sample_id in records:
                     raise ValueError(f"duplicate sample_id: {sample_id}")
                 normalized_path = str(Path(record["image_path"]).resolve()).casefold()
-                owner = path_owners.get(normalized_path)
-                if owner is not None:
-                    raise ValueError(f"image appears in multiple dataset splits: {record['image_path']} ({owner} and {(group_id, split)})")
-                path_owners[normalized_path] = (str(group_id), split)
+                path_owners.setdefault(normalized_path, []).append((str(group_id), split))
                 records[sample_id] = record
                 ids.append(sample_id)
             groups[str(group_id)][split] = ids
     if names is None:
         raise ValueError("catalog produced no dataset groups")
-    return {"records": records, "groups": groups, "names": names, "sources": sources}
+    for child, parent in subset_of.items():
+        if parent not in groups:
+            raise ValueError(f"test subset {child!r} references unknown parent group {parent!r}")
+        child_paths = {
+            str(Path(records[sample_id]["image_path"]).resolve()).casefold()
+            for sample_id in groups[child]["test"]
+        }
+        parent_paths = {
+            str(Path(records[sample_id]["image_path"]).resolve()).casefold()
+            for sample_id in groups[parent]["test"]
+        }
+        if not child_paths.issubset(parent_paths):
+            raise ValueError(f"test subset {child!r} contains images outside parent group {parent!r}")
+    for image_path, owners in path_owners.items():
+        for index, left in enumerate(owners):
+            for right in owners[index + 1 :]:
+                related_test_subset = (
+                    left[1] == right[1] == "test"
+                    and (subset_of.get(left[0]) == right[0] or subset_of.get(right[0]) == left[0])
+                )
+                if not related_test_subset:
+                    raise ValueError(f"image appears in multiple dataset splits: {image_path} ({left} and {right})")
+    return {
+        "records": records,
+        "groups": groups,
+        "names": names,
+        "sources": sources,
+        "subset_of": subset_of,
+    }
 
 
 def records_for(registry: Mapping[str, Any], sample_ids: list[str] | set[str]) -> list[dict[str, Any]]:

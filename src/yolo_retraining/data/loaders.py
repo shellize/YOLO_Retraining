@@ -56,6 +56,10 @@ def _load_layout_group(group_id: str, yaml_path: Path, payload: Mapping[str, Any
         manifest_entries = manifest if isinstance(manifest, list) else [manifest]
         if not all(isinstance(value, str) and Path(value).suffix.lower() == ".txt" for value in manifest_entries):
             raise ValueError(f"layout group {group_id!r} manifest entries must be .txt paths")
+    subset_of = group_spec.get("subset_of")
+    if subset_of is not None:
+        if split != "test" or not isinstance(subset_of, str) or not subset_of:
+            raise ValueError(f"layout group {group_id!r} subset_of is supported only for named test subsets")
     declared_root = Path(payload.get("path", yaml_path.parent)).expanduser()
     root = (yaml_path.parent / declared_root).resolve() if not declared_root.is_absolute() else declared_root.resolve()
     return {
@@ -63,6 +67,7 @@ def _load_layout_group(group_id: str, yaml_path: Path, payload: Mapping[str, Any
         "root": str(root),
         "names": _normalize_names(payload.get("names")),
         "splits": {name: entry if name == split else None for name in ("train", "val", "test")},
+        "subset_of": subset_of,
     }
 
 
@@ -129,4 +134,11 @@ def load_group(group_id: str, yaml_path: Path | str) -> dict[str, Any]:
                 }
             )
         split_records[split] = records
-    return {"group_id": group_id, "yaml_path": spec["yaml_path"], "root": spec["root"], "names": spec["names"], "splits": split_records}
+    return {
+        "group_id": group_id,
+        "yaml_path": spec["yaml_path"],
+        "root": spec["root"],
+        "names": spec["names"],
+        "splits": split_records,
+        "subset_of": spec.get("subset_of"),
+    }

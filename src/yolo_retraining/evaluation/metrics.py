@@ -3,11 +3,17 @@ from __future__ import annotations
 from typing import Any, Mapping, Sequence
 
 
-def summarize_matrix(rows: Sequence[Mapping[str, Any]], *, stage_ids: Sequence[str] | None = None, epsilon: float = 1e-12) -> dict[str, Any]:
+def summarize_matrix(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    stage_ids: Sequence[str] | None = None,
+    metric: str = "map30",
+    epsilon: float = 1e-12,
+) -> dict[str, Any]:
     matrix: list[dict[str, float]] = []
     for row in rows:
         tests = row.get("metrics", row.get("last_metrics", {}))
-        matrix.append({group: float(metrics["map50_95"]) for group, metrics in tests.items()})
+        matrix.append({group: float(metrics[metric]) for group, metrics in tests.items()})
     stage_ids = list(stage_ids or [])
     seen_mean = []
     for index, row in enumerate(matrix):
@@ -42,9 +48,11 @@ def summarize_matrix(rows: Sequence[Mapping[str, Any]], *, stage_ids: Sequence[s
     bwt_values = [matrix[-1][group] - matrix[0][group] for group in initial_overlap]
     return {
         "checkpoint": "best",
+        "primary_metric": metric,
         "matrix": matrix,
         "seen_mean": seen_mean,
-        "final_mean_map50_95": final_mean,
+        "final_mean": final_mean,
+        f"final_mean_{metric}": final_mean,
         "global_test_regression": global_regression,
         "final_mean_forgetting": sum(forgetting.values()) / len(forgetting) if forgetting else 0.0,
         "final_forgetting": forgetting,

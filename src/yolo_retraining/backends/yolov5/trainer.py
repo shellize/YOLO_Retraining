@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import math
 import os
 import re
@@ -22,7 +23,7 @@ ALLOWED_PARAMS = {
     "best_metric",
     "hyp",
 }
-BEST_METRICS = {"map50", "yolov5_fitness"}
+BEST_METRICS = {"map30", "map50", "yolov5_fitness"}
 
 
 def device_argument(device: Any) -> str:
@@ -48,9 +49,9 @@ def validate_training_params(config: Mapping[str, Any]) -> None:
     optimizer = str(params.get("optimizer", "SGD"))
     if optimizer not in {"SGD", "Adam", "AdamW"}:
         raise ValueError("backend.params.optimizer must be SGD, Adam, or AdamW")
-    best_metric = str(params.get("best_metric", "map50"))
+    best_metric = str(params.get("best_metric", "map30"))
     if best_metric not in BEST_METRICS:
-        raise ValueError("backend.params.best_metric must be map50 or yolov5_fitness")
+        raise ValueError("backend.params.best_metric must be map30, map50, or yolov5_fitness")
     hyp = params.get("hyp")
     if hyp is not None and not Path(str(hyp)).is_file():
         raise FileNotFoundError(f"YOLOv5 hyperparameter file does not exist: {hyp}")
@@ -66,6 +67,7 @@ def build_train_command(
     checkpoint: Path,
     data_yaml: Path,
     output_dir: Path,
+    metrics_sidecar: Path | None = None,
 ) -> list[str]:
     validate_training_params(config)
     params = config["backend"]["params"]
@@ -98,7 +100,7 @@ def build_train_command(
             "--patience",
             str(int(params.get("patience", 100))),
             "--best-metric",
-            str(params.get("best_metric", "map50")),
+            str(params.get("best_metric", "map30")),
             "--seed",
             str(int(config["task"]["seed"])),
             "--project",
@@ -117,6 +119,8 @@ def build_train_command(
         command.append("--cache")
         if isinstance(cache, str):
             command.append(cache)
+    if metrics_sidecar is not None:
+        command.extend(["--metrics-sidecar", str(metrics_sidecar.resolve())])
     return command
 
 
@@ -305,11 +309,24 @@ def _print_coarse_progress(raw_line: str, epochs: int | None, shown_epochs: set[
         print(f"[YOLOv5] {line}", flush=True)
 
 
-def read_training_history(path: Path) -> list[dict[str, Any]]:
+def read_training_history(path: Path, metrics_sidecar: Path | None = None) -> list[dict[str, Any]]:
     if not path.is_file():
         return []
     with path.open(newline="", encoding="utf-8") as handle:
-        return [{key.strip(): _number(value) for key, value in row.items()} for row in csv.DictReader(handle)]
+        history = [{key.strip(): _number(value) for key, value in row.items()} for row in csv.DictReader(handle)]
+    if metrics_sidecar is not None and metrics_sidecar.is_file():
+        records = [
+            json.loads(line)
+            for line in metrics_sidecar.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        if len(records) < len(history):
+            raise RuntimeError(
+                f"AP0.3 validation history has {len(records)} rows for {len(history)} training epochs"
+            )
+        for row, metrics in zip(history, records, strict=False):
+            row.update({key: float(metrics[key]) for key in ("map10", "map20", "map30")})
+    return history
 
 
 def _number(value: str | None) -> Any:

@@ -92,7 +92,13 @@ def main() -> int:
         raise ValueError(f"unexpected test manifest in layout: {test_manifest}")
     groups["test_filtered"] = {
         "split": "test",
+        "subset_of": "test",
         "manifest": test_manifest[: -len("test.txt")] + "test_filtered.txt",
+    }
+    groups["test_difficult"] = {
+        "split": "test",
+        "subset_of": "test",
+        "manifest": test_manifest[: -len("test.txt")] + "test_difficult.txt",
     }
     layout_path.write_text(
         yaml.safe_dump(layout, allow_unicode=True, sort_keys=False), encoding="utf-8", newline="\n"

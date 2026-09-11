@@ -198,6 +198,7 @@ class TaskRunner:
                 checkpoint_metrics[group] = result
                 print(
                     f"[Task] evaluation: checkpoint={checkpoint_name}, group={group}, "
+                    f"AP0.3={float(result.get('map30', 0.0)):.4f}, "
                     f"mAP50-95={float(result.get('map50_95', 0.0)):.4f}, "
                     f"mAP50={float(result.get('map50', 0.0)):.4f}, time={float(result.get('evaluation_seconds', 0.0)):.1f}s",
                     flush=True,
@@ -218,6 +219,18 @@ class TaskRunner:
         backend_provenance = training.get("backend_provenance")
         if backend_provenance is None:
             backend_provenance = self.backend.provenance(self.config)
+        artifacts = {
+            "last_checkpoint": relative_to(training["last_checkpoint"], self.output_dir),
+            "best_checkpoint": relative_to(training["best_checkpoint"], self.output_dir),
+            "metrics": "metrics/evaluation.json",
+            "cost": "metrics/cost.json",
+            "selection": "selection/summary.json",
+            "tensorboard": relative_to(tensorboard_dir, self.output_dir),
+        }
+        if training.get("validation_iou_metrics"):
+            artifacts["validation_iou_metrics"] = relative_to(
+                training["validation_iou_metrics"], self.output_dir
+            )
         return {
             "schema_version": 1,
             "status": "completed",
@@ -226,14 +239,8 @@ class TaskRunner:
             "parent_result": self.config["task"].get("parent_result"),
             "label_schema": registry["names"],
             "backend": backend_provenance,
-            "artifacts": {
-                "last_checkpoint": relative_to(training["last_checkpoint"], self.output_dir),
-                "best_checkpoint": relative_to(training["best_checkpoint"], self.output_dir),
-                "metrics": "metrics/evaluation.json",
-                "cost": "metrics/cost.json",
-                "selection": "selection/summary.json",
-                "tensorboard": relative_to(tensorboard_dir, self.output_dir),
-            },
+            "primary_metric": self.config["evaluation"]["primary_metric"],
+            "artifacts": artifacts,
             "selection": {"metadata": selection.get("metadata", {}), "group_counts": {key: len(value) for key, value in selection.get("groups", {}).items()}},
             "metrics": metrics,
             "cost": cost,

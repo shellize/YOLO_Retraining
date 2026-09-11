@@ -6,6 +6,6 @@ data:
   current: [stage0]
   candidate: [stage0]
   validation: [val]
-  test: [test]
+  test: [test, test_filtered]
 initialization: {source: pretrained, checkpoint: yolov5s.pt}
 select_policy: {name: full, params: {}}
