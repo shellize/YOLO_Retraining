@@ -54,6 +54,8 @@ WEIGHTS = {
     "class_image": 10.0,
     "class_instance": 4.0,
     "time_bin": 2.0,
+    "grouped_images": 15.0,
+    "group_count": 5.0,
 }
 
 
@@ -66,7 +68,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--time-bins", type=int, default=10)
     parser.add_argument("--search-trials", type=int, default=128)
     parser.add_argument("--large-group-threshold", type=int, default=10)
-    parser.add_argument("--large-group-penalty", type=float, default=0.6)
+    parser.add_argument("--large-group-penalty", type=float, default=1.5)
     return parser.parse_args()
 
 
@@ -110,6 +112,8 @@ def build_units(samples: list[Sample], group_members: dict[str, list[str]]) -> l
         features: Counter[str] = Counter()
         for sample in members:
             features.update(sample_features(sample))
+        features["grouped_images"] = len(members)
+        features["group_count"] = 1
         units.append(Unit(group_id, group_id, members, features))
     for sample in samples:
         if sample.relative_image not in grouped_images:
