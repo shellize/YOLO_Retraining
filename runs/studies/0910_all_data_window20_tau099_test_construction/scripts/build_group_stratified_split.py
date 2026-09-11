@@ -67,6 +67,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--time-bins", type=int, default=10)
     parser.add_argument("--search-trials", type=int, default=128)
+    parser.add_argument("--swap-attempts", type=int, default=300000)
     parser.add_argument("--large-group-threshold", type=int, default=10)
     parser.add_argument("--large-group-penalty", type=float, default=1.5)
     return parser.parse_args()
@@ -176,11 +177,55 @@ def final_cost(
     return value
 
 
+def improve_independent_swaps(
+    assigned: dict[str, list[Unit]],
+    targets: dict[str, dict[str, float]],
+    *,
+    seed: int,
+    attempts: int,
+) -> dict[str, list[Unit]]:
+    if attempts < 0:
+        raise ValueError("swap-attempts cannot be negative")
+    grouped = {split: [unit for unit in assigned[split] if unit.grouped] for split in SPLITS}
+    independent = {split: [unit for unit in assigned[split] if not unit.grouped] for split in SPLITS}
+    current = {split: Counter() for split in SPLITS}
+    for split in SPLITS:
+        for unit in assigned[split]:
+            current[split].update(unit.features)
+    rng = random.Random(seed + 999983)
+    pairs = (("train", "val"), ("train", "test"), ("val", "test"))
+    for _ in range(attempts):
+        left_split, right_split = pairs[rng.randrange(len(pairs))]
+        left_index = rng.randrange(len(independent[left_split]))
+        right_index = rng.randrange(len(independent[right_split]))
+        left = independent[left_split][left_index]
+        right = independent[right_split][right_index]
+        features = set(left.features) | set(right.features)
+        delta = 0.0
+        for feature in features:
+            weight = feature_weight(feature)
+            for split, remove, add in ((left_split, left, right), (right_split, right, left)):
+                target = targets[split][feature]
+                scale = max(1.0, target)
+                before = ((current[split][feature] - target) / scale) ** 2
+                after_count = current[split][feature] - remove.features[feature] + add.features[feature]
+                after = ((after_count - target) / scale) ** 2
+                delta += weight * (after - before)
+        if delta < -1e-12:
+            current[left_split].subtract(left.features)
+            current[left_split].update(right.features)
+            current[right_split].subtract(right.features)
+            current[right_split].update(left.features)
+            independent[left_split][left_index], independent[right_split][right_index] = right, left
+    return {split: grouped[split] + independent[split] for split in SPLITS}
+
+
 def split_units(
     units: list[Unit],
     *,
     seed: int,
     trials: int,
+    swap_attempts: int,
     large_group_threshold: int,
     large_group_penalty: float,
 ) -> tuple[dict[str, list[Unit]], float]:
@@ -250,6 +295,12 @@ def split_units(
             best, best_cost = assigned, cost
     if best is None:
         raise RuntimeError("split search produced no assignment")
+    best = improve_independent_swaps(best, targets, seed=seed, attempts=swap_attempts)
+    current = {split: Counter() for split in SPLITS}
+    for split in SPLITS:
+        for unit in best[split]:
+            current[split].update(unit.features)
+    best_cost = final_cost(current, targets, best, threshold=large_group_threshold, penalty=large_group_penalty)
     return best, best_cost
 
 
@@ -280,6 +331,7 @@ def main() -> int:
         units,
         seed=args.seed,
         trials=args.search_trials,
+        swap_attempts=args.swap_attempts,
         large_group_threshold=args.large_group_threshold,
         large_group_penalty=args.large_group_penalty,
     )
@@ -324,6 +376,7 @@ def main() -> int:
         "method": "group-aware deterministic multi-objective stratification with large-group penalty on validation and test",
         "seed": args.seed,
         "search_trials": args.search_trials,
+        "swap_attempts": args.swap_attempts,
         "objective": objective,
         "fractions": FRACTIONS,
         "time_bins": args.time_bins,
@@ -351,6 +404,7 @@ def main() -> int:
         "fractions": FRACTIONS,
         "time_bins": args.time_bins,
         "search_trials": args.search_trials,
+        "swap_attempts": args.swap_attempts,
         "large_group_threshold": args.large_group_threshold,
         "large_group_penalty": args.large_group_penalty,
         "selection_boundary": "Validation is used for model selection; test remains fixed and is not used to revise the split or protocol.",
