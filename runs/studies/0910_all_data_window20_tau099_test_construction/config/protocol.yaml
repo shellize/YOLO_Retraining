@@ -3,7 +3,7 @@ source_embeddings: data_analyse/dataset_redundancy/results/20260824-182608/embed
 variant_name: global_order_window20_tau0p990_label_aware_independent_representative
 final_variant_name: global_order_window20_tau0p990_label_aware_reviewed_final
 pair_reviewed_final_variant_name: global_order_window20_tau0p990_label_aware_pair_reviewed_final
-split_variant_name: random_stratified_s42_8_1_1
+split_variant_name: group_stratified_s42_8_1_1
 split_seed: 42
 split_fractions:
   train: 0.8
