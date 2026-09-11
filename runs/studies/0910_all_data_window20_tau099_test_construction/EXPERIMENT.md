@@ -54,6 +54,8 @@
 
 整图聚类容易被地铁环境中变化的人群背景干扰，因此正式的事件绑定候选改为目标级顺序轨迹。`target_track_candidate_audit` 在完整的去重后 manifest 顺序中定义位置距离，背景图片同样占据位置；每个标注框只与此前 20 个保留位置内的同类别目标匹配。粗筛使用偏低的匹配阈值以优先保证召回，结合紧框和外扩上下文的 HSV/HOG 外观描述以及框中心、大小约束，并要求新目标同时匹配轨迹原型和最近目标，避免简单连通分量的链式漂移。轨迹得分定义为轨迹中最低的连接得分，审阅页按该分数降序排列，只显示目标裁剪序列，人工只确认是否属于同一轨迹。
 
+轨迹人工结果中，`same_track` 整体形成目标事件，未审阅和 `not_same_track` 默认不绑定。`unsure` 以及人工指出的漏标轨迹按 `config/target_track_manual_overrides.yaml` 拆分：每一行是一个独立子轨迹，候选轨迹扣除这些子轨迹后的剩余成员视为主要轨迹；单图子轨迹只从主要轨迹移除，不产生跨图片约束。目标事件共享图片时继续合并为最终的图片级 split group，输出到 `target_track_groups_reviewed_final`。
+
 ## 输出边界
 
 ```text
@@ -74,6 +76,12 @@ runs/studies/0910_all_data_window20_tau099_test_construction/
 │   ├── manifest.txt
 │   ├── review_decisions.csv
 │   ├── protocol.json
+│   └── summary.json
+├── experiment/variants/target_track_groups_reviewed_final/
+│   ├── target_event_members.csv
+│   ├── image_split_groups.csv
+│   ├── manual_override_audit.csv
+│   ├── manual_review.csv
 │   └── summary.json
 ├── experiment/variants/random_stratified_s42_8_1_1/
 │   ├── manifests/{train,val,test}.txt
