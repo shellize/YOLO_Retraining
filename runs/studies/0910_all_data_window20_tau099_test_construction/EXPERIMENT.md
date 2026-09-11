@@ -58,6 +58,8 @@
 
 第二轮 `target_track_second_pass_audit` 排除第一轮已经绑定到图片级 split group 的全部图片，只在剩余图片中重新生成候选轨迹。序列位置仍来自完整的 5,763 张去重后 manifest，被排除图片仍占据位置；匹配得分把紧贴标注框的目标外观权重提高到 `0.80`，外扩上下文和框几何各占 `0.10`，其余窗口、低阈值和排序语义保持不变。第二轮使用独立浏览器存储键和 CSV 文件名，不覆盖第一轮审阅。
 
+第二轮人工结果沿用第一轮语义，并由 `config/target_track_second_pass_manual_overrides.yaml` 拆分不确定轨迹；`target_track_second_pass_groups_reviewed_final` 保存该轮独立结果。两轮确认的目标事件随后统一重编号，并按共享图片关系重新形成图片级约束，最终写入 `target_track_groups_two_pass_final`，作为后续 group-aware train/val/test 划分的唯一轨迹约束来源。
+
 ## 输出边界
 
 ```text
@@ -85,6 +87,8 @@ runs/studies/0910_all_data_window20_tau099_test_construction/
 │   ├── manual_override_audit.csv
 │   ├── manual_review.csv
 │   └── summary.json
+├── experiment/variants/target_track_second_pass_groups_reviewed_final/
+├── experiment/variants/target_track_groups_two_pass_final/
 ├── experiment/variants/random_stratified_s42_8_1_1/
 │   ├── manifests/{train,val,test}.txt
 │   ├── layout.yaml
