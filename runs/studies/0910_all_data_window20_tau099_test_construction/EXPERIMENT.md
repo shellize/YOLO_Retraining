@@ -112,7 +112,9 @@ train 的 4,611 张图片按全局帧顺序划分为 8 个 stage。同一 train 
 
 八个 stage 完整覆盖 train、互不重复，group 跨 stage 违规数为 0。`group_stratified_s42_8_1_1/layout.yaml` 现以固定 val/test 和 `stage0..stage7` 作为正式训练框架入口；聚合的 `train.txt` 继续保留用于全量训练身份核对。
 
-正式 split 冻结后，只审阅 test 中的正样本困难度，并保留两套评价：完整 test 表示真实目标分布，filtered test 排除人工明确确认的极困难或不可判定标注。学习曲线用于检查评估是否稳定，但不能反向调整 test 直到曲线符合预期，以免对测试集产生人为过拟合。
+正式 split 冻结后，只对 test 中 296 张带有效标注的图片进行困难度审阅，280 张纯背景不参与人工筛选。人工明确标记了 55 张困难正样本；未标记、正常和不确定样本按预先约定保留。原始 `test.txt` 的 576 张图片保持不变，新增与其严格嵌套的 `test_filtered.txt`，仅排除这 55 张困难正样本，因此包含 521 张图片，其中正样本 241 张、背景 280 张。另保存 `test_difficult.txt` 作为被排除的 55 张困难正样本清单，用于身份核对和误差分析，不作为第三套主评价协议。
+
+后续报告必须同时注明使用的是完整 `test` 还是 `test_filtered`：完整 test 表示冻结后的实际目标难度分布，`test_filtered` 用于观察排除人工认定极困难样本后的性能，两者不能混用或择优汇报。学习曲线用于检查评估是否稳定，但不能反向调整 test 直到曲线符合预期，以免对测试集产生人为过拟合。
 
 当前证据只约束人工确认的同一轨迹。未审阅候选默认独立，目标匹配窗口也有限，因此不能声称所有潜在身份泄露已经被完全消除。
 
@@ -129,10 +131,12 @@ runs/studies/0910_all_data_window20_tau099_test_construction/
 │   ├── global_order_window20_tau0p990_label_aware_pair_reviewed_final/
 │   ├── random_stratified_s42_8_1_1/                    # 已作废的图片级候选划分
 │   ├── group_stratified_s42_8_1_1/                     # 正式 group-aware 划分
-│   │   ├── manifests/{train,val,test,stage0..stage7}.txt
+│   │   ├── manifests/{train,val,test,test_filtered,test_difficult,stage0..stage7}.txt
 │   │   ├── layout.yaml
 │   │   ├── stage_assignments.csv
-│   │   └── materialization_summary.json
+│   │   ├── materialization_summary.json
+│   │   ├── test_difficulty_manual_review.csv
+│   │   └── test_difficulty_summary.json
 │   ├── target_track_groups_reviewed_final/
 │   ├── target_track_second_pass_groups_reviewed_final/
 │   └── target_track_groups_two_pass_final/             # 最终轨迹约束
@@ -140,6 +144,7 @@ runs/studies/0910_all_data_window20_tau099_test_construction/
 │   ├── global_temporal_cluster_preview_label_aware/
 │   ├── global_post_dedup_similarity_label_aware/
 │   ├── test_positive_difficulty_review/                 # 旧候选 test 审阅，暂停使用
+│   ├── final_test_positive_difficulty_review/           # 正式 test 正样本困难度审阅
 │   ├── retained_temporal_pair_audit/
 │   ├── positive_box_layout_pair_audit/
 │   ├── positive_box_layout_nonconsecutive_pair_audit/
