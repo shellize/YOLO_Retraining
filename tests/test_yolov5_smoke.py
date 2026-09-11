@@ -37,7 +37,7 @@ def _config(tmp_path: Path, dataset_yaml: Path) -> dict:
         "epoch_policy": {"name": "static", "params": {}},
         "budget": {"type": "epochs", "value": 1},
         "backend": {"params": {"batch": 4, "imgsz": 640, "device": 0, "workers": 2, "amp": True}},
-        "evaluation": {"primary_metric": "map50_95", "test_scope": "seen", "evaluate_checkpoints": ["last", "best"]},
+        "evaluation": {"primary_metric": "map30", "test_scope": "seen", "evaluate_checkpoints": ["last", "best"]},
     }
 
 
@@ -67,6 +67,11 @@ def test_real_yolov5s_full_cold(tmp_path: Path) -> None:
     assert result["backend"]["family"] == "original-yolov5"
     assert result["backend"]["source_commit"] == "915bbf294bb74c859f0b41f1c23bc395014ea679"
     assert result["backend"]["best_selection_metric"] == "map30"
+    assert result["primary_metric"] == "map30"
+    validation_history = output / result["artifacts"]["validation_iou_metrics"]
+    assert validation_history.is_file()
+    train_history = (output / "metrics" / "train_history.csv").read_text(encoding="utf-8")
+    assert "map10" in train_history and "map20" in train_history and "map30" in train_history
     assert result["backend"]["data_loader_adaptation"] == "read_only_incomplete_jpeg"
     assert source_hashes == {path: hashlib.sha256(path.read_bytes()).hexdigest() for path in source_hashes}
     train_log = (output / "logs" / "yolov5_train.log").read_text(encoding="utf-8")
