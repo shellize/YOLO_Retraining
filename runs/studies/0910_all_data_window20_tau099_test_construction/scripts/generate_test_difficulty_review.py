@@ -8,8 +8,8 @@ from pathlib import Path
 
 STUDY_ROOT = Path(__file__).resolve().parents[1]
 PROJECT_ROOT = STUDY_ROOT.parents[2]
-DEFAULT_SPLIT_DIR = STUDY_ROOT / "experiment" / "variants" / "random_stratified_s42_8_1_1"
-DEFAULT_OUTPUT_DIR = STUDY_ROOT / "result" / "test_positive_difficulty_review"
+DEFAULT_SPLIT_DIR = STUDY_ROOT / "experiment" / "variants" / "group_stratified_s42_8_1_1"
+DEFAULT_OUTPUT_DIR = STUDY_ROOT / "result" / "final_test_positive_difficulty_review"
 CLASS_NAMES = ("large luggage", "stroller", "wheelchair", "flatbed truck")
 CLASS_COLORS = ("#2563eb", "#16a34a", "#db2777", "#ea580c")
 
@@ -66,7 +66,7 @@ def html(payload: dict[str, object], image_root: str) -> str:
     colors = json.dumps(CLASS_COLORS, ensure_ascii=False)
     return f'''<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>固定 test 正样本难度审阅</title>
+<title>正式 test 正样本难度审阅</title>
 <style>
 :root{{--bg:#f4f7fb;--surface:#fff;--ink:#172033;--muted:#647087;--line:#d9e0eb;--blue:#2563eb;--green:#15803d;--red:#b91c1c;--amber:#b45309;--shadow:0 10px 28px rgba(32,50,86,.08)}}
 *{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "Segoe UI","Microsoft YaHei",sans-serif}}main{{max-width:1700px;margin:auto;padding:24px}}h1{{margin:0 0 6px;font-size:26px}}.muted{{color:var(--muted)}}
@@ -76,13 +76,13 @@ button,select,input{{font:inherit;border:1px solid var(--line);background:#fff;b
 .card.big{{grid-column:1/-1}}.card.big .figure{{max-width:1200px;cursor:zoom-out}}.pages{{margin:16px 0}}.pages button[aria-current=page]{{background:var(--blue);color:#fff}}.kbd{{font-family:Consolas,monospace;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:1px 5px;background:#fff}}
 @media(max-width:1050px){{#grid{{grid-template-columns:repeat(2,minmax(0,1fr))}}}}@media(max-width:680px){{main{{padding:14px}}#grid{{grid-template-columns:1fr}}}}
 </style></head><body><main>
-<h1>固定 test 正样本 · 难度审阅</h1>
+<h1>正式 test 正样本 · 难度审阅</h1>
 <div class="muted">仅展示带有效标注的 test 图片。红色“困难”表示后续从 filtered test 排除；未审阅、正常和不确定默认保留。选择与备注保存在当前浏览器。</div>
 <section class="summary"><div class="metric"><small>完整 test</small><strong>{payload['test_images']}</strong></div><div class="metric"><small>待审正样本</small><strong>{payload['positive_images']}</strong></div><div class="metric"><small>背景（不展示）</small><strong>{payload['background_images']}</strong></div><div class="metric"><small>已审阅</small><strong id="reviewed">0</strong></div><div class="metric"><small>困难</small><strong id="difficult">0</strong></div></section>
 <div class="toolbar"><select id="status"><option value="all">全部状态</option><option value="unreviewed">未审阅</option><option value="difficult">困难</option><option value="normal">正常</option><option value="unsure">不确定</option></select><select id="class"><option value="all">全部类别</option></select><select id="batch"><option value="all">全部 batch</option></select><select id="sort"><option value="frame">全局帧号升序</option><option value="labels_desc">标注框数量降序</option></select><input id="search" placeholder="搜索文件名"><button id="export">导出审阅 CSV</button><button id="clear">清空本页审阅</button><span class="muted" id="shown"></span></div>
 <p class="muted">快捷键：鼠标停在卡片上，按 <span class="kbd">D</span> 困难、<span class="kbd">N</span> 正常、<span class="kbd">U</span> 不确定。</p><section id="grid"></section><div class="pages" id="pages"></div>
 </main><script>
-const DATA={data},ROOT={root},COLORS={colors},KEY='0910_fixed_test_positive_difficulty_review_s42_v1',SIZE=30;
+const DATA={data},ROOT={root},COLORS={colors},KEY='0910_group_stratified_test_positive_difficulty_s42_v1',SIZE=30;
 let review=JSON.parse(localStorage.getItem(KEY)||'{{}}'),page=1,hovered=null;const $=id=>document.getElementById(id),esc=x=>String(x).replace(/[&<>"']/g,c=>({{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}}[c])),save=()=>localStorage.setItem(KEY,JSON.stringify(review));
 function boxSvg(row){{return row.boxes.map(b=>{{const x=Math.max(0,b.x-b.w/2),y=Math.max(0,b.y-b.h/2),w=Math.min(1-x,b.w),h=Math.min(1-y,b.h),color=COLORS[b.c%COLORS.length];return `<rect class="box" x="${{x}}" y="${{y}}" width="${{w}}" height="${{h}}" style="stroke:${{color}};fill:${{color}}"><title>${{esc(DATA.class_names[b.c]??b.c)}}</title></rect>`}}).join('')}}
 function setStatus(rank,status){{review[rank]=review[rank]||{{status:'',note:''}};review[rank].status=status;save();render()}}
@@ -92,7 +92,7 @@ function render(){{const all=rows(),total=Math.max(1,Math.ceil(all.length/SIZE))
 for(const id of ['status','class','batch','sort'])$(id).onchange=()=>{{page=1;render()}};$('search').oninput=()=>{{page=1;render()}};
 $('grid').onclick=e=>{{const card=e.target.closest('.card');if(!card)return;const choice=e.target.closest('.choice');if(choice){{setStatus(card.dataset.rank,choice.dataset.status);return}}if(e.target.closest('.figure'))card.classList.toggle('big')}};$('grid').onmouseover=e=>{{const card=e.target.closest('.card');if(card)hovered=card.dataset.rank}};$('grid').onmouseout=e=>{{if(e.target.closest('.card'))hovered=null}};$('grid').oninput=e=>{{if(e.target.tagName!=='TEXTAREA')return;const rank=e.target.closest('.card').dataset.rank;review[rank]=review[rank]||{{status:'',note:''}};review[rank].note=e.target.value;save()}};
 document.onkeydown=e=>{{if(!hovered||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))return;const status={{d:'difficult',n:'normal',u:'unsure'}}[e.key.toLowerCase()];if(status)setStatus(hovered,status)}};
-$('export').onclick=()=>{{const quote=v=>'"'+String(v??'').replaceAll('"','""')+'"',out=[['rank','image','global_frame','batch','classes','label_count','status','note']];for(const row of DATA.rows){{const r=review[row.rank]||{{}};out.push([row.rank,row.image,row.frame,row.batch,row.classes.join(';'),row.boxes.length,r.status||'',r.note||''])}}const blob=new Blob(['\ufeff'+out.map(row=>row.map(quote).join(',')).join('\\n')],{{type:'text/csv;charset=utf-8'}}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='test_positive_difficulty_manual_review.csv';a.click();URL.revokeObjectURL(a.href)}};
+$('export').onclick=()=>{{const quote=v=>'"'+String(v??'').replaceAll('"','""')+'"',out=[['rank','image','global_frame','batch','classes','label_count','status','note']];for(const row of DATA.rows){{const r=review[row.rank]||{{}};out.push([row.rank,row.image,row.frame,row.batch,row.classes.join(';'),row.boxes.length,r.status||'',r.note||''])}}const blob=new Blob(['\ufeff'+out.map(row=>row.map(quote).join(',')).join('\\n')],{{type:'text/csv;charset=utf-8'}}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='final_test_positive_difficulty_manual_review.csv';a.click();URL.revokeObjectURL(a.href)}};
 $('clear').onclick=()=>{{if(confirm('清空当前浏览器保存的全部难度审阅？')){{review={{}};save();render()}}}};
 $('class').innerHTML='<option value="all">全部类别</option>'+DATA.class_names.map((name,index)=>`<option value="${{index}}">${{esc(name)}}</option>`).join('');$('batch').innerHTML='<option value="all">全部 batch</option>'+[...new Set(DATA.rows.map(r=>r.batch))].sort().map(b=>`<option>${{esc(b)}}</option>`).join('');render();
 </script></body></html>'''
@@ -135,7 +135,7 @@ def main() -> int:
     (output_dir / "review.html").write_text(html(payload, image_root), encoding="utf-8", newline="\n")
     summary = {
         "status": "completed",
-        "source_split": "random_stratified_s42_8_1_1/test",
+        "source_split": f"{split_dir.name}/test",
         "test_images": len(test_images),
         "positive_images_for_review": len(rows),
         "background_images_not_shown": len(test_images) - len(rows),
@@ -146,7 +146,7 @@ def main() -> int:
             "unreviewed": "keep",
         },
         "html": "review.html",
-        "browser_export": "test_positive_difficulty_manual_review.csv",
+        "browser_export": "final_test_positive_difficulty_manual_review.csv",
     }
     (output_dir / "summary.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n"
