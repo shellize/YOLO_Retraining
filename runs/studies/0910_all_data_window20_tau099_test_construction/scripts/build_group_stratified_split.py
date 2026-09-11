@@ -192,6 +192,7 @@ def split_units(
     for unit in units:
         totals.update(unit.features)
     capacities = allocate(totals["images"])
+    grouped_image_capacities = allocate(totals["grouped_images"])
     targets = {split: {feature: total * FRACTIONS[split] for feature, total in totals.items()} for split in SPLITS}
     grouped = [unit for unit in units if unit.grouped]
     independent = [unit for unit in units if not unit.grouped]
@@ -209,8 +210,20 @@ def split_units(
         current = {split: Counter() for split in SPLITS}
         assigned = {split: [] for split in SPLITS}
         for unit in (*group_order, *independent_order):
+            eligible = list(SPLITS)
+            if unit.grouped:
+                if unit.size >= large_group_threshold and current["train"]["images"] + unit.size <= capacities["train"]:
+                    eligible = ["train"]
+                else:
+                    within_group_quota = [
+                        split
+                        for split in SPLITS
+                        if current[split]["grouped_images"] + unit.size <= grouped_image_capacities[split]
+                    ]
+                    if within_group_quota:
+                        eligible = within_group_quota
             choices = []
-            for split in SPLITS:
+            for split in eligible:
                 gain = assignment_gain(
                     unit,
                     split,
