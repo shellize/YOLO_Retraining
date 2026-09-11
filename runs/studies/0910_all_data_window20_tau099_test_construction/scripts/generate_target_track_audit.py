@@ -61,11 +61,15 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build target-track candidates in the post-dedup sequence.")
     parser.add_argument("--variant-dir", type=Path, default=DEFAULT_VARIANT)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--exclude-grouped-images", type=Path)
     parser.add_argument("--window", type=int, default=20)
     parser.add_argument("--min-score", type=float, default=0.62)
     parser.add_argument("--min-tight-similarity", type=float, default=0.55)
     parser.add_argument("--max-center-distance", type=float, default=0.20)
     parser.add_argument("--max-size-distance", type=float, default=0.22)
+    parser.add_argument("--tight-weight", type=float, default=0.60)
+    parser.add_argument("--context-weight", type=float, default=0.25)
+    parser.add_argument("--geometry-weight", type=float, default=0.15)
     return parser.parse_args()
 
 
@@ -99,7 +103,7 @@ def appearance(left: np.ndarray, right: np.ndarray) -> float:
     return float(np.clip(left @ right, 0.0, 1.0))
 
 
-def match_score(track: Track, node: Node) -> tuple[float, float, float, float]:
+def match_score(track: Track, node: Node, *, tight_weight: float, context_weight: float, geometry_weight: float) -> tuple[float, float, float, float]:
     last = track.nodes[-1]
     center_distance = math.hypot(node.x - last.x, node.y - last.y)
     size_distance = math.hypot(node.w - last.w, node.h - last.h)
@@ -108,11 +112,11 @@ def match_score(track: Track, node: Node) -> tuple[float, float, float, float]:
     tight_similarity = 0.6 * tight_prototype + 0.4 * tight_last
     context_similarity = 0.6 * appearance(track.prototype("context"), node.context) + 0.4 * appearance(last.context, node.context)
     geometry = math.exp(-(center_distance / 0.10 + size_distance / 0.12))
-    score = 0.60 * tight_similarity + 0.25 * context_similarity + 0.15 * geometry
+    score = tight_weight * tight_similarity + context_weight * context_similarity + geometry_weight * geometry
     return score, tight_similarity, center_distance, size_distance
 
 
-def build_tracks(nodes_by_index: dict[int, list[Node]], *, window: int, min_score: float, min_tight: float, max_center: float, max_size: float) -> list[Track]:
+def build_tracks(nodes_by_index: dict[int, list[Node]], *, window: int, min_score: float, min_tight: float, max_center: float, max_size: float, tight_weight: float, context_weight: float, geometry_weight: float) -> list[Track]:
     tracks: list[Track] = []
     for sequence_index in sorted(nodes_by_index):
         image_nodes = nodes_by_index[sequence_index]
@@ -126,7 +130,7 @@ def build_tracks(nodes_by_index: dict[int, list[Node]], *, window: int, min_scor
             details: dict[tuple[int, int], tuple[float, float, float, float]] = {}
             for row, track in enumerate(active):
                 for column, node in enumerate(nodes):
-                    detail = match_score(track, node)
+                    detail = match_score(track, node, tight_weight=tight_weight, context_weight=context_weight, geometry_weight=geometry_weight)
                     details[row, column] = detail
                     score, tight, center, size = detail
                     if score >= min_score and tight >= min_tight and center <= max_center and size <= max_size:
@@ -157,23 +161,31 @@ def main() -> int:
     args = parse_args()
     if args.window < 1:
         raise ValueError("window must be positive")
+    if not math.isclose(args.tight_weight + args.context_weight + args.geometry_weight, 1.0, abs_tol=1e-9):
+        raise ValueError("tight/context/geometry weights must sum to 1")
     variant, output = args.variant_dir.resolve(), args.output_dir.resolve()
     dataset = (PROJECT_ROOT / "data" / "self_improving").resolve()
     images = read_manifest(variant / "manifest.txt")
+    excluded_images: set[str] = set()
+    if args.exclude_grouped_images:
+        with args.exclude_grouped_images.resolve().open(encoding="utf-8-sig", newline="") as handle:
+            excluded_images = {row["image"].replace("\\", "/").casefold() for row in csv.DictReader(handle)}
     nodes_by_index: dict[int, list[Node]] = defaultdict(list)
     object_count = 0
     for sequence_index, image_path in enumerate(images):
         boxes = read_boxes(image_path, dataset)
         if not boxes:
             continue
+        relative = image_path.relative_to(dataset).as_posix()
+        if relative.casefold() in excluded_images:
+            continue
         image = cv2.imread(str(image_path))
         if image is None:
             raise ValueError(f"OpenCV could not read image: {image_path}")
-        relative = image_path.relative_to(dataset).as_posix()
         for box_index, box in enumerate(boxes):
             nodes_by_index[sequence_index].append(Node(relative, sequence_index, frame(image_path), box_index, int(box["c"]), float(box["x"]), float(box["y"]), float(box["w"]), float(box["h"]), descriptor(crop(image, box, 0.03)), descriptor(crop(image, box, 0.22))))
             object_count += 1
-    tracks = build_tracks(nodes_by_index, window=args.window, min_score=args.min_score, min_tight=args.min_tight_similarity, max_center=args.max_center_distance, max_size=args.max_size_distance)
+    tracks = build_tracks(nodes_by_index, window=args.window, min_score=args.min_score, min_tight=args.min_tight_similarity, max_center=args.max_center_distance, max_size=args.max_size_distance, tight_weight=args.tight_weight, context_weight=args.context_weight, geometry_weight=args.geometry_weight)
     tracks.sort(key=lambda track: (-min(track.link_scores), -len(track.nodes), track.nodes[0].sequence_index))
     rows = []
     for index, track in enumerate(tracks, start=1):
@@ -183,8 +195,10 @@ def main() -> int:
         raise FileExistsError(f"refusing to overwrite audit output: {output}")
     output.mkdir(parents=True, exist_ok=True)
     image_root = Path(os.path.relpath(dataset, output)).as_posix()
-    (output / "track_review.html").write_text(html(payload, image_root), encoding="utf-8", newline="\n")
-    summary = {"status": "completed", "source_variant": variant.name, "sequence_definition": "position in the complete post-dedup manifest", "window": args.window, "feature": "tight/context HSV histogram plus HOG", "track_score": "minimum accepted link score in the trajectory; tracks sorted descending", "matching": {"min_score": args.min_score, "min_tight_similarity": args.min_tight_similarity, "max_center_distance": args.max_center_distance, "max_size_distance": args.max_size_distance}, **{key: payload[key] for key in ("final_images", "labeled_objects", "track_count", "node_count", "max_track_size")}, "html": "track_review.html", "browser_export": "target_track_manual_review.csv"}
+    browser_export = f"{output.name}_manual_review.csv"
+    page = html(payload, image_root).replace("0910_target_track_candidate_review_v1", f"0910_{output.name}_review_v1").replace("target_track_manual_review.csv", browser_export)
+    (output / "track_review.html").write_text(page, encoding="utf-8", newline="\n")
+    summary = {"status": "completed", "source_variant": variant.name, "sequence_definition": "position in the complete post-dedup manifest", "window": args.window, "excluded_grouped_images": len(excluded_images), "feature": "tight/context HSV histogram plus HOG", "feature_weights": {"tight": args.tight_weight, "context": args.context_weight, "geometry": args.geometry_weight}, "track_score": "minimum accepted link score in the trajectory; tracks sorted descending", "matching": {"min_score": args.min_score, "min_tight_similarity": args.min_tight_similarity, "max_center_distance": args.max_center_distance, "max_size_distance": args.max_size_distance}, **{key: payload[key] for key in ("final_images", "labeled_objects", "track_count", "node_count", "max_track_size")}, "html": "track_review.html", "browser_export": browser_export}
     (output / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     return 0

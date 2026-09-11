@@ -56,6 +56,8 @@
 
 轨迹人工结果中，`same_track` 整体形成目标事件，未审阅和 `not_same_track` 默认不绑定。`unsure` 以及人工指出的漏标轨迹按 `config/target_track_manual_overrides.yaml` 拆分：每一行是一个独立子轨迹，候选轨迹扣除这些子轨迹后的剩余成员视为主要轨迹；单图子轨迹只从主要轨迹移除，不产生跨图片约束。目标事件共享图片时继续合并为最终的图片级 split group，输出到 `target_track_groups_reviewed_final`。
 
+第二轮 `target_track_second_pass_audit` 排除第一轮已经绑定到图片级 split group 的全部图片，只在剩余图片中重新生成候选轨迹。序列位置仍来自完整的 5,763 张去重后 manifest，被排除图片仍占据位置；匹配得分把紧贴标注框的目标外观权重提高到 `0.80`，外扩上下文和框几何各占 `0.10`，其余窗口、低阈值和排序语义保持不变。第二轮使用独立浏览器存储键和 CSV 文件名，不覆盖第一轮审阅。
+
 ## 输出边界
 
 ```text
@@ -97,6 +99,7 @@ runs/studies/0910_all_data_window20_tau099_test_construction/
 ├── result/positive_box_layout_nonconsecutive_pair_audit/
 ├── result/final_positive_tau095_window10_cluster_audit/
 ├── result/target_track_candidate_audit/
+├── result/target_track_second_pass_audit/
 ├── logs/
 └── scripts/
 ```
